@@ -1,11 +1,11 @@
 # Configuration file for the Sphinx documentation builder.
 
 # -- Project information
-from package_name import __project__, __version__
+from evolver import __project__, __version__
 
 
 project = __project__
-copyright = '2023, SSEC-JHU'
+copyright = '2024, SSEC-JHU'
 author = 'SSEC-JHU'
 
 release = __version__
@@ -48,7 +48,7 @@ if html_theme == 'sphinx_book_theme':
             'image_dark': '../_static/SSEC_logo_vert_white_lg_1184x661.png',
             'text': f'{html_title}',
         },
-        'repository_url': 'https://github.com/ssec-jhu/base-template',
+        'repository_url': 'https://github.com/ssec-jhu/evolver-ng',
         'use_repository_button': True,
     })
 
