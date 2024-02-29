@@ -1,6 +1,6 @@
 import time
 from pydantic import BaseModel
-from evolver.util import load_class_fqcn
+from evolver.util import load_class_fqcn, driver_from_descriptor
 from evolver.hardware import SensorDriver, EffectorDriver
 
 
@@ -42,25 +42,23 @@ class Evolver:
         self.adapters = []
         for adapter in config.adapters:
             self.setup_adapter(adapter)
-        self.setup_serial(config.serial)
+        if config.serial is not None:
+            self.setup_serial(config.serial)
 
     def setup_driver(self, name, driver_config: HardwareDriverDescriptor):
         driver_class = load_class_fqcn(driver_config.driver)
         config = driver_class.Config.model_validate(driver_config.config)
         calibrator = None
         if driver_config.calibrator is not None:
-            calibrator_class = load_class_fqcn(driver_config.calibrator.driver)
-            calibrator_config = calibrator_class.Config.model_validate(driver_config.calibrator.config)
-            calibrator = calibrator_class(calibrator_config)
+            calibrator = driver_from_descriptor(self, driver_config.calibrator)
         self.hardware[name] = driver_class(self, config, calibrator)
+        self.last_read[name] = -1
 
     def setup_adapter(self, adapter):
-        cls = load_class_fqcn(adapter.driver)
-        conf = cls.Config.model_validate(adapter.config)
-        self.adapters.append(cls(self, conf))
+        self.adapters.append(driver_from_descriptor(self, adapter))
 
     def setup_serial(self, serial):
-        pass
+        self.serial = driver_from_descriptor(self, serial)
 
     def get_hardware(self, name):
         return self.hardware[name]
@@ -77,13 +75,14 @@ class Evolver:
     def calibration_status(self):
         return {name: device.calibrator.status for name,device in self.hardware.items()}
 
+    @property
+    def state(self):
+        return {name: device.get() for name,device in self.sensors.items()}
+
     def read_state(self):
         for name, device in self.sensors.items():
             device.read()
             self.last_read[name] = time.time()
-
-    def get_state(self):
-        return {name: device.get() for name,device in self.sensors.items()}
 
     def evaluate_adapters(self):
         for adapter in self.adapters:

@@ -15,7 +15,7 @@ class BaseCalibrator(ABC):
     class Config(BaseModel):
         calibfile: str = None
 
-    def __init__(self, config: Config = Config()):
+    def __init__(self, evovler = None, config: Config = Config()):
         self.config = config
 
     @property

@@ -12,7 +12,7 @@ evolver = Evolver()
 async def describe_evolver():
     return {
         'config': evolver.config,
-        'state': evolver.get_state(),
+        'state': evolver.state,
         'last_read': evolver.last_read,
     }
 
