@@ -17,9 +17,22 @@ async def describe_evolver():
     }
 
 
+@app.get('/state')
+async def get_state():
+    return {
+        'state': evolver.state,
+        'last_read': evolver.last_read,
+    }
+
+
 @app.post("/")
 async def update_evolver(config: EvolverConfig):
     evolver.update_config(config)
+
+
+@app.get('/schema')
+async def get_schema():
+    return evolver.schema
 
 
 @app.get("/healthz")

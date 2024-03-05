@@ -79,6 +79,21 @@ class Evolver:
     def state(self):
         return {name: device.get() for name,device in self.sensors.items()}
 
+    @property
+    def schema(self):
+        hardware_schemas = []
+        for n, hw in self.hardware.items():
+            s = {'name': n, 'kind': str(type(hw)),'config': hw.Config.model_json_schema()}
+            if isinstance(hw, SensorDriver):
+                s['output'] = hw.Output.model_json_schema()
+            if isinstance(hw, EffectorDriver):
+                s['input'] = hw.Input.model_json_schema()
+            hardware_schemas.append(s)
+        return {
+            'hardware': hardware_schemas,
+            'adapters': [{'kind': str(type(a)), 'config': a.Config.model_json_schema()} for a in self.adapters],
+        }
+
     def read_state(self):
         for name, device in self.sensors.items():
             device.read()
