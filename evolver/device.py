@@ -2,6 +2,12 @@ import time
 from pydantic import BaseModel
 from evolver.util import load_class_fqcn, driver_from_descriptor
 from evolver.hardware import SensorDriver, EffectorDriver
+from evolver.serial import EvolverSerialUART
+from evolver.history import HistoryServer
+
+
+DEFAULT_SERIAL = EvolverSerialUART
+DEFAULT_HISTORY = HistoryServer
 
 
 class AdapterDescriptor(BaseModel):
@@ -18,6 +24,7 @@ class EvolverConfig(BaseModel):
     hardware: dict[str, HardwareDriverDescriptor] = {}
     adapters: list[AdapterDescriptor] = []
     serial: AdapterDescriptor = None
+    history: AdapterDescriptor = None
     enable_react: bool = True
     enable_commit: bool = True
     interval: int = 20
@@ -43,7 +50,13 @@ class Evolver:
         for adapter in config.adapters:
             self.setup_adapter(adapter)
         if config.serial is not None:
-            self.setup_serial(config.serial)
+            self.serial = driver_from_descriptor(self, config.serial)
+        else:
+            self.serial = DEFAULT_SERIAL()
+        if config.history is not None:
+            self.history = driver_from_descriptor(self, config.history)
+        else:
+            self.history = DEFAULT_HISTORY()
 
     def setup_driver(self, name, driver_config: HardwareDriverDescriptor):
         driver_class = load_class_fqcn(driver_config.driver)
@@ -56,9 +69,6 @@ class Evolver:
 
     def setup_adapter(self, adapter):
         self.adapters.append(driver_from_descriptor(self, adapter))
-
-    def setup_serial(self, serial):
-        self.serial = driver_from_descriptor(self, serial)
 
     def get_hardware(self, name):
         return self.hardware[name]
@@ -98,6 +108,8 @@ class Evolver:
         for name, device in self.sensors.items():
             device.read()
             self.last_read[name] = time.time()
+            self.history.put(name, device.get())
+
 
     def evaluate_adapters(self):
         for adapter in self.adapters:

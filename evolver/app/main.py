@@ -35,6 +35,11 @@ async def get_schema():
     return evolver.schema
 
 
+@app.get('/history/{name}')
+async def get_history(name: str):
+    return evolver.history.get(name)
+
+
 @app.get("/healthz")
 async def healthz():
     return {"message": f"Running '{__project__}' ver: '{__version__}'"}

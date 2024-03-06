@@ -25,6 +25,8 @@ class TestApp:
         assert newconfig['hardware']['test']['driver'] == 'evolver.hardware.NoOpSensorDriver'
 
     def test_evolver_app_react_loop_setup(self, app_client):
+        # The context manager ensures that startup event loop is called
+        # TODO: check results generated in react (may require hardware at startup, or forced execution of loop)
         with app_client as client:
             response = client.get('/')
             assert response.status_code == 200

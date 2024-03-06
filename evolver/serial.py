@@ -31,8 +31,11 @@ class EvolverSerialUART(Serial):
 
     def __init__(self, evolver = None, config = None):
         super().__init__(config)
-        self.serial = serial.Serial(port=self.config.port, baudrate=self.config.baudrate, timeout=self.config.timeout)
+        self.serial = None
         self.lock = Lock()
+
+    def _connect(self):
+        self.serial = serial.Serial(port=self.config.port, baudrate=self.config.baudrate, timeout=self.config.timeout)
 
     def _parse_response(self, response):
         parts = response.split(b',')
@@ -50,6 +53,8 @@ class EvolverSerialUART(Serial):
         # need to lock since we do three way comminication and during that term
         # the addressed device is considered owner of the line.
         with self.lock:
+            if self.serial is None:
+                self._connect()
             self.serial.write(self._encode_command(cmd))
             response = self.serial.readline()
             try:
