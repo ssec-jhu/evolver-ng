@@ -1,6 +1,6 @@
 import pytest
 from evolver.device import Evolver, EvolverConfig
-from evolver.hardware import NoOpSensorDriver
+from evolver.hardware.demo import NoOpSensorDriver
 
 
 @pytest.fixture
@@ -10,16 +10,16 @@ def conf_with_driver():
         'hardware': {
             'testsensor': {
                 'driver':
-                'evolver.hardware.NoOpSensorDriver',
+                'evolver.hardware.demo.NoOpSensorDriver',
                 'config': {},
                 'calibrator': {
-                    'driver': 'evolver.hardware.NoOpCalibrator'
+                    'driver': 'evolver.hardware.demo.NoOpCalibrator'
                 }
             },
-            'testeffector': {'driver': 'evolver.hardware.NoOpEffectorDriver', 'config': {}},
+            'testeffector': {'driver': 'evolver.hardware.demo.NoOpEffectorDriver', 'config': {}},
         },
         'adapters': [
-            {'driver': 'evolver.adapter.NoOpAdapter'},
+            {'driver': 'evolver.adapter.demo.NoOpAdapter'},
         ],
         'serial': { 'driver': 'evolver.serial.EchoSerial' },
     }

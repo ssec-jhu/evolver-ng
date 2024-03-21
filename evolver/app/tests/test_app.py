@@ -18,11 +18,11 @@ class TestApp:
         assert sorted(response.json().keys()) == ['config', 'last_read', 'state']
 
     def test_evolver_update_config_endpoint(self, app_client):
-        data = {'hardware': {'test': {'driver': 'evolver.hardware.NoOpSensorDriver'}}}
+        data = {'hardware': {'test': {'driver': 'evolver.hardware.demo.NoOpSensorDriver'}}}
         response = app_client.post('/', json=data)
         assert response.status_code == 200
         newconfig = app_client.get('/').json()['config']
-        assert newconfig['hardware']['test']['driver'] == 'evolver.hardware.NoOpSensorDriver'
+        assert newconfig['hardware']['test']['driver'] == 'evolver.hardware.demo.NoOpSensorDriver'
 
     def test_evolver_app_react_loop_setup(self, app_client):
         # The context manager ensures that startup event loop is called

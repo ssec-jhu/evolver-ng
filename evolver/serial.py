@@ -1,17 +1,17 @@
 import serial
 from abc import ABC, abstractmethod
-from pydantic import BaseModel
+import pydantic
 from threading import Lock
 
 
-class SerialData(BaseModel):
+class SerialData(pydantic.BaseModel):
     addr: str
     data: list[bytes]
     kind: str = 'r'
 
 
 class Serial(ABC):
-    class Config(BaseModel):
+    class Config(pydantic.BaseModel):
         pass
 
     def __init__(self, evolver = None, config: Config = None):
@@ -24,7 +24,7 @@ class Serial(ABC):
 
 
 class EvolverSerialUART(Serial):
-    class Config(BaseModel):
+    class Config(pydantic.BaseModel):
         port: str = '/dev/ttyAMA0'
         baudrate: int = 9600
         timeout: float = 1

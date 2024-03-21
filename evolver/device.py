@@ -1,7 +1,7 @@
 import time
-from pydantic import BaseModel
+import pydantic
 from evolver.util import load_class_fqcn, driver_from_descriptor
-from evolver.hardware import SensorDriver, EffectorDriver
+from evolver.hardware.interface import SensorDriver, EffectorDriver
 from evolver.serial import EvolverSerialUART
 from evolver.history import HistoryServer
 
@@ -10,7 +10,7 @@ DEFAULT_SERIAL = EvolverSerialUART
 DEFAULT_HISTORY = HistoryServer
 
 
-class AdapterDescriptor(BaseModel):
+class AdapterDescriptor(pydantic.BaseModel):
     driver: str
     config: dict = {}
 
@@ -19,7 +19,7 @@ class HardwareDriverDescriptor(AdapterDescriptor):
     calibrator: AdapterDescriptor = None
 
 
-class EvolverConfig(BaseModel):
+class EvolverConfig(pydantic.BaseModel):
     vials: list = list(range(16))
     hardware: dict[str, HardwareDriverDescriptor] = {}
     adapters: list[AdapterDescriptor] = []

@@ -1,11 +1,11 @@
 import time
+import pydantic
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from pydantic import BaseModel
 
 
 class History(ABC):
-    class Config(BaseModel):
+    class Config(pydantic.BaseModel):
         pass
 
     @abstractmethod
