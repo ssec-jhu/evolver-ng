@@ -1,6 +1,6 @@
 import time
 import pydantic
-from evolver.util import load_class_fqcn, driver_from_descriptor
+from evolver.util import load_class_fqcn
 from evolver.hardware.interface import SensorDriver, EffectorDriver
 from evolver.serial import EvolverSerialUART
 from evolver.history import HistoryServer
@@ -13,6 +13,11 @@ DEFAULT_HISTORY = HistoryServer
 class AdapterDescriptor(pydantic.BaseModel):
     driver: str
     config: dict = {}
+
+    def driver_from_descriptor(self, evolver):
+        cls = load_class_fqcn(self.driver)
+        conf = cls.Config.model_validate(self.config)
+        return cls(evolver, conf)
 
 
 class HardwareDriverDescriptor(AdapterDescriptor):
@@ -50,11 +55,11 @@ class Evolver:
         for adapter in config.adapters:
             self.setup_adapter(adapter)
         if config.serial is not None:
-            self.serial = driver_from_descriptor(self, config.serial)
+            self.serial = config.serial.driver_from_descriptor(self)
         else:
             self.serial = DEFAULT_SERIAL()
         if config.history is not None:
-            self.history = driver_from_descriptor(self, config.history)
+            self.history = config.history.driver_from_descriptor(self)
         else:
             self.history = DEFAULT_HISTORY()
 
@@ -63,12 +68,12 @@ class Evolver:
         config = driver_class.Config.model_validate(driver_config.config)
         calibrator = None
         if driver_config.calibrator is not None:
-            calibrator = driver_from_descriptor(self, driver_config.calibrator)
+            calibrator = driver_config.calibrator.driver_from_descriptor(self)
         self.hardware[name] = driver_class(self, config, calibrator)
         self.last_read[name] = -1
 
     def setup_adapter(self, adapter):
-        self.adapters.append(driver_from_descriptor(self, adapter))
+        self.adapters.append(adapter.driver_from_descriptor(self))
 
     def get_hardware(self, name):
         return self.hardware[name]

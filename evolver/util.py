@@ -18,9 +18,3 @@ def load_class_fqcn(fqcn):
     mod, cls = fqcn.rsplit('.', 1)
     module = importlib.import_module(mod)
     return getattr(module, cls)
-
-
-def driver_from_descriptor(evolver, descriptor):
-    cls = load_class_fqcn(descriptor.driver)
-    conf = cls.Config.model_validate(descriptor.config)
-    return cls(evolver, conf)
