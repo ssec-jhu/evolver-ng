@@ -36,11 +36,10 @@ class EvolverConfig(pydantic.BaseModel):
 
 
 class Evolver:
-    hardware = {}
-    adapters = []
-    last_read = {}
-
     def __init__(self, config: EvolverConfig = EvolverConfig()):
+        self.hardware = {}
+        self.last_read = {}
+        self.adapters = []
         self.update_config(config)
 
     def update_config(self, config: EvolverConfig):
@@ -114,7 +113,6 @@ class Evolver:
             device.read()
             self.last_read[name] = time.time()
             self.history.put(name, device.get())
-
 
     def evaluate_adapters(self):
         for adapter in self.adapters:
