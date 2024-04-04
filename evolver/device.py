@@ -4,6 +4,7 @@ from evolver.util import load_class_fqcn
 from evolver.hardware.interface import SensorDriver, EffectorDriver
 from evolver.serial import EvolverSerialUART
 from evolver.history import HistoryServer
+from evolver.vial import VialView
 
 
 DEFAULT_SERIAL = EvolverSerialUART
@@ -76,6 +77,9 @@ class Evolver:
 
     def get_hardware(self, name):
         return self.hardware[name]
+
+    def get_vial(self, vial_number):
+        return VialView(vial_number, self.hardware)
 
     @property
     def sensors(self):
