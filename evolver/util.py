@@ -12,3 +12,9 @@ def find_package_location(package=__project__):
 
 def find_repo_location(package=__project__):
     return Path(find_package_location(package) / os.pardir)
+
+
+def load_class_fqcn(fqcn):
+    mod, cls = fqcn.rsplit('.', 1)
+    module = importlib.import_module(mod)
+    return getattr(module, cls)

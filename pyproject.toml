@@ -11,6 +11,8 @@ license = {file = "LICENSE"}
 requires-python = ">=3.11"
 dependencies = [
     "fastapi[all]",
+    "uvicorn",
+    "pyserial",
 ]
 
 [project.optional-dependencies]
