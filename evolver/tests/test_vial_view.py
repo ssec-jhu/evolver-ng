@@ -1,7 +1,7 @@
 import pytest
-from evolver.device import Evolver
+from evolver.device import Evolver, HardwareDriverDescriptor
 from evolver.hardware.demo import NoOpEffectorDriver, NoOpSensorDriver
-from evolver.vial import VialView
+from evolver.vial import VialView, EvolverVialView
 
 
 @pytest.fixture
@@ -42,3 +42,19 @@ def test_vial_view_hardware_inspect(hardware_map):
     assert 'missing' not in v.hardware
     v = VialView(100, hardware_map)
     assert 'sensor' not in v.hardware
+
+
+def test_evolver_vial_view(demo_evolver):
+    v = EvolverVialView(1, demo_evolver)
+    assert 'testsensor' in v.hardware
+    demo_evolver.read_state()
+    assert v.get('testsensor') == NoOpSensorDriver.Output(vial=1, raw=1, value=2)
+    # ensure our existing view is still valid after update
+    assert 'newsensor' not in v.hardware
+    with pytest.raises(KeyError):
+        v.get('newsensor')
+    demo_evolver.setup_driver(
+        'newsensor',
+        HardwareDriverDescriptor(driver='evolver.hardware.demo.NoOpSensorDriver', config={'echo_raw': 99}))
+    demo_evolver.read_state()
+    assert v.get('newsensor') == NoOpSensorDriver.Output(vial=1, raw=99, value=2)
