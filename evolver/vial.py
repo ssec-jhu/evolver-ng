@@ -24,6 +24,10 @@ def _vial_filter(vial: int, driver: VialHardwareDriver):
     return False
 
 
+def _filter_hardwares_by_vial(vial: int, hw: dict[str, VialHardwareDriver]):
+    return {k: v for k,v in hw.items() if _vial_filter(vial, v)}
+
+
 class VialView(Vial):
     def __init__(self, vial: int, hardware: dict[str, VialHardwareDriver]):
         super().__init__(vial)
@@ -31,7 +35,7 @@ class VialView(Vial):
 
     @property
     def hardware(self):
-        return {k: v for k,v in self._hardware.items() if _vial_filter(self.vial, v)}
+        return _filter_hardwares_by_vial(self.vial, self._hardware)
 
     def get(self, name: str):
         return self.hardware[name].get().get(self.vial)
@@ -39,8 +43,7 @@ class VialView(Vial):
     def set(self, name: str, value):
         value['vial'] = self.vial
         hw = self.hardware[name]
-        in_val = hw.Input.model_validate(value)
-        hw.set(in_val)
+        hw.set(hw.Input.model_validate(value))
 
 
 class EvolverVialView(VialView):
@@ -49,4 +52,4 @@ class EvolverVialView(VialView):
 
     @property
     def hardware(self):
-        return {k: v for k,v in self._hardware.hardware.items() if _vial_filter(self.vial, v)}
+        return _filter_hardwares_by_vial(self.vial, self._hardware.hardware)
