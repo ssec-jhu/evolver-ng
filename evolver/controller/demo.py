@@ -1,4 +1,4 @@
-from evolver.adapter.interface import Controller
+from evolver.controller.interface import Controller
 
 
 class NoOpController(Controller):
