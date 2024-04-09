@@ -39,12 +39,16 @@ class HardwareDriver(ABC):
 
 
 class VialHardwareDriver(HardwareDriver):
+    @property
+    def vial_list(self):
+        return self.config.vials or []
+
     def reconfigure(self, config):
         super().reconfigure(config)
         if config.vials is None:
             config.vials = self.evolver.config.vials
         else:
-            if not set(config.vials).issubset(self.evolver.all_vials):
+            if not set(config.vials).issubset(self.evolver.config.vials):
                 raise ValueError('invalid vials found in config')
 
 
