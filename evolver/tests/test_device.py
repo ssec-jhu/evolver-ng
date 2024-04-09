@@ -51,12 +51,12 @@ def test_evolver_read_and_get_state(demo_evolver, method):
         assert state['testsensor'][vial] == NoOpSensorDriver.Output(vial=vial, raw=1, value=2)
 
 
-@pytest.mark.parametrize('enable_react', [True, False])
-def test_evolver_controller_react_in_loop_if_configured(demo_evolver, enable_react):
+@pytest.mark.parametrize('enable_control', [True, False])
+def test_evolver_controller_control_in_loop_if_configured(demo_evolver, enable_control):
     assert demo_evolver.controllers[0].ncalls == 0
-    demo_evolver.config.enable_react = enable_react
+    demo_evolver.config.enable_control = enable_control
     demo_evolver.loop_once()
-    assert demo_evolver.controllers[0].ncalls == (1 if enable_react else 0)
+    assert demo_evolver.controllers[0].ncalls == (1 if enable_control else 0)
 
 
 def test_evolver_remove_driver(demo_evolver, conf_with_driver):

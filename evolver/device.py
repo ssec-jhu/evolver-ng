@@ -30,7 +30,7 @@ class EvolverConfig(pydantic.BaseModel):
     controllers: list[ControllerDescriptor] = []
     serial: ControllerDescriptor = None
     history: ControllerDescriptor = None
-    enable_react: bool = True
+    enable_control: bool = True
     enable_commit: bool = True
     interval: int = 20
 
@@ -116,7 +116,7 @@ class Evolver:
 
     def evaluate_controllers(self):
         for controller in self.controllers:
-            controller.react()
+            controller.control()
 
     def commit_proposals(self):
         for device in self.effectors.values():
@@ -125,7 +125,7 @@ class Evolver:
     def loop_once(self):
         self.read_state()
         # for any hardware awaiting calibration, call calibration update method here
-        if self.config.enable_react:
+        if self.config.enable_control:
             self.evaluate_controllers()
         if self.config.enable_commit:
             self.commit_proposals()

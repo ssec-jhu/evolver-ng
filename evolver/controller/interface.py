@@ -10,5 +10,5 @@ class Controller(ABC):
         self.config = config or self.Config()
 
     @abstractmethod
-    def react(self):
+    def control(self):
         pass
