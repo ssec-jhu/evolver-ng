@@ -10,7 +10,7 @@ DEFAULT_SERIAL = EvolverSerialUART
 DEFAULT_HISTORY = HistoryServer
 
 
-class AdapterDescriptor(pydantic.BaseModel):
+class ControllerDescriptor(pydantic.BaseModel):
     driver: str
     config: dict = {}
 
@@ -20,16 +20,16 @@ class AdapterDescriptor(pydantic.BaseModel):
         return cls(evolver, conf)
 
 
-class HardwareDriverDescriptor(AdapterDescriptor):
-    calibrator: AdapterDescriptor = None
+class HardwareDriverDescriptor(ControllerDescriptor):
+    calibrator: ControllerDescriptor = None
 
 
 class EvolverConfig(pydantic.BaseModel):
     vials: list = list(range(16))
     hardware: dict[str, HardwareDriverDescriptor] = {}
-    adapters: list[AdapterDescriptor] = []
-    serial: AdapterDescriptor = None
-    history: AdapterDescriptor = None
+    controllers: list[ControllerDescriptor] = []
+    serial: ControllerDescriptor = None
+    history: ControllerDescriptor = None
     enable_react: bool = True
     enable_commit: bool = True
     interval: int = 20
@@ -39,7 +39,7 @@ class Evolver:
     def __init__(self, config: EvolverConfig = EvolverConfig()):
         self.hardware = {}
         self.last_read = {}
-        self.adapters = []
+        self.controllers = []
         self.update_config(config)
 
     def update_config(self, config: EvolverConfig):
@@ -50,9 +50,9 @@ class Evolver:
             if name not in config.hardware.keys():
                 del(self.hardware[name])
                 del(self.last_read[name])
-        self.adapters = []
-        for adapter in config.adapters:
-            self.setup_adapter(adapter)
+        self.controllers = []
+        for controller in config.controllers:
+            self.setup_controller(controller)
         if config.serial is not None:
             self.serial = config.serial.driver_from_descriptor(self)
         else:
@@ -71,8 +71,8 @@ class Evolver:
         self.hardware[name] = driver_class(self, config, calibrator)
         self.last_read[name] = -1
 
-    def setup_adapter(self, adapter):
-        self.adapters.append(adapter.driver_from_descriptor(self))
+    def setup_controller(self, controller):
+        self.controllers.append(controller.driver_from_descriptor(self))
 
     def get_hardware(self, name):
         return self.hardware[name]
@@ -105,7 +105,7 @@ class Evolver:
             hardware_schemas.append(s)
         return {
             'hardware': hardware_schemas,
-            'adapters': [{'kind': str(type(a)), 'config': a.Config.model_json_schema()} for a in self.adapters],
+            'controllers': [{'kind': str(type(a)), 'config': a.Config.model_json_schema()} for a in self.controllers],
         }
 
     def read_state(self):
@@ -114,9 +114,9 @@ class Evolver:
             self.last_read[name] = time.time()
             self.history.put(name, device.get())
 
-    def evaluate_adapters(self):
-        for adapter in self.adapters:
-            adapter.react()
+    def evaluate_controllers(self):
+        for controller in self.controllers:
+            controller.react()
 
     def commit_proposals(self):
         for device in self.effectors.values():
@@ -126,6 +126,6 @@ class Evolver:
         self.read_state()
         # for any hardware awaiting calibration, call calibration update method here
         if self.config.enable_react:
-            self.evaluate_adapters()
+            self.evaluate_controllers()
         if self.config.enable_commit:
             self.commit_proposals()
