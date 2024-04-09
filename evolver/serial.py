@@ -1,7 +1,9 @@
+from enum import Enum
+
 import serial
-from abc import ABC, abstractmethod
 import pydantic
-from threading import Lock
+
+from evolver.connection.interface import Connection
 
 
 class SerialData(pydantic.BaseModel):
@@ -10,62 +12,83 @@ class SerialData(pydantic.BaseModel):
     kind: str = 'r'
 
 
-class Serial(ABC):
-    class Config(pydantic.BaseModel):
-        pass
+class EvolverSerialUART(Connection):
 
-    def __init__(self, evolver = None, config: Config = None):
-        self.evolver = evolver
-        self.config = config or self.Config()
+    backend = serial
 
-    @abstractmethod
-    def communicate(cmd: SerialData) -> SerialData:
-        pass
+    class CMD(Enum):
+        SEND_SUFFIX = b'_!'
+        RESP_SUFFIX = b'end'
 
-
-class EvolverSerialUART(Serial):
     class Config(pydantic.BaseModel):
         port: str = '/dev/ttyAMA0'
         baudrate: int = 9600
         timeout: float = 1
 
-    def __init__(self, evolver = None, config = None):
-        super().__init__(config)
-        self.serial = None
-        self.lock = Lock()
+    def _open(self):
+        return self.backend.Serial(port=self.config.port, baudrate=self.config.baudrate, timeout=self.config.timeout)
 
-    def _connect(self):
-        self.serial = serial.Serial(port=self.config.port, baudrate=self.config.baudrate, timeout=self.config.timeout)
+    def _close(self):
+        return self.conn.close()
 
-    def _parse_response(self, response):
+    @classmethod
+    def _decode_serial_data(cls, response, suffix=CMD.RESP_SUFFIX.value):
         parts = response.split(b',')
-        if parts.pop() != b'end':
-            raise ValueError()
+        if resp_suffix := parts.pop() != suffix:
+            raise ValueError(f"Incorrect command suffix detected: expected '{suffix}' but got '{resp_suffix}'")
         addrcode = parts[0].decode('utf-8')
         addr, code = addrcode[:-1], addrcode[-1]
         return SerialData(addr=addr, data=parts[1:], kind=code)
 
-    def _encode_command(self, cmd: SerialData):
+    @classmethod
+    def _encode_serial_data(cls, cmd: SerialData, suffix=CMD.SEND_SUFFIX.value):
         addrcode = (cmd.addr + cmd.kind).encode('utf-8')
-        return b','.join((addrcode, b','.join(cmd.data), b'_!'))
+        return b','.join((addrcode, b','.join(cmd.data), suffix))
+
+    def write(self, cmd, encode=True):
+        return self.conn.write(self._encode_serial_data(cmd) if encode else cmd)
+
+    def read(self):
+        response = self.conn.readline()
+        try:
+            return self._decode_serial_data(response)
+        except Exception:
+            raise ValueError('invalid response')
 
     def communicate(self, cmd: SerialData):
         # need to lock since we do three way comminication and during that term
         # the addressed device is considered owner of the line.
         with self.lock:
-            if self.serial is None:
-                self._connect()
-            self.serial.write(self._encode_command(cmd))
-            response = self.serial.readline()
-            try:
-                data = self._parse_response(response)
-            except Exception:
-                raise ValueError('invalid response')
-            ack = cmd.copy(update=dict(kind='a', data=[b'' for i in cmd.data]))
-            self.serial.write(ack)
+            self.write(cmd)
+            data = self.read()
+            ack = cmd.model_copy(update=dict(kind='a', data=[b'' for i in cmd.data]))
+            self.write(ack)
         return data
 
 
-class EchoSerial(Serial):
-    def communicate(self, cmd):
-        return SerialData(addr=cmd.addr[::-1], data=cmd.data, kind=b'e')
+class PySerialEmulator:
+    """ For testing purposes only!. """
+
+    @classmethod
+    def Serial(cls, *args, **kwargs):
+        return cls(*args, **kwargs)
+
+    def __init__(self, *args, **kwargs):
+        self._data = None
+
+    def write(self, data):
+        self._data = EvolverSerialUART._decode_serial_data(data, suffix=EvolverSerialUART.CMD.SEND_SUFFIX.value)
+
+    def readline(self):
+        if not self._data or self._data.addr.startswith('X'):
+            return b'badresponse'
+        data = self._data.model_copy()
+        data.kind = 'e'
+        return EvolverSerialUART._encode_serial_data(data, suffix=EvolverSerialUART.CMD.RESP_SUFFIX.value)
+
+    def close(self):
+        self._data = None
+
+
+class EvolverSerialUARTEmulator(EvolverSerialUART):
+    backend = PySerialEmulator
