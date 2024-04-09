@@ -1,7 +1,7 @@
-from evolver.adapter.interface import Adapter
+from evolver.adapter.interface import Controller
 
 
-class NoOpAdapter(Adapter):
+class NoOpController(Controller):
     ncalls = 0
 
     def react(self):

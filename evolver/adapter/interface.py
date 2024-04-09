@@ -2,7 +2,7 @@ import pydantic
 from abc import ABC, abstractmethod
 
 
-class Adapter(ABC):
+class Controller(ABC):
     class Config(pydantic.BaseModel):
         pass
 
