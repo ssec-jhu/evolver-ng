@@ -116,7 +116,7 @@ class Evolver:
 
     def evaluate_controllers(self):
         for controller in self.controllers:
-            controller.control()
+            controller.run()
 
     def commit_proposals(self):
         for device in self.effectors.values():
