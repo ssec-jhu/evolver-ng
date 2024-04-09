@@ -1,2 +1,3 @@
 fastapi==0.110.0
+pyserial==3.5
 uvicorn[standard]==0.29.0
