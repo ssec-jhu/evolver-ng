@@ -36,8 +36,10 @@ class BaseInterface(ABC):
 
     def __init__(self, *args, name: str = None, **kwargs):
         self.name = name if name else self.__class__.__name__
-        self._setup_logger()
+        self.logger = None
         self._config = None  # This is only populated if created using self.create() from a config.
+
+        self._setup_logger()
 
     def _setup_logger(self):
         self.logger = logging.getLogger(self.name)
