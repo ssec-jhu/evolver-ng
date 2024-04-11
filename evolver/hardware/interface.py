@@ -1,5 +1,9 @@
-import pydantic
 from abc import ABC, abstractmethod
+from threading import RLock
+
+import pydantic
+
+from evolver.connection.interface import Connection
 
 
 class VialConfigBaseModel(pydantic.BaseModel):
@@ -23,19 +27,65 @@ class BaseCalibrator(ABC):
         pass
 
 
-class HardwareDriver(ABC):
+class Device(ABC):
     class Config(pydantic.BaseModel):
-        pass
-    calibrator = None
+        ...
 
-    def __init__(self, evolver, config = None, calibrator = None):
-        self.evolver = evolver
-        self.reconfigure(config or self.Config())
-        if calibrator:
-            self.calibrator = calibrator
+    def __init__(self, connection=None, lock_constructor=RLock, sub_devices=None, connect=False):
+        self.sub_devices = sub_devices if sub_devices else {}  # For conglomerate devices.
+        self.connection = connection  # Maybe None for conglomerate device.
+        self.lock = lock_constructor()
 
-    def reconfigure(self, config):
-        self.config = config
+        # Instantiate connection if needed.
+        self._instantiate_connection()
+
+        if connect:
+            self.connect()
+
+    def connect(self, reuse=False):
+        with self.lock:
+            if self.connection:
+                # Open connection.
+                self.connection.open(reuse=reuse)
+
+            for device in self.sub_devices:
+                device.connect(reuse=reuse)
+
+    def disconnect(self):
+        with self.lock:
+            if self.connection:
+                # Close connection.
+                self.connection.close()
+
+            for device in self.sub_devices:
+                device.disconnect()
+
+    def __enter__(self):
+        self.lock.acquire()
+        try:
+            self.connect()
+        except Exception:
+            self.lock.release()
+            raise
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            self.disconnect()
+        finally:
+            self.lock.release()
+
+    def _instantiate_connection(self):
+        if self.connection is None:
+            return
+        elif isinstance(self.connection, Connection):
+            ...
+        elif issubclass(self.connection, Connection):
+            self.connection = self.connection()
+        else:
+            raise TypeError(f"Connection must be of type '{Connection.__qualname__}' not '{type(self.connection)}'.")
+
+
 
 
 class VialHardwareDriver(HardwareDriver):
