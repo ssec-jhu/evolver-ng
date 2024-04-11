@@ -66,6 +66,9 @@ class Connection(ABC):
                 # NOTE: We assume here that a failure when closing renders the connection undefined so nullify.
                 self.conn = None
 
+    def __del__(self):
+        self.close()
+
     def __enter__(self):
         self.lock.acquire()
         try:
