@@ -68,7 +68,6 @@ class Connection(BaseInterface):
                 ret = self._close(*args, **kwargs)
                 self.logger.info("Connection closed.")
                 return ret
-
             finally:
                 # NOTE: We assume here that a failure when closing renders the connection undefined so nullify.
                 self.conn = None
