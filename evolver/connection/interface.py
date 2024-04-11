@@ -44,16 +44,22 @@ class Connection(ABC):
         """ Implement write/read protocol all in one. """
         ...
 
+    def is_open(self):
+        if hasattr(self.conn, "is_open"):
+            return self.conn.is_open()
+
+        return self.conn is not None
+
     def open(self, *args, reuse=True, **kwargs):
         if not reuse:
             self.close()
 
-        if self.conn is None:
+        if not self.is_open():
             self.conn = self._open(*args, **kwargs)
         return self.conn
 
     def close(self, *args, **kwargs):
-        if self.conn:
+        if self.is_open():
             try:
                 return self._close(*args, **kwargs)
             finally:
