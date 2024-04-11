@@ -10,6 +10,16 @@ DEFAULT_SERIAL = EvolverSerialUART
 DEFAULT_HISTORY = HistoryServer
 
 
+# TODO: Move this to a more generic location.
+class ConfigDescriptor(pydantic.BaseModel):
+    classinfo: str
+    config: dict = {}
+
+    def create(self):
+        cls = load_class_fqcn(self.classinfo)
+        return cls(**cls.Config.model_validate(self.config).model_dump())
+
+
 class AdapterDescriptor(pydantic.BaseModel):
     driver: str
     config: dict = {}
