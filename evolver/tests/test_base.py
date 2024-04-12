@@ -1,3 +1,5 @@
+import pytest
+
 import evolver.base
 
 
@@ -28,3 +30,15 @@ class TestBaseInterface:
 
         config = ConcreteInterface.Config(a=6, b=7)
         assert ConcreteInterface.create(config)._config == config
+
+
+class TestConfigDescriptor:
+    @pytest.fixture()
+    def mock_descriptor(self):
+        return evolver.base.ConfigDescriptor(classinfo="evolver.tests.test_base.ConcreteInterface",
+                                             config=dict(a=11, b=22))
+
+    def test_create(self, mock_descriptor):
+        obj = mock_descriptor.create()
+        assert obj.a == 11
+        assert obj.b == 22
