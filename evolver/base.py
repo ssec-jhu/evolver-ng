@@ -20,8 +20,9 @@ class BaseInterface(ABC):
         """ Create an instance from a config. """
         if config is None:
             config = cls.Config()
-        elif not isinstance(config, BaseConfig):
-            # Convert to BaseConfig instance.
+        elif isinstance(config, str):
+            config = cls.Config.model_validate_json(config)
+        else:
             config = cls.Config.model_validate(config)
 
         obj = cls(**config.model_dump())

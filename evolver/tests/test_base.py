@@ -31,6 +31,11 @@ class TestBaseInterface:
         config = ConcreteInterface.Config(a=6, b=7)
         assert ConcreteInterface.create(config)._config == config
 
+    def test_json_config(self):
+        obj = ConcreteInterface.create(ConcreteInterface.Config(a=4, b=5).model_dump_json())
+        assert obj.a == 4
+        assert obj.b == 5
+
 
 class TestConfigDescriptor:
     @pytest.fixture()
