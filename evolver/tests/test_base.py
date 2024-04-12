@@ -14,6 +14,16 @@ class ConcreteInterface(evolver.base.BaseInterface):
         self.b = b
 
 
+class ConcreteInterface2(ConcreteInterface):
+    ...
+
+
+@pytest.fixture()
+def mock_descriptor():
+    return evolver.base.ConfigDescriptor(classinfo="evolver.tests.test_base.ConcreteInterface",
+                                         config=dict(a=11, b=22))
+
+
 class TestBaseInterface:
     def test_create(self):
         obj = ConcreteInterface.create()
@@ -36,13 +46,13 @@ class TestBaseInterface:
         assert obj.a == 4
         assert obj.b == 5
 
+    def test_from_config_descriptor(self, mock_descriptor):
+        obj = ConcreteInterface.create(mock_descriptor)
+        assert obj.a == 11
+        assert obj.b == 22
+
 
 class TestConfigDescriptor:
-    @pytest.fixture()
-    def mock_descriptor(self):
-        return evolver.base.ConfigDescriptor(classinfo="evolver.tests.test_base.ConcreteInterface",
-                                             config=dict(a=11, b=22))
-
     def test_create(self, mock_descriptor):
         obj = mock_descriptor.create()
         assert obj.a == 11

@@ -22,6 +22,18 @@ class BaseInterface(ABC):
             config = cls.Config()
         elif isinstance(config, str):
             config = cls.Config.model_validate_json(config)
+        elif isinstance(config, ConfigDescriptor):
+            type_error = TypeError(f"The given {ConfigDescriptor.__name__} for '{config.classinfo}' is not compatible "
+                                   f"with this class '{cls.__qualname__}'")
+            try:
+                descriptor_class = config.import_cls()
+            except ImportError as error:
+                raise type_error from error
+
+            if not issubclass(cls, descriptor_class):
+                raise type_error
+
+            config = cls.Config.model_validate(config.config)
         else:
             config = cls.Config.model_validate(config)
 
@@ -37,7 +49,10 @@ class ConfigDescriptor(pydantic.BaseModel):
     classinfo: str
     config: dict = {}
 
+    def import_cls(self):
+        return evolver.util.load_class_fqcn(self.classinfo)
+
     def create(self):
         """ Create an instance of classinfo from a config. """
-        cls = evolver.util.load_class_fqcn(self.classinfo)
+        cls = self.import_cls()
         return cls.create(self.config)
