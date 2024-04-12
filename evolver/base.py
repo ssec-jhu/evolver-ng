@@ -26,7 +26,7 @@ class BaseInterface(ABC):
             type_error = TypeError(f"The given {ConfigDescriptor.__name__} for '{config.classinfo}' is not compatible "
                                    f"with this class '{cls.__qualname__}'")
             try:
-                descriptor_class = config.import_cls()
+                descriptor_class = config.import_classinfo()
             except ImportError as error:
                 raise type_error from error
 
@@ -49,10 +49,10 @@ class ConfigDescriptor(pydantic.BaseModel):
     classinfo: str
     config: dict = {}
 
-    def import_cls(self):
+    def import_classinfo(self):
         return evolver.util.load_class_fqcn(self.classinfo)
 
     def create(self):
         """ Create an instance of classinfo from a config. """
-        cls = self.import_cls()
+        cls = self.import_classinfo()
         return cls.create(self.config)
