@@ -1,18 +1,19 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from threading import RLock
 
-import pydantic
+from base import BaseConfig, BaseInterface
 
 
-class Connection(ABC):
+class Connection(BaseInterface):
     """ Interface for a connection protocol, abstracting and wrapping lower-level communication over self.backend. """
 
-    class Config(pydantic.BaseModel):
-        ...
+    class Config(BaseConfig):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
 
     backend = None  # Backend module/library to use.
 
-    def __init__(self, *args, config: Config = None, lock_constructor=RLock, **kwargs):
+    def __init__(self, config: Config = None, lock_constructor=RLock, *args, **kwargs):
         self.conn = None  # This is the core object that this class wraps.
         self.config = config or self.Config()
         self.lock = lock_constructor()
@@ -55,13 +56,18 @@ class Connection(ABC):
             self.close()
 
         if not self.is_open():
+            self.logger.info("Opening connection...")
             self.conn = self._open(*args, **kwargs)
+            self.logger.info("Connection opened.")
         return self.conn
 
     def close(self, *args, **kwargs):
         if self.is_open():
             try:
-                return self._close(*args, **kwargs)
+                self.logger.info("Closing connection...")
+                ret = self._close(*args, **kwargs)
+                self.logger.info("Connection closed.")
+                return ret
             finally:
                 # NOTE: We assume here that a failure when closing renders the connection undefined so nullify.
                 self.conn = None
