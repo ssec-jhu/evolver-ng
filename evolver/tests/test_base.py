@@ -5,11 +5,12 @@ import evolver.base
 
 class ConcreteInterface(evolver.base.BaseInterface):
     class Config(evolver.base.BaseConfig):
+        name: str = "TestDevice"
         a: int = 2
         b: int = 3
 
-    def __init__(self, a, b):
-        super().__init__()
+    def __init__(self, a, b, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.a = a
         self.b = b
 
@@ -35,14 +36,14 @@ class TestBaseInterface:
         assert obj.b == 7
 
     def test_config_stash(self):
-        assert ConcreteInterface(4, 5)._config is None
+        assert ConcreteInterface(4, 5, "TestDevice")._config is None
         assert ConcreteInterface.create()._config == ConcreteInterface.Config()
 
-        config = ConcreteInterface.Config(a=6, b=7)
+        config = ConcreteInterface.Config(name="TestDevice", a=6, b=7)
         assert ConcreteInterface.create(config)._config == config
 
     def test_json_config(self):
-        obj = ConcreteInterface.create(ConcreteInterface.Config(a=4, b=5).model_dump_json())
+        obj = ConcreteInterface.create(ConcreteInterface.Config(a=4, b=5, name="TestDevice").model_dump_json())
         assert obj.a == 4
         assert obj.b == 5
 

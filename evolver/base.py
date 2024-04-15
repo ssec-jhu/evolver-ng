@@ -1,4 +1,5 @@
 from abc import ABC
+import logging
 
 import pydantic
 
@@ -6,7 +7,7 @@ import evolver.util
 
 
 class BaseConfig(pydantic.BaseModel):
-    ...
+    name: str
 
 
 class BaseInterface(ABC):
@@ -41,8 +42,21 @@ class BaseInterface(ABC):
         obj._config = config
         return obj
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, name: str, *args, **kwargs):
+        self.name = name
+        self._setup_logger()
         self._config = None  # This is only populated if created using self.create() from a config.
+
+    def _setup_logger(self):
+        self.logger = logging.getLogger(self.name)
+        ch = logging.StreamHandler()
+
+        # TODO: #27 move to loglevel & format to settings file.
+        ch.setLevel(logging.INFO)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        ch.setFormatter(formatter)
+        self.logger.addHandler(ch)
 
 
 class ConfigDescriptor(pydantic.BaseModel):
