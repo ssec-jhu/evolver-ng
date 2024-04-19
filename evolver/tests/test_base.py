@@ -15,10 +15,6 @@ class ConcreteInterface(evolver.base.BaseInterface):
         self.b = b
 
 
-class ConcreteInterface2(ConcreteInterface):
-    ...
-
-
 @pytest.fixture()
 def mock_descriptor():
     return evolver.base.ConfigDescriptor(classinfo="evolver.tests.test_base.ConcreteInterface",

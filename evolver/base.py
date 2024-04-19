@@ -7,7 +7,7 @@ import evolver.util
 
 
 class BaseConfig(pydantic.BaseModel):
-    name: str
+    name: str = None
 
 
 class BaseInterface(ABC):
@@ -24,15 +24,11 @@ class BaseInterface(ABC):
         elif isinstance(config, str):
             config = cls.Config.model_validate_json(config)
         elif isinstance(config, ConfigDescriptor):
-            type_error = TypeError(f"The given {ConfigDescriptor.__name__} for '{config.classinfo}' is not compatible "
-                                   f"with this class '{cls.__qualname__}'")
-            try:
-                descriptor_class = config.import_classinfo()
-            except ImportError as error:
-                raise type_error from error
+            descriptor_class = config.import_classinfo()
 
             if not issubclass(cls, descriptor_class):
-                raise type_error
+                raise TypeError(f"The given {ConfigDescriptor.__name__} for '{config.classinfo}' is not compatible "
+                                f"with this class '{cls.__qualname__}'")
 
             config = cls.Config.model_validate(config.config)
         else:
@@ -43,7 +39,7 @@ class BaseInterface(ABC):
         return obj
 
     def __init__(self, name: str, *args, **kwargs):
-        self.name = name
+        self.name = name if name else self.__class__.__name__
         self._setup_logger()
         self._config = None  # This is only populated if created using self.create() from a config.
 
