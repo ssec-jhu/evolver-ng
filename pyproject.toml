@@ -12,6 +12,7 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi[all]",
     "pydantic",
+    "pydantic-settings",
     "pyserial",
     "uvicorn"
 ]
