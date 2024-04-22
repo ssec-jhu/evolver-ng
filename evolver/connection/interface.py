@@ -1,19 +1,19 @@
 from abc import abstractmethod
 from threading import RLock
 
-from base import BaseConfig, BaseInterface
+from evolver.base import BaseConfig, BaseInterface
 
 
 class Connection(BaseInterface):
     """ Interface for a connection protocol, abstracting and wrapping lower-level communication over self.backend. """
 
     class Config(BaseConfig):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+        ...
 
     backend = None  # Backend module/library to use.
 
-    def __init__(self, config: Config = None, lock_constructor=RLock, *args, **kwargs):
+    def __init__(self, *args, config: Config = None, lock_constructor=RLock, **kwargs):
+        super().__init__(*args, **kwargs)
         self.conn = None  # This is the core object that this class wraps.
         self.config = config or self.Config()
         self.lock = lock_constructor()
