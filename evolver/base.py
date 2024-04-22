@@ -3,8 +3,6 @@ import logging
 
 import pydantic
 
-import evolver.util
-
 
 class BaseConfig(pydantic.BaseModel):
     name: str = None
@@ -24,9 +22,7 @@ class BaseInterface(ABC):
         elif isinstance(config, str):
             config = cls.Config.model_validate_json(config)
         elif isinstance(config, ConfigDescriptor):
-            descriptor_class = config.import_classinfo()
-
-            if not issubclass(cls, descriptor_class):
+            if not issubclass(cls, config.classinfo):
                 raise TypeError(f"The given {ConfigDescriptor.__name__} for '{config.classinfo}' is not compatible "
                                 f"with this class '{cls.__qualname__}'")
 
@@ -56,13 +52,9 @@ class BaseInterface(ABC):
 
 
 class ConfigDescriptor(pydantic.BaseModel):
-    classinfo: str
+    classinfo: pydantic.ImportString
     config: dict = {}
-
-    def import_classinfo(self):
-        return evolver.util.load_class_fqcn(self.classinfo)
 
     def create(self):
         """ Create an instance of classinfo from a config. """
-        cls = self.import_classinfo()
-        return cls.create(self.config)
+        return self.classinfo.create(self.config)
