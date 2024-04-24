@@ -2,9 +2,13 @@ from abc import abstractmethod
 from threading import RLock
 from typing import Optional
 
+import pydantic
+
 from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor
+from evolver.calibration.interface import Calibrator
 from evolver.connection.interface import Connection
 from evolver.controller.interface import Controller
+from evolver.settings import settings
 
 
 class VialConfigBaseModel(BaseConfig):
@@ -15,32 +19,26 @@ class VialBaseModel(BaseConfig):
     vial: int
 
 
-class BaseCalibrator(BaseInterface):
-    class Config(BaseConfig):
-        calibfile: str = None
-
-    def __init__(self, *args, evovler = None, config: Config = Config(), **kwargs):
-        super().__init__(*args, **kwargs)
-        self.config = config
-
-    @property
-    @abstractmethod
-    def status(self):
-        pass
-
-
 class Device(BaseInterface):
     class Config(BaseConfig):
+        ...
+
+    class InputModel(pydantic.BaseModel):
+        ...
+
+    class OutputModel(pydantic.BaseModel):
         ...
 
     def __init__(self,
                  *args,
                  connection: Optional[Connection, ConfigDescriptor] = None,
+                 calibrator: Optional[Calibrator, ConfigDescriptor] = None,
                  controller: Optional[Controller, ConfigDescriptor] = None,
                  sub_devices: Optional[dict[ConfigDescriptor]] = None,
-                 connect=False,
+                 connect=settings.OPEN_DEVICE_CONNECTION_UPON_INIT_POLICY_DEFAULT,
                  **kwargs):
         super().__init__(*args, **kwargs)
+        self.calibrator = calibrator
         self.connection = connection  # Maybe None for conglomerate device.
         self.controller = controller
         self.lock = RLock()
@@ -51,20 +49,29 @@ class Device(BaseInterface):
             raise ValueError("A connection must be specified when no sub devices are given.")
 
         # Instantiate objects from config descriptors.
+        # Note: When overriding ``__init__``, consider the use of ``evolver.base.init_and_set_vars_from_descriptors``,
+        # however, also note that instantiation occurs in the order in which vars are first declared.
         if isinstance(self.connection, ConfigDescriptor):
             self.connection = self.connection.create()
         if isinstance(self.controller, ConfigDescriptor):
             self.controller = self.controller.create()
+        if isinstance(self.calibrator, ConfigDescriptor):
+            self.calibrator = self.calibrator.create()
 
         if connect:
             self.connect()
 
+    @Calibrator.calibrate
     @abstractmethod
-    def get(self, *args, **kwargs):
+    def get(self, *args, **kwargs) -> "OutputModel":
+        """ Implement data retrieval  from ``self.connection.read()`` and conversion to ``self.OutputModel``.
+            Note: Concrete implementations are expected to also be decorated with ``@Calibrator.calibrate``.
+        """
         ...
 
     @abstractmethod
     def set(self, *args, **kwargs):
+        """ Implement data set calling ``self.connection.write()`` and conversion from ``self.InputModel``. """
         ...
 
     def connect(self, reuse=True):
