@@ -21,7 +21,7 @@ def conf_with_driver():
         'controllers': [
             {'driver': 'evolver.controller.demo.NoOpController'},
         ],
-        'serial': { 'driver': 'evolver.serial.EchoSerial' },
+        'serial': { 'driver': 'evolver.serial.EvolverSerialUARTEmulator' },
     }
 
 
