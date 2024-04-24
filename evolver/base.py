@@ -60,3 +60,12 @@ class ConfigDescriptor(pydantic.BaseModel):
     def create(self):
         """ Create an instance of classinfo from a config. """
         return self.classinfo.create(self.config)
+
+
+def init_and_set_vars_from_descriptors(obj):
+    """ Instantiate object vars that are ConfigDescriptors and set them on the object.
+        E.g., this can be called from a classes ``__init__`` as ``init_and_set_vars_from_descriptors(self)``.
+    """
+    for key, value in vars(obj).items():
+        if isinstance(value, ConfigDescriptor):
+            setattr(obj, value.create())
