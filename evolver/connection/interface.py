@@ -2,6 +2,7 @@ from abc import abstractmethod
 from threading import RLock
 
 from evolver.base import BaseConfig, BaseInterface
+from evolver.settings import settings
 
 
 class Connection(BaseInterface):
@@ -51,7 +52,7 @@ class Connection(BaseInterface):
 
         return self.conn is not None
 
-    def open(self, *args, reuse=True, **kwargs):
+    def open(self, *args, reuse: bool = settings.CONNECTION_REUSE_POLICY_DEFAULT, **kwargs):
         if not reuse:
             self.close()
 
