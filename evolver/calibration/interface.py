@@ -5,6 +5,12 @@ from evolver.settings import settings
 
 
 class Calibrator(BaseInterface):
+    """ Base Interface class for all calibration implementations.
+
+        A modular layer for encapsulating both the calibration conversion method (``convert``) and the calibration
+        procedure itself.
+    """
+
     class Config(BaseConfig):
         dir: str = settings.ROOT_CALIBRATOR_FILE_STORAGE_PATH  # TODO: Placeholder for #45
 

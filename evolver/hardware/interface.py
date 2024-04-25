@@ -20,6 +20,32 @@ class VialBaseModel(BaseConfig):
 
 
 class Device(BaseInterface):
+    """
+        Base Interface class for all device implementations.
+
+        A modular layer for wrapping ``self.connection`` which is the communication layer to the underlying physical
+        hardware.
+
+        This interface is intended to be self-similar such that it can be used to implement "conglomerate" devices that
+        are themselves a collection of other devices.
+
+        Attributes:
+            connection (:obj:`Connection`, :obj:`ConfigDescriptor`, optional): Connection to the underlying physical
+                hardware. Note: Only optional when using ``sub_devices``.
+            calibrator (:obj:`Calibrator`, :obj:`ConfigDescriptor`, optional): Calibrator used to calibrate data
+                returned from the underlying hardware. This also couples the device with the calibration procedure used
+                to obtain any required calibration parameters.
+            sub_controller (:obj:`Controller`, :obj:`ConfigDescriptor`, optional): This can be used to leverage the
+                ``Controller`` interface for orchestrating multiple sub devices, e.g., thermostat control of thermometer
+                and heater devices.
+            sub_devices (:obj:`dict` of :obj:`Device`, :obj:`dict` of :obj:`ConfigDescriptor`, optional):
+                Dictionary of sub devices that this conglomerate device wraps. E.g., thermometer and heater, pressure
+                sensors and pressure valves (or pumps), etc.
+        Args:
+            *args: Passed to super().__init__.
+            connect (bool): Call self.connection.open() upon instantiation when True.
+            **kwargs: Passed to super().__init__.
+    """
     class Config(BaseConfig):
         ...
 
@@ -33,15 +59,15 @@ class Device(BaseInterface):
                  *args,
                  connection: Optional[Connection, ConfigDescriptor] = None,
                  calibrator: Optional[Calibrator, ConfigDescriptor] = None,
-                 controller: Optional[Controller, ConfigDescriptor] = None,
-                 sub_devices: Optional[dict[ConfigDescriptor]] = None,
+                 sub_controller: Optional[Controller, ConfigDescriptor] = None,
+                 sub_devices: Optional[dict["Device"], dict[ConfigDescriptor]] = None,
                  connect=settings.OPEN_DEVICE_CONNECTION_UPON_INIT_POLICY_DEFAULT,
                  **kwargs):
         super().__init__(*args, **kwargs)
         self.calibrator = calibrator
         self.connection = connection  # Maybe None for conglomerate device.
-        self.controller = controller
         self.lock = RLock()
+        self.sub_controller = sub_controller
         self.sub_devices = sub_devices if sub_devices else {}  # For conglomerate devices.
 
         # A connection can only be null when sub devices exist.
@@ -53,8 +79,8 @@ class Device(BaseInterface):
         # however, also note that instantiation occurs in the order in which vars are first declared.
         if isinstance(self.connection, ConfigDescriptor):
             self.connection = self.connection.create()
-        if isinstance(self.controller, ConfigDescriptor):
-            self.controller = self.controller.create()
+        if isinstance(self.sub_controller, ConfigDescriptor):
+            self.sub_controller = self.sub_controller.create()
         if isinstance(self.calibrator, ConfigDescriptor):
             self.calibrator = self.calibrator.create()
 
@@ -95,6 +121,7 @@ class Device(BaseInterface):
                 device.disconnect()
 
     def __enter__(self):
+        """ Acquire lock and open connection(s). """
         self.lock.acquire()
         try:
             self.connect()
@@ -104,6 +131,7 @@ class Device(BaseInterface):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """ Release lock and close connection(s). """
         try:
             self.disconnect()
         finally:
