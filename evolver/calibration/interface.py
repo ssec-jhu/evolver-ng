@@ -37,11 +37,19 @@ class Calibrator(BaseInterface):
         ...
 
     @staticmethod
-    def calibrate(func):
+    def calibrate(func) -> "func.__class__.OutputModel":
         """ Use to decorate, for example, ``evolver.hardware.interface.Device.get()`` to calibrate returned data. """
         def wrapper(self, *args, **kwargs):
             data = func(self, *args, **kwargs)
 
+            # Only calibrate (convert) calibrated calibrators.
+            if (((is_calibrated := getattr(self, "is_calibrated", None))
+                    or ((calibrator := getattr(self, "calibrator", None))
+                        and (is_calibrated := getattr(calibrator, "is_calibrated", None))))
+                    and not is_calibrated()):
+                return data
+
+            # Calibrate data.
             if ((convert := getattr(self, "convert", None))
                 or ((calibrator := getattr(self, "calibrator", None))
                     and (convert := getattr(calibrator, "convert", None)))):

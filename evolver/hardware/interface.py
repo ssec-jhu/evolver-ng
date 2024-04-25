@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from collections import defaultdict
 from threading import RLock
 from typing import Optional
 
@@ -60,7 +61,7 @@ class Device(BaseInterface):
                  connection: Optional[Connection, ConfigDescriptor] = None,
                  calibrator: Optional[Calibrator, ConfigDescriptor] = None,
                  sub_controller: Optional[Controller, ConfigDescriptor] = None,
-                 sub_devices: Optional[dict["Device"], dict[ConfigDescriptor]] = None,
+                 sub_devices: Optional[dict["Device"], dict[ConfigDescriptor]] = defaultdict,
                  connect=settings.OPEN_DEVICE_CONNECTION_UPON_INIT_POLICY_DEFAULT,
                  **kwargs):
         super().__init__(*args, **kwargs)
@@ -68,7 +69,7 @@ class Device(BaseInterface):
         self.connection = connection  # Maybe None for conglomerate device.
         self.lock = RLock()
         self.sub_controller = sub_controller
-        self.sub_devices = sub_devices if sub_devices else {}  # For conglomerate devices.
+        self.sub_devices = sub_devices  # For conglomerate devices.
 
         # A connection can only be null when sub devices exist.
         if (not self.connection) and (not self.sub_devices):
