@@ -1,10 +1,18 @@
+from fastapi.openapi.utils import get_openapi
 from ..main import __version__  # Leave as relative for use in template: ssec-jhu/base-template.
+from ..main import app
 
 
 class TestApp:
     def test_root(self, app_client):
         response = app_client.get("/")
         assert response.status_code == 200
+
+    def test_docs(self, app_client):
+        # this test just ensures that everything in our app is json schemafiable
+        # for the openapi docs generation. No assertions on the output since we
+        # are not testing openapi utilities themselves.
+        get_openapi(title='test', version='test', routes=app.routes)
 
     def test_healthz(self, app_client):
         response = app_client.get("/healthz")
