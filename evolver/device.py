@@ -1,5 +1,6 @@
 import time
 import pydantic
+from typing import Annotated
 from evolver.hardware.interface import SensorDriver, EffectorDriver
 from evolver.serial import EvolverSerialUART
 from evolver.history import HistoryServer
@@ -7,10 +8,15 @@ from evolver.history import HistoryServer
 
 DEFAULT_SERIAL = EvolverSerialUART
 DEFAULT_HISTORY = HistoryServer
+# pydantics import string alone does not generate a schema, which breaks openapi
+# docs. We wrap it to set schema explicitly.
+ImportString = Annotated[
+    pydantic.ImportString, pydantic.WithJsonSchema({'type': 'string', 'description': 'fully qualified class name'})
+]
 
 
 class ControllerDescriptor(pydantic.BaseModel):
-    driver: pydantic.ImportString
+    driver: ImportString
     config: dict = {}
 
     def driver_from_descriptor(self, evolver):
