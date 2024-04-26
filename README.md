@@ -30,6 +30,10 @@ The system is designed to be easily extensible both by a user operating a box un
 conditions, and also by a hardware developer needing a software driver for their on-chip sensors. All extension points
 will be easily sharable via pip installations or by sharing configuration files.
 
+❗❗ NOTE: The information in this section does not represent instructions, but rather design goals. We will update with
+real instructions when the necessary hook-ups have been added to make use of these goals. To test and run an example app
+see Build instructions below ❗❗
+
 ## Configuration
 
 ### Config file
