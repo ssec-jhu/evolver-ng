@@ -21,9 +21,14 @@ References:
 * original code base: https://github.com/FYNCH-BIO
 
 
+🚧 ❗ This project is under active early development - some of the information below may be out of date ❗ 🚧
+
+
 # Extensability
 
-**NB**: This area is under active development and subject to change!
+The system is designed to be easily extensible both by a user operating a box under their desired experimental
+conditions, and also by a hardware developer needing a software driver for their on-chip sensors. All extension points
+will be easily sharable via pip installations or by sharing configuration files.
 
 ## Configuration
 
@@ -33,9 +38,9 @@ Configuration of the eVolver system including provisioned hardware and experimen
 file, for example:
 
 ```yaml
-enable_commit: true
-enable_react: true
-interval: 20
+enable_react: true  # run the experiment controllers
+enable_commit: true  # enable controllers to send commands to hardware
+interval: 20  # how often in seconds to loop
 hardware:
   temp:
     driver: evolver.hardware.default.TempSensorDriver
@@ -110,6 +115,11 @@ class MyCoolExperiment(Controller):
       pump_flow_rate = od90 / self.config.flow_rate_factor
       self.evolver.set('PUMP', pump_flow_rate)
 ```
+
+There will also likely be a generic "development" controller that can take a blob of python code to execute, so for
+example a user can write code in the webUI which will get evaluated during each loop. This will enable rapid
+development, while also making it simple to "freeze" that code into a module (that can be committed and shared more
+easily) since the body can simply be copied to Controller classes `control` method as above!
 
 # Installation, Build, & Run instructions
 
