@@ -12,7 +12,7 @@
 # About
 
 The next generation of software control for eVolver. This package provides a modular bioreactor controller framework and
-REST api focused on extensability in hardware and experiment control. The REST api enables decoupling of the core
+REST api focused on extensibility in hardware and experiment control. The REST api enables decoupling of the core
 control from the user interaction and aims to enable support of configuration of new hardware without explicit UI
 componentry required.
 
@@ -24,11 +24,11 @@ References:
 🚧 ❗ This project is under active early development - some of the information below may be out of date ❗ 🚧
 
 
-# Extensability
+# Extensibility
 
 The system is designed to be easily extensible both by a user operating a box under their desired experimental
 conditions, and also by a hardware developer needing a software driver for their on-chip sensors. All extension points
-will be easily sharable via pip installations or by sharing configuration files.
+will be easily shareable via pip installations or by sharing configuration files.
 
 ❗❗ NOTE: The information in this section does not represent instructions, but rather design goals. We will update with
 real instructions when the necessary hook-ups have been added to make use of these goals. To test and run an example app
@@ -61,7 +61,7 @@ controllers:
     start_time: 0
 ```
 
-This enables both sharing of the evolver setup and experiment with others, and also the ability to easily resume the
+This enables both sharing of the eVolver setup and experiment with others, and also the ability to easily resume the
 experiment on hardware failure.
 
 ### Web api
@@ -71,7 +71,7 @@ user-friendly manner via a web browser.
 
 ## Experiment control
 
-In the default mode, the evolver application will run a loop every 20 seconds which:
+In the default mode, the eVolver application will run a loop every 20 seconds which:
 
 * **reads** the sensor values into a device object which can later be read from
 * **evaluates** the experiment controllers in order. The code in the controllers can access sensor data and set effector
@@ -102,7 +102,7 @@ class MyNewHardware(Sensor):
 ### Experiment controller extensions
 
 Experiment controllers simply need to implement the control method, which will be called in the **evaluate** phase
-mentioned above. These can read values from the evolver devices and set commands to others for changing the
+mentioned above. These can read values from the eVolver devices and set commands to others for changing the
 environment. A simple example might look like (not real code, interface subject to change):
 
 
@@ -129,7 +129,7 @@ easily) since the body can simply be copied to Controller classes `control` meth
 
 ### Prerequisite
 
-Build, testing and examples use the tox utility to set up virtual environments, the only prequisite on the development
+Build, testing and examples use the tox utility to set up virtual environments, the only perquisite on the development
 system is python and tox (represented in `requirements/dev.txt`):
 
 ```
