@@ -67,7 +67,7 @@ class Evolver(BaseInterface):
         for name, device in self.sensors.items():
             device.read()
             self.last_read[name] = time.time()
-            self.history.put(name, device.get())
+            self.history.set(name, device.get())
 
     def evaluate_controllers(self):
         for controller in self.controllers:
