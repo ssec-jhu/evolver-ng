@@ -14,7 +14,7 @@
 The next generation of software control for eVolver. This package provides a modular bioreactor controller framework and
 REST api focused on extensibility in hardware and experiment control. The REST api enables decoupling of the core
 control from the user interaction and aims to enable support for configuration of new hardware without explicit UI
-componentry required.
+componentry being required.
 
 References:
 * eVolver wiki: https://khalil-lab.gitbook.io/evolver
