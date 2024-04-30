@@ -55,6 +55,12 @@ class ConfigDescriptor(pydantic.BaseModel):
     classinfo: pydantic.ImportString
     config: dict = {}
 
-    def create(self):
-        """ Create an instance of classinfo from a config. """
-        return self.classinfo.create(self.config)
+    def create(self, **kwargs):
+        """ Create an instance of classinfo from a config.
+
+            Args:
+                kwargs (:obj:`dict`): Key-value pairs used to override contents of ``self.config``.
+        """
+        config = self.config.copy()
+        config.update(kwargs)
+        return self.classinfo.create(config)

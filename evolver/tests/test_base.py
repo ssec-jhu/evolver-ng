@@ -54,3 +54,8 @@ class TestConfigDescriptor:
         obj = mock_descriptor.create()
         assert obj.a == 11
         assert obj.b == 22
+
+    def test_create_with_overrides(self, mock_descriptor):
+        obj = mock_descriptor.create(a=101)
+        assert obj.a == 101
+        assert obj.b == 22
