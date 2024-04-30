@@ -9,126 +9,156 @@
 
 ![SSEC-JHU Logo](docs/_static/SSEC_logo_horiz_blue_1152x263.png)
 
-Base repo template to be used by all others.
+# About
 
-Things to do when using this template:
+The next generation of software control for eVolver. This package provides a modular bioreactor controller framework and
+REST api focused on extensibility in hardware and experiment control. The REST api enables decoupling of the core
+control from the user interaction and aims to enable support for configuration of new hardware without explicit UI
+componentry being required.
 
- * Correct ```<package_name>``` for child repo - suggest doing a search-all (grep) "package_name".
- * Uncomment above DOI in README.md and correct ``<insert_ID_number>``.
- * Correct "description" field in .zenodo.json to reflect description of child repo.
- * Correct the ``CI Status`` badge with child repo name.
- * Correct CodeCov status badge.
- * Correct meta data in ``CITATION.cff``.
- * Correct ``homepage``, ``documentation``, and ``repository`` under ``[project.urls]`` in pyproject.toml
- * Import package into https://readthedocs.org/.
+References:
+* eVolver wiki: https://khalil-lab.gitbook.io/evolver
+* original code base: https://github.com/FYNCH-BIO
 
-What's included in this template:
 
- * Licence file
- * Code of Conduct
- * Build & Setup, inc. ``pip`` dependency requirements.
- * Dependabot GitHub action
- * CI for GitHub actions: lint, pytest, build & publish docker image to GitHub Packages.
- * Dockerfile.
- * Pytest example(s).
- * Githooks.
+🚧 ❗ This project is under active early development - some of the information below may be out of date ❗ 🚧
+
+
+# Extensibility
+
+The system is designed to be easily extensible both by a user operating a box under their desired experimental
+conditions, and also by a hardware developer needing a software driver for their on-chip sensors. All extension points
+will be easily shareable via pip installations or by sharing configuration files.
+
+❗❗ NOTE: The information in this section does not represent instructions, but rather design goals. We will update with
+real instructions when the necessary hook-ups have been added to make use of these goals. To test and run an example app
+see Build instructions below ❗❗
+
+## Configuration
+
+### Config file
+
+Configuration of the eVolver system including provisioned hardware and experiments can be expressed in a single yaml
+file, for example:
+
+```yaml
+enable_react: true  # run the experiment controllers
+enable_commit: true  # enable controllers to send commands to hardware
+interval: 20  # how often in seconds to loop
+hardware:
+  temp:
+    driver: evolver.hardware.default.TempSensorDriver
+  od90:
+    driver: evolver.hardware.default.OD90SensorDriver
+    config:
+      key: val
+  pump:
+    driver: evolver.hardware.default.PumpEffectorDriver
+controllers:
+- driver: evolver.controllers.default.ChemostatExperimentController
+  config:
+    start_od: 0
+    start_time: 0
+```
+
+This enables both sharing of the eVolver setup and experiment with others, and also the ability to easily resume the
+experiment on hardware failure.
+
+### Web api
+
+The web api will expose all configuration options also available in the config file so configuration can be done in a
+user-friendly manner via a web browser.
+
+## Experiment control
+
+In the default mode, the eVolver application will run a loop every 20 seconds which:
+
+* **reads** the sensor values into a device object which can later be read from
+* **evaluates** the experiment controllers in order. The code in the controllers can access sensor data and set effector
+  values.
+* **progresses** the experiment by sending the updates from controllers to the underlying hardware device (e.g. set pump
+  flow rate or start stirring)
+
+
+### Hardware device extensions
+
+Once an on-board device is created and attached to the serial bus, a new hardware driver can be created by implementing
+the `get`, `set`, `read` and/or `commit` methods of a hardware driver. For example (not real code, interface subject to
+change):
+
+
+```py
+class MyNewHardware(Sensor):
+    def read(self):
+      # send the serial command specific for this device, which can handle
+      # the particular output it creates
+      data = self.evolver.serial.communicate(SerialData(self.addr, data_bytes, kind='r'))
+      self.loaded_data = self.convert_serial(data)
+
+    def get(self):
+      return Output(self.loaded_data)  # output converted from raw serial to real data
+```
+
+### Experiment controller extensions
+
+Experiment controllers simply need to implement the control method, which will be called in the **evaluate** phase
+mentioned above. These can read values from the eVolver devices and set commands to others for changing the
+environment. A simple example might look like (not real code, interface subject to change):
+
+
+```py
+class MyCoolExperiment(Controller):
+   class Config(VialConfigBaseModel):
+      od_sensor: str = 'OD90'
+      flow_rate_factor: int = 10
+
+   def control(self):
+      # read values from a particular sensor
+      od90 = self.evolver.get(self.config.od_sensor)
+      # set an effector based on this value
+      pump_flow_rate = od90 / self.config.flow_rate_factor
+      self.evolver.set('PUMP', pump_flow_rate)
+```
+
+There will also likely be a generic "development" controller that can take a blob of python code to execute, so for
+example a user can write code in the webUI which will get evaluated during each loop. This will enable rapid
+development, while also making it simple to "freeze" that code into a module (that can be committed and shared more
+easily) since the body can simply be copied to Controller classes `control` method as above!
 
 # Installation, Build, & Run instructions
 
-### Conda:
+### Prerequisite
 
-For additional cmds see the [Conda cheat-sheet](https://docs.conda.io/projects/conda/en/4.6.0/_downloads/52a95608c49671267e40c689e0bc00ca/conda-cheatsheet.pdf).
+Build, testing and examples use the tox utility to set up virtual environments, the only perquisite on the development
+system is python and tox (represented in `requirements/dev.txt`):
 
- * Download and install either [miniconda](https://docs.conda.io/en/latest/miniconda.html#installing) or [anaconda](https://docs.anaconda.com/free/anaconda/install/index.html).
- * Create new environment (env) and install ``conda create -n <environment_name>``
- * Activate/switch to new env ``conda activate <environment_name>``
- * ``cd`` into repo dir.
- * Install ``python`` and ``pip`` ``conda install python=3.11 pip``
- * Install all required dependencies (assuming local dev work), there are two ways to do this
-   * If working with tox (recommended) ``pip install -r requirements/dev.txt``.
-   * If you would like to setup an environment with all requirements to run outside of tox ``pip install -r requirements/all.txt``.
+```
+pip install -r requirements/dev.txt
+```
 
-### Build:
+### Test
 
-  #### with Docker:
-  * Download & install Docker - see [Docker install docs](https://docs.docker.com/get-docker/).
-  * ``cd`` into repo dir.
-  * Build image: ``docker build -t <image_name> .``
+Run tox within the repo base path to run an end-to-end test and packaging:
 
-  #### with Python ecosystem:
-  * ``cd`` into repo dir.
-  * ``conda activate <environment_name>``
-  * Build and install package in <environment_name> conda env: ``pip install .``
-  * Do the same but in dev/editable mode (changes to repo will be reflected in env installation upon python kernel restart)
-    _NOTE: This is the preferred installation method for dev work._
-    ``pip install -e .``.
-    _NOTE: If you didn't install dependencies from ``requirements/dev.txt``, you can install
-    a looser constrained set of deps using: ``pip install -e .[dev]``._
+```
+tox
+```
 
-### Run
+or to run just the unit tests (for example):
 
-  #### with Docker:
-  * Follow the above [Build with Docker instructions](#with-docker).
-  * Run container from image: ``docker run -d -p 8000:8000 <image_name>``. _NOTE: ``-p 8000:8000`` is specific to the example application using port 8000._
-  * Alternatively, images can be pulled from ``ghcr.io/ssec-jhu/`` e.g., ``docker pull ghcr.io/ssec-jhu/evolver-ng:pr-1``.
+```
+tox -e test
+```
 
-  #### with Python ecosystem:
-  * Follow the above [Build with Python ecosystem instructions](#with-python-ecosystem).
-  * Run ``uvicorn package_name.app.main:app --host 0.0.0.0 --port", "8000``. _NOTE: This is just an example and is obviously application dependent._
+### Example run
 
-### Usage:
-To be completed by child repo.
+We can leverage the tox testing environment, which contains all required dependencies, to run the application locally
+for evaluation:
 
+```
+tox -e test exec -- python -m evolver.app.main
+```
 
-# Testing
-_NOTE: The following steps require ``pip install -r requirements/dev.txt``._
-
-## Using tox
-
-* Run tox ``tox``. This will run all of linting, security, test, docs and package building within tox virtual environments.
-* To run an individual step, use ``tox -e {step}`` for example, ``tox -e test``, ``tox -e build-docs``, etc.
-
-Typically, the CI tests run in github actions will use tox to run as above. See also [ci.yml](https://github.com/ssec-jhu/evolver-ng/blob/main/.github/workflows/ci.yml).
-
-## Outside of tox:
-
-The below assume you are running steps without tox, and that all requirements are installed into a conda environment, e.g. with ``pip install -r requirements/all.txt``.
-
-_NOTE: Tox will run these for you, this is specifically if there is a requirement to setup environment and run these outside the purview of tox._
-
-### Linting:
-Facilitates in testing typos, syntax, style, and other simple code analysis tests.
-  * ``cd`` into repo dir.
-  * Switch/activate correct environment: ``conda activate <environment_name>``
-  * Run ``ruff .``
-  * This can be automatically run (recommended for devs) every time you ``git push`` by installing the provided
-    ``pre-push`` git hook available in ``./githooks``.
-    Instructions are in that file - just ``cp ./githooks/pre-push .git/hooks/;chmod +x .git/hooks/pre-push``.
-
-### Security Checks:
-Facilitates in checking for security concerns using [Bandit](https://bandit.readthedocs.io/en/latest/index.html).
- * ``cd`` into repo dir.
- * ``bandit --severity-level=medium -r package_name``
-
-### Unit Tests:
-Facilitates in testing core package functionality at a modular level.
-  * ``cd`` into repo dir.
-  * Run all available tests: ``pytest .``
-  * Run specific test: ``pytest tests/test_util.py::test_base_dummy``.
-
-### Regression tests:
-Facilitates in testing whether core data results differ during development.
-  * WIP
-
-### Smoke Tests:
-Facilitates in testing at the application and infrastructure level.
-  * WIP
-
-### Build Docs:
-Facilitates in building, testing & viewing the docs.
- * ``cd`` into repo dir.
- * ``pip install -r requirements/docs.txt``
- * ``cd docs``
- * ``make clean``
- * ``make html``
- * To view the docs in your default browser run ``open docs/_build/html/index.html``.
+You should then be able to visit the automatically generated API documentation in your local browser at
+https://localhost:8000/docs (or https://localhost:8000/redoc). From there you can experiment with sending
+data and reading from various endpoints (which will eventually be hooked up to a web user interface).
