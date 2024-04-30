@@ -1,14 +1,27 @@
 from abc import ABC, abstractmethod
 
-from evolver.base import BaseConfig
+from evolver.base import BaseConfig, ConfigDescriptor
 
 
 class Controller(ABC):
-    class Config(BaseConfig):
-        ...
+    """
+        Base interface class for all control implementations.
 
-    def __init__(self, evolver, config: Config = None):
-        self.config = config or self.Config()
+        Attributes:
+            devices (:obj:`dict` of :obj:`Device`, :obj:`dict` of :obj:`ConfigDescriptor`): Dictionary of devices to
+                control.
+    """
+
+    class Config(BaseConfig):
+        devices: dict
+
+    def __init__(self, devices: dict):
+        self.devices = devices
+
+        # Instantiate objects from config descriptors.
+        for device in self.devices:
+            if isinstance(device, ConfigDescriptor):
+                self.devices[device] = device.create()
 
     def pre_control(self, *args, **kwargs):
         """ Hook for customization pre-control execution, see self.run().
