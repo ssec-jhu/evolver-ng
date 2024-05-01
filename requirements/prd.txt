@@ -1,4 +1,4 @@
-fastapi==0.110.0
+fastapi==0.110.3
 pydantic==2.7.0
 pydantic-settings==2.2.1
 pyserial==3.5
