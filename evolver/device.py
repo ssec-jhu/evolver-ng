@@ -55,6 +55,8 @@ class Evolver:
                 del(self.hardware[name])
                 del(self.last_read[name])
         self.controllers = []
+        # NOTE: This has to occur after the hardware/device drivers have been instantiated as they get passed to the
+        # controller.
         for controller in config.controllers:
             self.setup_controller(controller)
         if config.serial is not None:
@@ -74,8 +76,14 @@ class Evolver:
         self.hardware[name] = driver_config.driver(self, config, calibrator)
         self.last_read[name] = -1
 
-    def setup_controller(self, controller):
-        self.controllers.append(controller.driver_from_descriptor(self))
+    def setup_controller(self, controller: ControllerDescriptor):
+        config = controller.config.copy()
+        # Creat dict of required hardware instances.
+        hardware = {x: y for x, y in self.hardware.items() if x in config}
+        # Update controller config with actual hardware instances.
+        config.update(hardware)
+        # Instantiate controller and add to list.
+        self.controllers.append(controller.driver(**config))
 
     def get_hardware(self, name):
         return self.hardware[name]

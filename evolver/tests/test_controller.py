@@ -16,4 +16,4 @@ class TestController(Controller):
 
 class TestControllerInterface:
     def test_hooks(self):
-        assert TestController(evolver=None).run() == "pre control data, control data, post control data"
+        assert TestController().run() == "pre control data, control data, post control data"

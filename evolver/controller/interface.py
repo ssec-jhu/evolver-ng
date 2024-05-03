@@ -4,11 +4,10 @@ from evolver.base import BaseConfig
 
 
 class Controller(ABC):
+    """ Base interface class for all control implementations. """
+
     class Config(BaseConfig):
         ...
-
-    def __init__(self, evolver, config: Config = None):
-        self.config = config or self.Config()
 
     def pre_control(self, *args, **kwargs):
         """ Hook for customization pre-control execution, see self.run().
