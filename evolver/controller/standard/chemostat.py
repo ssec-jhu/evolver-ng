@@ -25,7 +25,7 @@ class Chemostat(Controller):
         # come from history similarly
         self.start_time = time.time()
 
-    def control(self):
+    def control(self, *args, **kwargs):
         od_val = self.evolver.hardware.get(self.config.od_sensor).get()
         pump = self.evolver.hardware.get(self.config.pump)
         stir = self.evolver.hardware.get(self.config.stirrer)

@@ -1,12 +1,10 @@
 import pytest
 from unittest.mock import MagicMock
 from evolver.controller.standard import Chemostat
-from evolver.device import Evolver
+from evolver.device import Evolver, EvolverConfig
 
 
-@pytest.fixture
-def mock_hardware():
-    evolver = Evolver()
+def add_mock_hardware(evolver):
     evolver.hardware = {i: MagicMock() for i in ['od', 'pump', 'stirrer']}
     evolver.hardware['od'].get.return_value = {0: MagicMock(density=0), 1: MagicMock(density=1)}
     # setup mock for enabling assert on set values for effectors. Pulls out all
@@ -17,6 +15,12 @@ def mock_hardware():
         mock.set.side_effect = lambda a: mock.inputs.append(a)
     setup_hw_mock(evolver.hardware['pump'])
     setup_hw_mock(evolver.hardware['stirrer'])
+
+
+@pytest.fixture
+def mock_hardware():
+    evolver = Evolver()
+    add_mock_hardware(evolver)
     return evolver
 
 
@@ -54,3 +58,23 @@ def test_chemostat_standard_operation(mock_hardware, window, start_od, stir_rate
         # only vial 1 meets the mean OD requirements
         assert pump.inputs == [{'vial': 1, 'flow_rate': flow_rate}]
         assert stir.inputs == [{'vial': 1, 'stir_rate': stir_rate}]
+
+
+def test_evolver_based_setup():  # test to ensure evolver pluggability via config/loop
+    config = {
+        'controllers': [
+            {
+                'driver': 'evolver.controller.standard.Chemostat',
+                'config': {
+                    'od_sensor': 'od',
+                    'pump': 'pump',
+                    'stirrer': 'stirrer',
+                }
+            }
+        ]
+    }
+    evolver = Evolver(EvolverConfig.model_validate(config))
+    with pytest.raises(AttributeError):
+        evolver.loop_once()
+    add_mock_hardware(evolver)
+    evolver.loop_once()
