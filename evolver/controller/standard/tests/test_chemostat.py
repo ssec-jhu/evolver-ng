@@ -25,15 +25,15 @@ def mock_hardware():
 
 
 @pytest.mark.parametrize('window', [4,7])
-@pytest.mark.parametrize('start_od', [0, 1])
+@pytest.mark.parametrize('min_od', [0, 1])
 @pytest.mark.parametrize('stir_rate,flow_rate', [(1,2), (9.9, 10.1)])
-def test_chemostat_standard_operation(mock_hardware, window, start_od, stir_rate, flow_rate):
+def test_chemostat_standard_operation(mock_hardware, window, min_od, stir_rate, flow_rate):
     config = Chemostat.Config(
         od_sensor='od',
         pump='pump',
         stirrer='stirrer',
         window=window,
-        start_od=start_od,
+        min_od=min_od,
         stir_rate=stir_rate,
         flow_rate=flow_rate,
     )
@@ -51,7 +51,7 @@ def test_chemostat_standard_operation(mock_hardware, window, start_od, stir_rate
 
     # After window is complete, we expect to have started dilutions, where we
     # expect commands to have been sent to pump and stir
-    if start_od == 0:
+    if min_od == 0:
         assert pump.inputs == [{'vial': 0, 'flow_rate': flow_rate}, {'vial': 1, 'flow_rate': flow_rate}]
         assert stir.inputs == [{'vial': 0, 'stir_rate': stir_rate}, {'vial': 1, 'stir_rate': stir_rate}]
     else:
