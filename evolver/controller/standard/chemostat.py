@@ -25,10 +25,20 @@ class Chemostat(Controller):
         # come from history similarly
         self.start_time = time.time()
 
+    @property
+    def od(self):
+        return self.evolver.hardware.get(self.config.od_sensor)
+
+    @property
+    def pump(self):
+        return self.evolver.hardware.get(self.config.pump)
+
+    @property
+    def stir(self):
+        return self.evolver.hardware.get(self.config.stirrer)
+
     def control(self, *args, **kwargs):
-        od_values = self.evolver.hardware.get(self.config.od_sensor).get()
-        pump = self.evolver.hardware.get(self.config.pump)
-        stir = self.evolver.hardware.get(self.config.stirrer)
+        od_values = self.od.get()
         elapsed_time = time.time() - self.start_time
 
         if set(self.config.vials or []) - set(od_values):
@@ -52,5 +62,5 @@ class Chemostat(Controller):
             # Inputs assume the relevant device has its calibration and takes
             # the target real value. These may be missing spec, for example does
             # pump need bolus value also?
-            pump.set(pump.Input(vial=vial, flow_rate=self.config.flow_rate))
-            stir.set(stir.Input(vial=vial, stir_rate=self.config.stir_rate))
+            self.pump.set(self.pump.Input(vial=vial, flow_rate=self.config.flow_rate))
+            self.stir.set(self.stir.Input(vial=vial, stir_rate=self.config.stir_rate))
