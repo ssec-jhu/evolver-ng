@@ -8,6 +8,8 @@ class BaseSettings(pydantic_settings.BaseSettings):
 
 class Settings(BaseSettings):
     CONNECTION_REUSE_POLICY_DEFAULT: bool = True
+    DEFAULT_LOOP_INTERVAL: int = 20
+    NUMBER_OF_VIALS_PER_BOX: int = 16
 
 
 class AppSettings(BaseSettings):

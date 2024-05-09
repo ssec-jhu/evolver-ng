@@ -1,8 +1,12 @@
-import time
-from pydantic import Field
 from collections import defaultdict, deque
+import time
+
+from pydantic import Field
+
+from evolver.base import ConfigDescriptor
 from evolver.controller.interface import Controller
-from evolver.hardware.interface import VialConfigBaseModel
+from evolver.hardware.interface import VialConfigBaseModel, HardwareDriver
+from evolver.settings import settings
 
 
 class Chemostat(Controller):
@@ -16,51 +20,74 @@ class Chemostat(Controller):
         flow_rate: float = Field(0, description="Flow rate for dilutions")
         stir_rate: float = Field(8, description="Stir rate")
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self,
+                 od_sensor: HardwareDriver | ConfigDescriptor | str,
+                 pump: HardwareDriver | ConfigDescriptor | str,
+                 stirrer: HardwareDriver | ConfigDescriptor | str,
+                 *args,
+                 vials: list = None,  # TODO: Derive this cls from a VialCentricController and add this there (#30).
+                 window: int = 7,
+                 min_od: float = 0,
+                 start_delay: int = 0,
+                 flow_rate: float = 0,
+                 stir_rate: float = 8,
+                 **kwargs):
+        self._od_sensor = od_sensor
+        self._pump = pump
+        self._stirrer = stirrer
+        self.vials = vials or list(range(settings.NUMBER_OF_VIALS_PER_BOX))
+        self.window = window
+        self.min_od = min_od
+        self.start_delay = start_delay
+        self.flow_rate = flow_rate
+        self.stir_rate = stir_rate
+
         # buffer could come from history as well
-        self.od_buffer = defaultdict(lambda: deque(maxlen=self.config.window))
+        self.od_buffer = defaultdict(lambda: deque(maxlen=self.window))
+
         # start_time is something we might actually want to be a property of
         # evolver, in case of interrupt it has a chance of continuing - but can
         # come from history similarly
         self.start_time = time.time()
 
+        super().__init__(*args, **kwargs)
+
     @property
-    def od(self):
-        return self.evolver.hardware.get(self.config.od_sensor)
+    def od_sensor(self):
+        return self.evolver.hardware.get(self._od_sensor) if isinstance(self._od_sensor, str) else self._od_sensor
 
     @property
     def pump(self):
-        return self.evolver.hardware.get(self.config.pump)
+        return self.evolver.hardware.get(self._pump) if isinstance(self._pump, str) else self._pump
 
     @property
-    def stir(self):
-        return self.evolver.hardware.get(self.config.stirrer)
+    def stirrer(self):
+        return self.evolver.hardware.get(self._stirrer) if isinstance(self._stirrer, str) else self._stirrer
 
     def control(self, *args, **kwargs):
-        od_values = self.od.get()
+        od_values = self.od_sensor.get()
         elapsed_time = time.time() - self.start_time
 
-        if set(self.config.vials or []) - set(od_values):
-            raise ValueError(f'missing vials: I want: {self.config.vials}, OD provides: {od_values.keys()}')
+        if set(self.vials) - set(od_values):
+            raise ValueError(f'missing vials: I want: {self.vials}, OD provides: {od_values.keys()}')
 
         for vial, od_value in od_values.items():
-            if self.config.vials and vial not in self.config.vials:
+            if self.vials and vial not in self.vials:
                 continue
 
             # Load the rotating window buffer with latest value and only proceed
             # with dilutions if both we have the full window loaded and it has
             # been configured time since start
             self.od_buffer[vial].append(od_value.density)
-            if len(self.od_buffer[vial]) < self.config.window or elapsed_time < self.config.start_delay * 3600:
+            if len(self.od_buffer[vial]) < self.window or elapsed_time < self.start_delay * 3600:
                 continue
 
-            od_mean = sum(self.od_buffer[vial]) / self.config.window
-            if self.config.min_od > od_mean:
+            od_mean = sum(self.od_buffer[vial]) / self.window
+            if self.min_od > od_mean:
                 continue
 
             # Inputs assume the relevant device has its calibration and takes
             # the target real value. These may be missing spec, for example does
             # pump need bolus value also?
-            self.pump.set(self.pump.Input(vial=vial, flow_rate=self.config.flow_rate))
-            self.stir.set(self.stir.Input(vial=vial, stir_rate=self.config.stir_rate))
+            self.pump.set(self.pump.Input(vial=vial, flow_rate=self.flow_rate))
+            self.stirrer.set(self.stirrer.Input(vial=vial, stir_rate=self.stir_rate))

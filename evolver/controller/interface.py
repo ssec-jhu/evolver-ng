@@ -1,15 +1,15 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
-from evolver.base import BaseConfig
+from evolver.base import BaseConfig, BaseInterface
 
 
-class Controller(ABC):
+class Controller(BaseInterface):
     class Config(BaseConfig):
         ...
 
-    def __init__(self, evolver, config: Config = None):
-        self.config = config or self.Config()
+    def __init__(self, *args, evolver=None, **kwargs):
         self.evolver = evolver
+        super().__init__(*args, **kwargs)
 
     def pre_control(self, *args, **kwargs):
         """ Hook for customization pre-control execution, see self.run().

@@ -21,12 +21,19 @@ class EvolverSerialUART(Connection):
         RESP_SUFFIX = b'end'
 
     class Config(pydantic.BaseModel):
+        name: str = "EvolverSerialUART"
         port: str = '/dev/ttyAMA0'
         baudrate: int = 9600
         timeout: float = 1
 
+    def __init__(self, *args, port: str = '/dev/ttyAMA0', baudrate: int = 9600, timeout: float = 1, **kwargs):
+        self.port = port
+        self.baudrate = baudrate
+        self.timeout = timeout
+        super().__init__(*args, **kwargs)
+
     def _open(self):
-        return self.backend.Serial(port=self.config.port, baudrate=self.config.baudrate, timeout=self.config.timeout)
+        return self.backend.Serial(port=self.port, baudrate=self.baudrate, timeout=self.timeout)
 
     def _close(self):
         return self.conn.close()

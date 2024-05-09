@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
 from evolver.controller.standard import Chemostat
-from evolver.device import Evolver, EvolverConfig
+from evolver.device import Evolver
 
 
 def add_mock_hardware(evolver):
@@ -36,8 +36,9 @@ def test_chemostat_standard_operation(mock_hardware, window, min_od, stir_rate, 
         min_od=min_od,
         stir_rate=stir_rate,
         flow_rate=flow_rate,
+        vials=[0, 1]
     )
-    c = Chemostat(mock_hardware, config)
+    c = Chemostat(evolver=mock_hardware, **config.model_dump())
     pump = mock_hardware.hardware['pump']
     stir = mock_hardware.hardware['stirrer']
 
@@ -64,16 +65,17 @@ def test_evolver_based_setup():  # test to ensure evolver pluggability via confi
     config = {
         'controllers': [
             {
-                'driver': 'evolver.controller.standard.Chemostat',
+                'classinfo': 'evolver.controller.standard.Chemostat',
                 'config': {
                     'od_sensor': 'od',
                     'pump': 'pump',
                     'stirrer': 'stirrer',
+                    'vials': [0, 1]
                 }
             }
         ]
     }
-    evolver = Evolver(EvolverConfig.model_validate(config))
+    evolver = Evolver.create(config)
     with pytest.raises(AttributeError):
         evolver.loop_once()
     add_mock_hardware(evolver)

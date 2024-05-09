@@ -3,10 +3,10 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from evolver import __project__, __version__
 from evolver.base import require_all_fields
 from evolver.device import Evolver, EvolverConfig
 from evolver.settings import app_settings
-from .. import __project__, __version__
 
 
 @asynccontextmanager
@@ -26,7 +26,7 @@ app.state.evolver = None
 
 
 @require_all_fields
-class EvolverConfigWithoutDefaults(EvolverConfig):
+class EvolverConfigWithoutDefaults(Evolver.Config):
     ...
 
 
@@ -49,7 +49,7 @@ async def get_state():
 
 @app.post("/")
 async def update_evolver(config: EvolverConfigWithoutDefaults):
-    app.state.evolver.update_config(config)
+    app.state.evolver = Evolver.create(config)
     app.state.evolver.config.save(app_settings.CONFIG_FILE)
 
 

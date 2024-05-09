@@ -1,3 +1,5 @@
+import json
+
 import pydantic
 import pytest
 
@@ -22,6 +24,52 @@ def mock_descriptor():
                                          config=dict(a=11, b=22))
 
 
+@pytest.fixture()
+def mock_descriptor_as_dict(mock_descriptor):
+    return mock_descriptor.model_dump()
+
+
+@pytest.fixture()
+def mock_descriptor_as_json(mock_descriptor):
+    return mock_descriptor.model_dump_json()
+
+
+@pytest.fixture()
+def mock_conf_as_dict(mock_descriptor):
+    return mock_descriptor.config
+
+
+@pytest.fixture()
+def mock_conf_as_json(mock_conf_as_dict):
+    return json.dumps(mock_conf_as_dict)
+
+
+class TestBaseConfig:
+    def test_empty_model_validate(self):
+        obj = ConcreteInterface.Config.model_validate(None)
+        assert isinstance(obj, ConcreteInterface.Config)
+
+    def test_auto_json_handling(self):
+        config = ConcreteInterface.Config(a=6, b=7).model_dump_json()
+        obj = ConcreteInterface.Config.model_validate(config)
+        assert isinstance(obj, ConcreteInterface.Config)
+        assert obj.a == 6
+        assert obj.b == 7
+
+    def test_from_config_descriptor(self, mock_descriptor):
+        assert isinstance(mock_descriptor, evolver.base.ConfigDescriptor)
+        obj = ConcreteInterface.Config.model_validate(mock_descriptor)
+        assert isinstance(obj, ConcreteInterface.Config)
+        assert obj.a == 11
+        assert obj.b == 22
+
+    def test_from_base_interface(self):
+        obj = ConcreteInterface.Config.model_validate(ConcreteInterface(a=8, b=9))
+        assert isinstance(obj, ConcreteInterface.Config)
+        assert obj.a == 8
+        assert obj.b == 9
+
+
 class TestBaseInterface:
     def test_create(self):
         obj = ConcreteInterface.create()
@@ -32,22 +80,84 @@ class TestBaseInterface:
         assert obj.a == 6
         assert obj.b == 7
 
-    def test_config_stash(self):
-        assert ConcreteInterface(4, 5, "TestDevice")._config is None
-        assert ConcreteInterface.create()._config == ConcreteInterface.Config()
+    def test_config_property(self):
+        config = ConcreteInterface.Config(a=6, b=7)
+        obj = ConcreteInterface.create(config)
+        assert obj.config == config.dict()
+        assert obj.Config.model_validate(config) == config
 
-        config = ConcreteInterface.Config(name="TestDevice", a=6, b=7)
-        assert ConcreteInterface.create(config)._config == config
-
-    def test_json_config(self):
-        obj = ConcreteInterface.create(ConcreteInterface.Config(a=4, b=5, name="TestDevice").model_dump_json())
-        assert obj.a == 4
-        assert obj.b == 5
-
-    def test_from_config_descriptor(self, mock_descriptor):
-        obj = ConcreteInterface.create(mock_descriptor)
+    @pytest.mark.parametrize("conf", ("mock_conf_as_json", "mock_conf_as_dict"))
+    def test_from_conf(self, conf, request):
+        obj = ConcreteInterface.create(request.getfixturevalue(conf))
         assert obj.a == 11
         assert obj.b == 22
+
+    def test_descriptor_property(self):
+        obj = ConcreteInterface.create()
+        descriptor = obj.descriptor
+        assert isinstance(descriptor, evolver.base.ConfigDescriptor)
+        assert descriptor.classinfo is ConcreteInterface
+        assert descriptor.config == obj.config
+
+    def test_to_config_descriptor(self):
+        obj = ConcreteInterface.create()
+        descriptor = evolver.base.ConfigDescriptor.model_validate(obj)
+        assert isinstance(descriptor, evolver.base.ConfigDescriptor)
+        assert descriptor.classinfo is ConcreteInterface
+        assert descriptor.config == obj.config
+
+    @pytest.mark.parametrize("descriptor", ("mock_descriptor", "mock_descriptor_as_dict", "mock_descriptor_as_json"))
+    def test_from_descriptor(self, descriptor, request):
+        descriptor = request.getfixturevalue(descriptor)
+        obj = ConcreteInterface.create(descriptor)
+        assert obj.a == 11
+        assert obj.b == 22
+
+    def test_config_symmetry(self):
+        assert ConcreteInterface.create().config == ConcreteInterface.Config().model_dump()
+        assert ConcreteInterface.Config.model_validate(ConcreteInterface.create().config) == ConcreteInterface.Config()
+
+    def test_config_as_json(self):
+        obj = ConcreteInterface.create()
+        assert obj.config_json == ConcreteInterface.Config().model_dump_json()
+
+    def test_config_as_model(self):
+        obj = ConcreteInterface.create()
+        assert obj.config_model == ConcreteInterface.Config()
+
+    def test_create_descriptor_cls_missmatch(self):
+        descriptor = evolver.base.ConfigDescriptor(classinfo=int,
+                                                   config=ConcreteInterface.Config().model_dump())
+        with pytest.raises(TypeError, match="is not compatible with this class"):
+            ConcreteInterface.create(descriptor)
+
+        with pytest.raises(TypeError, match="is not compatible with this class"):
+            ConcreteInterface.create(descriptor.model_dump())
+
+        with pytest.raises(TypeError, match="is not compatible with this class"):
+            ConcreteInterface.create(descriptor.model_dump_json())
+
+    def test_schema(self):
+        class Foo(pydantic.BaseModel):
+            interface: ConcreteInterface
+
+        assert Foo.model_json_schema() == {
+            '$defs': {'Config': {'properties': {'name': {'default': 'TestDevice',
+                                                         'title': 'Name',
+                                                         'type': 'string'},
+                                                'a': {'default': 2, 'title': 'A', 'type': 'integer'},
+                                                'b': {'default': 3, 'title': 'B', 'type': 'integer'}},
+                                 'title': 'Config',
+                                 'type': 'object'}},
+            'properties': {'interface': {'$ref': '#/$defs/Config'}},
+            'required': ['interface'],
+            'title': 'Foo',
+            'type': 'object'}
+
+        obj = Foo(interface=ConcreteInterface.Config())
+        assert obj.interface.a == 2
+        assert obj.interface.b == 3
+        assert obj.model_dump() == {'interface': {'name': 'TestDevice', 'a': 2, 'b': 3}}
 
 
 class TestConfigDescriptor:
@@ -56,10 +166,53 @@ class TestConfigDescriptor:
         assert obj.a == 11
         assert obj.b == 22
 
-    def test_create_with_overrides(self, mock_descriptor):
-        obj = mock_descriptor.create(a=101)
+    def test_create_with_empty_config(self):
+        obj = evolver.base.ConfigDescriptor(classinfo="evolver.tests.test_base.ConcreteInterface").create()
+        assert obj.a == 2
+        assert obj.b == 3
+
+    @pytest.mark.parametrize("kwargs", (dict(a=101),
+                                        dict(update=dict(a=101)),
+                                        dict(update=dict(a=102), a=101)))
+    def test_create_with_overrides(self, mock_descriptor, kwargs):
+        obj = mock_descriptor.create(**kwargs)
         assert obj.a == 101
         assert obj.b == 22
+
+    def test_construct_from_base_config(self):
+        obj = ConcreteInterface.Config(a=11, b=22)
+        descriptor = evolver.base.ConfigDescriptor.model_validate(obj)
+        assert descriptor.classinfo is ConcreteInterface
+        assert descriptor.config == obj.model_dump()
+        assert descriptor.config["a"] == 11
+        assert descriptor.config["b"] == 22
+
+    def test_construct_from_base_interface(self):
+        obj = ConcreteInterface(a=11, b=22)
+        descriptor = evolver.base.ConfigDescriptor.model_validate(obj)
+        assert descriptor.classinfo is ConcreteInterface
+        assert descriptor.config == obj.config
+        assert descriptor.config["a"] == 11
+        assert descriptor.config["b"] == 22
+
+    def test_construct_from_static_cls(self):
+        descriptor = evolver.base.ConfigDescriptor.model_validate(ConcreteInterface)
+        assert descriptor.classinfo is ConcreteInterface
+        assert descriptor.config == ConcreteInterface.Config().model_dump()
+        assert descriptor.config["a"] == 2
+        assert descriptor.config["b"] == 3
+
+    def test_serialize_classinfo(self, mock_descriptor_as_json):
+        descriptor = evolver.base.ConfigDescriptor.model_validate(mock_descriptor_as_json)
+        assert isinstance(descriptor.classinfo, type)
+        descriptor.model_dump_json() == mock_descriptor_as_json
+
+    def test_classinfo_serialization(self):
+        obj = ConcreteInterface.create()
+        assert isinstance(obj.descriptor.classinfo, type)
+        assert isinstance(obj.descriptor.model_dump()["classinfo"], type)
+        assert isinstance(json.loads(obj.descriptor.model_dump_json())["classinfo"], str)
+        assert isinstance(evolver.base.ConfigDescriptor(classinfo=json.loads(obj.descriptor.model_dump_json())["classinfo"]).classinfo, type)
 
 
 def test_require_all_fields():

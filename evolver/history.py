@@ -1,11 +1,12 @@
 import time
-import pydantic
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections import defaultdict
 
+from evolver.base import BaseConfig, BaseInterface
 
-class History(ABC):
-    class Config(pydantic.BaseModel):
+
+class History(BaseInterface):
+    class Config(BaseConfig):
         pass
 
     @abstractmethod
@@ -18,10 +19,12 @@ class History(ABC):
 
 
 class HistoryServer(History):
-    def __init__(self, evolver=None, config=None):
-        self.evolver = evolver
-        self.config = config
-        self.history = defaultdict(list)
+    class Config(History.Config):
+        name: str = "HistoryServer"
+
+    def __init__(self, *args, history=defaultdict(list), **kwargs):
+        self.history = history
+        super().__init__(*args, **kwargs)
 
     def put(self, name, data):
         self.history[name].append((time.time(), data))

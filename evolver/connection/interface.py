@@ -13,11 +13,10 @@ class Connection(BaseInterface):
 
     backend = None  # Backend module/library to use.
 
-    def __init__(self, *args, config: Config = None, lock_constructor=RLock, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, lock_constructor=RLock, **kwargs):
         self.conn = None  # This is the core object that this class wraps.
-        self.config = config or self.Config()
         self.lock = lock_constructor()
+        super().__init__(*args, **kwargs)
 
     @abstractmethod
     def _open(self,  *args, **kwargs):
