@@ -9,6 +9,7 @@ class Controller(ABC):
 
     def __init__(self, evolver, config: Config = None):
         self.config = config or self.Config()
+        self.evolver = evolver
 
     def pre_control(self, *args, **kwargs):
         """ Hook for customization pre-control execution, see self.run().
