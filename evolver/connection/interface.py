@@ -48,7 +48,7 @@ class Connection(BaseInterface):
 
     def is_open(self):
         if hasattr(self.conn, "is_open"):
-            return self.conn.is_open()
+            return self.conn.is_open
 
         return self.conn is not None
 

@@ -21,6 +21,6 @@ def test_uart_serial(payload):
 
 def test_uart_bad_response_raises(payload):
     with EvolverSerialUARTEmulator() as s:
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match=r".* but got .*badresponse"):
             epayload = payload.model_copy(update=dict(addr='Xyz'))
             s.communicate(epayload)
