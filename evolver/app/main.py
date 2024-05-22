@@ -1,11 +1,19 @@
 import asyncio
+
 from fastapi import FastAPI
+
+from evolver.base import require_all_fields
 from evolver.device import Evolver, EvolverConfig
 from .. import __project__, __version__
 
 
 app = FastAPI()
 evolver = Evolver()
+
+
+@require_all_fields
+class EvolverConfigWithoutDefaults(EvolverConfig):
+    ...
 
 
 @app.get("/")
@@ -26,7 +34,7 @@ async def get_state():
 
 
 @app.post("/")
-async def update_evolver(config: EvolverConfig):
+async def update_evolver(config: EvolverConfigWithoutDefaults):
     evolver.update_config(config)
 
 
