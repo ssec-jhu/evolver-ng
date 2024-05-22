@@ -48,8 +48,7 @@ class Connection(BaseInterface):
 
     def is_open(self):
         if hasattr(self.conn, "is_open"):
-            return self.conn.is_open()
-
+            return self.conn.is_open() if callable(self.conn.is_open) else self.conn.is_open
         return self.conn is not None
 
     def open(self, *args, reuse: bool = settings.CONNECTION_REUSE_POLICY_DEFAULT, **kwargs):

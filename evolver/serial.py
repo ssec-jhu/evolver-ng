@@ -34,7 +34,7 @@ class EvolverSerialUART(Connection):
     @classmethod
     def _decode_serial_data(cls, response, suffix=CMD.RESP_SUFFIX.value):
         parts = response.split(b',')
-        if resp_suffix := parts.pop() != suffix:
+        if (resp_suffix := parts.pop()) != suffix:
             raise ValueError(f"Incorrect command suffix detected: expected '{suffix}' but got '{resp_suffix}'")
         addrcode = parts[0].decode('utf-8')
         addr, code = addrcode[:-1], addrcode[-1]
@@ -52,8 +52,8 @@ class EvolverSerialUART(Connection):
         response = self.conn.readline()
         try:
             return self._decode_serial_data(response)
-        except Exception:
-            raise ValueError('invalid response')
+        except Exception as exc:
+            raise ValueError(f'invalid response: {exc}') from exc
 
     def communicate(self, cmd: SerialData):
         # need to lock since we do three way comminication and during that term
