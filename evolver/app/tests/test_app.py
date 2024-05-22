@@ -32,6 +32,14 @@ class TestApp:
         newconfig = app_client.get('/').json()['config']
         assert newconfig['hardware']['test']['driver'] == 'evolver.hardware.demo.NoOpSensorDriver'
 
+        data = {'history': {'driver': 'evolver.history.HistoryServer'}}
+        response = app_client.post('/', json=data)
+        assert response.status_code == 200
+
+        newconfig = app_client.get('/').json()['config']
+        assert newconfig["history"]["driver"] == 'evolver.history.HistoryServer'
+        assert newconfig['hardware']['test']['driver'] == 'evolver.hardware.demo.NoOpSensorDriver'
+
     def test_evolver_app_control_loop_setup(self, app_client):
         # The context manager ensures that startup event loop is called
         # TODO: check results generated in control() (may require hardware at startup, or forced execution of loop)

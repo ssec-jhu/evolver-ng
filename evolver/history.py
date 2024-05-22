@@ -18,7 +18,7 @@ class History(ABC):
 
 
 class HistoryServer(History):
-    def __init__(self, config = None):
+    def __init__(self, evolver=None, config = None):
         self.history = defaultdict(list)
 
     def put(self, name, data):
