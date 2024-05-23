@@ -43,11 +43,7 @@ class TestApp:
             assert content["msg"] == "Field required"
 
         new_data = EvolverConfig().copy(update=data)
-        # Note: pydantic.BaseModel.model_dump() doesn't serialize the driver class and canonical json has issues
-        # serializing some classes, e.g., ABCMeta. However, pydantic.BaseModel.model_dump_json() knows how to convert
-        # pydantic.ImportString. However, some setting must be adrift as this results in a 422 "Input should be a valid
-        # dictionary or object to extract fields from". To resolve this, we convert it back to a dict.
-        response = app_client.post('/', json=json.loads(new_data.model_dump_json()))
+        response = app_client.post('/', data=new_data.model_dump_json())
         assert response.status_code == 200
         newconfig = app_client.get('/').json()['config']
         assert newconfig['hardware']['test']['driver'] == 'evolver.hardware.demo.NoOpSensorDriver'
