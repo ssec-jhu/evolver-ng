@@ -1,6 +1,10 @@
+import json
+
 from fastapi.openapi.utils import get_openapi
 from ..main import __version__  # Leave as relative for use in template: ssec-jhu/base-template.
-from ..main import app
+from ..main import app, EvolverConfigWithoutDefaults
+
+from evolver.device import EvolverConfig
 
 
 class TestApp:
@@ -25,9 +29,21 @@ class TestApp:
         assert response.status_code == 200
         assert sorted(response.json().keys()) == ['config', 'last_read', 'state']
 
+    def test_EvolverConfigWithoutDefaults(self):
+        EvolverConfigWithoutDefaults.model_validate(EvolverConfig().model_dump())
+        EvolverConfigWithoutDefaults.model_validate_json(EvolverConfig().model_dump_json())
+
     def test_evolver_update_config_endpoint(self, app_client):
         data = {'hardware': {'test': {'driver': 'evolver.hardware.demo.NoOpSensorDriver'}}}
         response = app_client.post('/', json=data)
+        # all config fields are required so the above post failed with an Unprocessable Entity error.
+        assert response.status_code == 422
+        contents = json.loads(response.content)
+        for content in contents["detail"]:
+            assert content["msg"] == "Field required"
+
+        new_data = EvolverConfig().copy(update=data)
+        response = app_client.post('/', data=new_data.model_dump_json())
         assert response.status_code == 200
         newconfig = app_client.get('/').json()['config']
         assert newconfig['hardware']['test']['driver'] == 'evolver.hardware.demo.NoOpSensorDriver'

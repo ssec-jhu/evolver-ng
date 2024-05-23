@@ -2,6 +2,33 @@ from abc import ABC
 import logging
 
 import pydantic
+import pydantic_core
+
+
+def require_all_fields(cls):
+    """ Decorate a model mutating it to one where all fields are required.
+
+        Example:
+            ```python
+            import pydantic
+            from evolver.base import require_all_fields
+
+            class MyModel(pydantic.BaseModel):
+                a: int = 3
+
+            @require_all_fields
+            class MyModelWithoutDefaults(MyModel):
+                ...
+            ```
+    """
+    for field in cls.model_fields:
+        # FieldInfo.is_required is specified as being conditionally only upon ``default`` & ``default_factory``.
+        # see https://docs.pydantic.dev/latest/api/fields/#pydantic.fields.FieldInfo.is_required
+        cls.model_fields[field].default = pydantic_core.PydanticUndefined
+        cls.model_fields[field].default_factory = None
+
+    cls.model_rebuild(force=True)
+    return cls
 
 
 class BaseConfig(pydantic.BaseModel):

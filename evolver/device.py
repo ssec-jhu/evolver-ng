@@ -32,8 +32,8 @@ class EvolverConfig(pydantic.BaseModel):
     vials: list = list(range(16))
     hardware: dict[str, HardwareDriverDescriptor] = {}
     controllers: list[ControllerDescriptor] = []
-    serial: ControllerDescriptor = None
-    history: ControllerDescriptor = None
+    serial: ControllerDescriptor = ControllerDescriptor(driver=DEFAULT_SERIAL)
+    history: ControllerDescriptor = ControllerDescriptor(driver=DEFAULT_HISTORY)
     enable_control: bool = True
     enable_commit: bool = True
     interval: int = 20

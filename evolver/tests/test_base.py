@@ -1,3 +1,4 @@
+import pydantic
 import pytest
 
 import evolver.base
@@ -59,3 +60,20 @@ class TestConfigDescriptor:
         obj = mock_descriptor.create(a=101)
         assert obj.a == 101
         assert obj.b == 22
+
+
+def test_require_all_fields():
+    for field in ConcreteInterface.Config.model_fields.values():
+        assert not field.is_required()
+
+    ConcreteInterface.Config(a=1)
+
+    @evolver.base.require_all_fields
+    class ConfigWithoutDefaults(ConcreteInterface.Config):
+        ...
+
+    for field in ConfigWithoutDefaults.model_fields.values():
+        assert field.is_required()
+
+    with pytest.raises(pydantic.ValidationError, match="Field required"):
+        ConfigWithoutDefaults(a=1)
