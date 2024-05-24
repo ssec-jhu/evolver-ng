@@ -25,7 +25,7 @@ class ControllerDescriptor(pydantic.BaseModel):
 
 
 class HardwareDriverDescriptor(ControllerDescriptor):
-    calibrator: ControllerDescriptor = None
+    calibrator: ControllerDescriptor|None = None
 
 
 class EvolverConfig(pydantic.BaseModel):
