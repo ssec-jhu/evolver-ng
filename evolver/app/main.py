@@ -1,15 +1,13 @@
 import asyncio
-import os
-import yaml
 from fastapi import FastAPI
-from pathlib import Path
 
 from evolver.base import require_all_fields
 from evolver.device import Evolver, EvolverConfig
+from evolver.settings import settings
+from evolver.util import load_config_for_evolver, save_evolver_config
 from .. import __project__, __version__
 
 
-EVOLVER_CONFIG_FILE=Path('evolver.yml')  # in current directory
 app = FastAPI()
 evolver = Evolver()
 
@@ -39,8 +37,7 @@ async def get_state():
 @app.post("/")
 async def update_evolver(config: EvolverConfigWithoutDefaults):
     evolver.update_config(config)
-    with open(EVOLVER_CONFIG_FILE, 'w') as f:
-        yaml.dump(config.model_dump(mode='json'), f)
+    save_evolver_config(config, settings.CONFIG_FILE)
 
 @app.get('/schema')
 async def get_schema():
@@ -68,21 +65,20 @@ async def start_evolver_loop():
     asyncio.create_task(evolver_async_loop())
 
 
-def load_config_file():
-    if EVOLVER_CONFIG_FILE.exists():
-        with open(EVOLVER_CONFIG_FILE) as f:
-            evolver.update_config(EvolverConfig.model_validate(yaml.load(f, yaml.SafeLoader)))
+@app.on_event('startup')
+async def load_config():
+    load_config_for_evolver(evolver, settings.CONFIG_FILE)
+
 
 def start():
     import uvicorn
     uvicorn.run(
         app,
-        host=os.getenv("EVOLVER_HOST", "127.0.0.1"),
-        port=int(os.getenv("EVOLVER_PORT", 8000)),
+        host=settings.HOST,
+        port=settings.PORT,
         log_level="info"
     )
 
 
 if __name__ == '__main__':
-    load_config_file()
     start()
