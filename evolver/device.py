@@ -1,6 +1,8 @@
 import time
 import pydantic
 from typing import Annotated
+
+from evolver.base import BaseConfig
 from evolver.hardware.interface import SensorDriver, EffectorDriver
 from evolver.serial import EvolverSerialUART
 from evolver.history import HistoryServer
@@ -28,7 +30,8 @@ class HardwareDriverDescriptor(ControllerDescriptor):
     calibrator: ControllerDescriptor|None = None
 
 
-class EvolverConfig(pydantic.BaseModel):
+class EvolverConfig(BaseConfig):
+    name: str = "Evolver"
     vials: list = list(range(16))
     hardware: dict[str, HardwareDriverDescriptor] = {}
     controllers: list[ControllerDescriptor] = []

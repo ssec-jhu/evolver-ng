@@ -3,8 +3,7 @@ from fastapi import FastAPI
 
 from evolver.base import require_all_fields
 from evolver.device import Evolver, EvolverConfig
-from evolver.settings import settings
-from evolver.util import load_config_for_evolver, save_evolver_config
+from evolver.settings import app_settings
 from .. import __project__, __version__
 
 
@@ -37,7 +36,8 @@ async def get_state():
 @app.post("/")
 async def update_evolver(config: EvolverConfigWithoutDefaults):
     evolver.update_config(config)
-    save_evolver_config(config, settings.CONFIG_FILE)
+    evolver.config.save(app_settings.CONFIG_FILE)
+
 
 @app.get('/schema')
 async def get_schema():
@@ -67,15 +67,15 @@ async def start_evolver_loop():
 
 @app.on_event('startup')
 async def load_config():
-    load_config_for_evolver(evolver, settings.CONFIG_FILE)
+    evolver.update_config(EvolverConfig.load(app_settings.CONFIG_FILE))
 
 
 def start():
     import uvicorn
     uvicorn.run(
         app,
-        host=settings.HOST,
-        port=settings.PORT,
+        host=app_settings.HOST,
+        port=app_settings.PORT,
         log_level="info"
     )
 

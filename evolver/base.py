@@ -1,8 +1,10 @@
 from abc import ABC
 import logging
+from pathlib import Path
 
 import pydantic
 import pydantic_core
+import yaml
 
 
 def require_all_fields(cls):
@@ -33,6 +35,17 @@ def require_all_fields(cls):
 
 class BaseConfig(pydantic.BaseModel):
     name: str = None
+
+    @classmethod
+    def load(cls, file_path: Path, encoding: str | None = None):
+        """Loads the specified config file and return a new instance."""
+        with open(file_path, encoding=encoding) as f:
+            return cls.model_validate(yaml.safe_load(f))
+
+    def save(self, file_path: Path, encoding: str | None = None):
+        """Write out config as yaml file to specified file."""
+        with open(file_path, 'w', encoding=encoding) as f:
+            yaml.dump(self.model_dump(mode='json'), f)
 
 
 class BaseInterface(ABC):
