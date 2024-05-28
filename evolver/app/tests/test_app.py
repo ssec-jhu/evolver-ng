@@ -1,12 +1,16 @@
 import json
 
+import pytest
 import yaml
 from fastapi.openapi.utils import get_openapi
 
+import evolver.util
 from evolver import __version__
-from evolver.app.main import EvolverConfigWithoutDefaults, app
-from evolver.base import ConfigDescriptor
+from evolver.app.main import EvolverConfigWithoutDefaults, SchemaResponse, app
+from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor
 from evolver.device import Evolver
+from evolver.hardware.demo import NoOpCalibrator, NoOpEffectorDriver, NoOpSensorDriver
+from evolver.hardware.interface import EffectorDriver, SensorDriver
 from evolver.settings import app_settings
 
 
@@ -61,11 +65,31 @@ class TestApp:
         response = app_client.get("/")
         assert response.status_code == 200
 
-    def test_schema_endpoint(self, app_client):
-        response = app_client.get("/schema")
+    @pytest.mark.parametrize(
+        "classinfo",
+        (
+            None,
+            Evolver,
+            BaseConfig,
+            BaseInterface,
+            EffectorDriver,
+            SensorDriver,
+            NoOpCalibrator,
+            NoOpEffectorDriver,
+            NoOpSensorDriver,
+        ),
+    )
+    def test_schema_endpoint(self, app_client, classinfo):
+        fqn = evolver.util.fully_qualified_name(classinfo) if classinfo else evolver.util.fully_qualified_name(Evolver)
+        response = app_client.get("/schema", params=dict(classinfo=fqn) if classinfo else None)
         assert response.status_code == 200
         # There's not much in the default config yet, this will change in future PRs.
-        assert json.loads(response.content) == dict(hardware=[], controllers=[])
+        assert json.loads(response.content) == SchemaResponse(classinfo=fqn).model_dump(mode="json")
+
+    @pytest.mark.parametrize("classinfo", ("this.is.not.a.class", "int", ""))
+    def test_schema_endpoint_exception(self, app_client, classinfo):
+        response = app_client.get("/schema/", params=dict(classinfo=classinfo))
+        assert response.status_code == 422
 
 
 def test_app_load_file(app_client):

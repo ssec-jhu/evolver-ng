@@ -1,11 +1,13 @@
 import asyncio
 from contextlib import asynccontextmanager
+from typing import Any
 
+import pydantic
 from fastapi import FastAPI
 
 import evolver.util
 from evolver import __project__, __version__
-from evolver.base import require_all_fields
+from evolver.base import BaseConfig, BaseInterface, ImportString, require_all_fields
 from evolver.device import Evolver
 from evolver.settings import app_settings
 
@@ -57,9 +59,28 @@ async def update_evolver(config: EvolverConfigWithoutDefaults):
     app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
 
 
-@app.get("/schema")
-async def get_schema():
-    return app.state.evolver.schema
+class SchemaResponse(pydantic.BaseModel):
+    classinfo: ImportString
+    config: dict | None = None
+    input: dict | None = None
+    output: dict | None = None
+
+    def model_post_init(self, __context: Any) -> None:
+        if issubclass(self.classinfo, BaseConfig):
+            self.config = self.classinfo.model_json_schema()
+        elif issubclass(self.classinfo, BaseInterface):
+            self.config = self.classinfo.Config.model_json_schema()
+
+            if hasattr(self.classinfo, "Input") and issubclass(self.classinfo.Input, pydantic.BaseModel):
+                self.input = self.classinfo.Input.model_json_schema()
+
+            if hasattr(self.classinfo, "Output") and issubclass(self.classinfo.Output, pydantic.BaseModel):
+                self.input = self.classinfo.Output.model_json_schema()
+
+
+@app.get("/schema/", response_model=SchemaResponse)
+async def get_schema(classinfo: ImportString | None = evolver.util.fully_qualified_name(Evolver)) -> SchemaResponse:
+    return SchemaResponse(classinfo=classinfo)
 
 
 @app.get("/history/{name}")
