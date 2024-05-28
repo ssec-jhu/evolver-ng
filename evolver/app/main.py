@@ -12,9 +12,10 @@ from evolver.settings import app_settings
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup:
-    app.state.evolver = Evolver()
     if app_settings.LOAD_FROM_CONFIG_ON_STARTUP:
-        app.state.evolver.update_config(EvolverConfig.load(app_settings.CONFIG_FILE))
+        app.state.evolver.create(Evolver.Config.load(app_settings.CONFIG_FILE))
+    else:
+        app.state.evolver = Evolver.create()
     asyncio.create_task(evolver_async_loop())
     yield
     # Shutdown:
