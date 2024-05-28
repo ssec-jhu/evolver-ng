@@ -68,10 +68,7 @@ class TestEvolver:
 
     def test_config_correctness_from_conf(self, conf_with_driver):
         obj = Evolver.create(conf_with_driver)
-
-        # These should only differ by classinfo, in that ``classinfo`` keys in ``obj.config`` will be types whilst those
-        # in ``obj.descriptor.config`` will be str of their fqn. See Note in ``evolver.base.ConfigDescriptor.model_validate()``.
-        assert obj.config != obj.descriptor.config
+        assert obj.config == obj.descriptor.config
 
         assert obj.config_json == json.dumps(obj.descriptor.config, separators=(',', ':'))
         obj2 = Evolver.create(obj.config_json)
@@ -83,7 +80,7 @@ class TestEvolver:
     def test_empty_config_property_equivalence(self):
         obj1 = Evolver.create()
         obj2 = Evolver.Config()
-        assert obj1.config == obj2.model_dump()
+        assert obj1.config == obj2.model_dump(mode="json")
 
     def test_config_symmetry(self):
         obj1 = Evolver.create()

@@ -1,6 +1,5 @@
 from abc import ABC
 from collections import defaultdict
-import json
 import logging
 from pathlib import Path
 from typing import Annotated, Any, Dict
@@ -85,24 +84,23 @@ class ConfigDescriptor(_BaseConfig):
         # ``model_dump()`` will have their classinfo keys remain as their imported classes rather than a fqn str.
         # The issue with these no longer being models is that ``classinfo`` will just be a normal key and not an
         # ``ImportString``. Subsequent serialization will not be possible as it doesn't go via
-        # ``ImportString._Serialize()``. To address this, we convert to json and then back to a dict such that
+        # ``ImportString._Serialize()``. To address this, we always use ``model_dump(mode="json")`` such
         # ``classinfo`` has been correctly serialized. This is not ideal, nor performant, though the latter is not an
         # issue for this code base.
         # TODO: Rethink ConfigDescriptor.config type, as an ordinary dict doesn't ensure that its contents is
         #  serializable. The very point of the pydantic framework is to solve this issue.
 
         if isinstance(obj, type) and issubclass(obj, BaseInterface):
-            return super().model_validate(dict(classinfo=obj.fqn(), config=json.loads(obj.Config().model_dump_json())),
+            return super().model_validate(dict(classinfo=obj.fqn(), config=obj.Config().model_dump(mode="json")),
                                           *args,
                                           **kwargs)
         elif isinstance(obj, BaseConfig) and (classinfo := obj.__pydantic_parent_namespace__.get("__qualname__")):
             return super().model_validate(dict(classinfo=f"{obj.__module__}.{classinfo}",
-                                               config=json.loads(obj.model_dump_json())),
+                                               config=obj.model_dump(mode="json")),
                                           *args,
                                           **kwargs)
         elif isinstance(obj, BaseInterface):
-            return super().model_validate(dict(classinfo=obj.classinfo,
-                                               config=json.loads(obj.config_json)), *args, **kwargs)
+            return super().model_validate(dict(classinfo=obj.classinfo, config=obj.config), *args, **kwargs)
         return super().model_validate(obj, *args, **kwargs)
 
     def create(self,
@@ -238,7 +236,7 @@ class BaseInterface(ABC):
             Note: For convenience of converting back and forth from a ``ConfigDescriptor`` we return a ``dict`` rather
                   than an instance of ``BaseConfig``.
         """
-        return self.config_model.model_dump()
+        return self.config_model.model_dump(mode="json")
 
     @property
     def config_json(self) -> str:
