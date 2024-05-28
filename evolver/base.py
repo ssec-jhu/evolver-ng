@@ -8,6 +8,8 @@ import pydantic
 import pydantic_core
 import yaml
 
+import evolver.util
+
 
 def require_all_fields(cls):
     """ Decorate a model mutating it to one where all fields are required.
@@ -91,7 +93,8 @@ class ConfigDescriptor(_BaseConfig):
         #  serializable. The very point of the pydantic framework is to solve this issue.
 
         if isinstance(obj, type) and issubclass(obj, BaseInterface):
-            return super().model_validate(dict(classinfo=obj.fqn(), config=obj.Config().model_dump(mode="json")),
+            return super().model_validate(dict(classinfo=evolver.util.fully_qualified_name(obj),
+                                               config=obj.Config().model_dump(mode="json")),
                                           *args,
                                           **kwargs)
         elif isinstance(obj, BaseConfig) and (classinfo := obj.__pydantic_parent_namespace__.get("__qualname__")):
@@ -191,7 +194,6 @@ class BaseInterface(ABC):
         return cls(**dict(config))
 
     def __init__(self, *args, name: str = None, **kwargs):
-        # self.classinfo = self.__class__.fqn()
         self.name = name or self.__class__.__name__
         self.logger = None
         self._setup_logger()
@@ -225,10 +227,6 @@ class BaseInterface(ABC):
     def __get_pydantic_json_schema__(cls, *args, **kwargs):
         return cls.Config.__get_pydantic_json_schema__(*args, **kwargs)
 
-    @classmethod
-    def fqn(cls):
-        return f"{cls.__module__}.{cls.__qualname__}"
-
     @property
     def config(self) -> dict:
         """ Return a dict of Config populated from instance attributes.
@@ -254,7 +252,7 @@ class BaseInterface(ABC):
 
     @property
     def classinfo(self):
-        return self.__class__.fqn()
+        return evolver.util.fully_qualified_name(self.__class__)
 
 
 def init_and_set_vars_from_descriptors(obj, **non_config_kwargs):
