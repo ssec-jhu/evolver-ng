@@ -1,6 +1,6 @@
-import time
 from abc import abstractmethod
 from collections import defaultdict
+import time
 
 from evolver.base import BaseConfig, BaseInterface
 
@@ -22,8 +22,8 @@ class HistoryServer(History):
     class Config(History.Config):
         name: str = "HistoryServer"
 
-    def __init__(self, *args, history=defaultdict(list), **kwargs):
-        self.history = history
+    def __init__(self, *args, **kwargs):
+        self.history = defaultdict(list)
         super().__init__(*args, **kwargs)
 
     def put(self, name, data):

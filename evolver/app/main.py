@@ -5,7 +5,7 @@ from fastapi import FastAPI
 
 from evolver import __project__, __version__
 from evolver.base import require_all_fields
-from evolver.device import Evolver, EvolverConfig
+from evolver.device import Evolver
 from evolver.settings import app_settings
 
 
@@ -34,7 +34,7 @@ class EvolverConfigWithoutDefaults(Evolver.Config):
 @app.get("/")
 async def describe_evolver():
     return {
-        'config': app.state.evolver.config,
+        'config': app.state.evolver.config_model,
         'state': app.state.evolver.state,
         'last_read': app.state.evolver.last_read,
     }
@@ -72,7 +72,7 @@ async def healthz():
 async def evolver_async_loop():
     while True:
         app.state.evolver.loop_once()
-        await asyncio.sleep(app.state.evolver.config.interval)
+        await asyncio.sleep(app.state.evolver.interval)
 
 
 def start():

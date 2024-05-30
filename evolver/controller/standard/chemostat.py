@@ -35,7 +35,7 @@ class Chemostat(Controller):
         self._od_sensor = od_sensor
         self._pump = pump
         self._stirrer = stirrer
-        self.vials = vials or list(range(settings.NUMBER_OF_VIALS_PER_BOX))
+        self.vials = vials or list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
         self.window = window
         self.min_od = min_od
         self.start_delay = start_delay

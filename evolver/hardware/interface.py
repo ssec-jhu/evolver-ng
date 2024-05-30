@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
 from evolver.base import BaseConfig, BaseInterface
+from evolver.settings import settings
 
 
 class VialConfigBaseModel(BaseConfig):
@@ -15,8 +16,8 @@ class BaseCalibrator(BaseInterface):
     class Config(BaseConfig):
         calibfile: str = None
 
-    def __init__(self, *args, evovler=None, **kwargs):
-        self.evovler = evovler
+    def __init__(self, *args, evolver=None, **kwargs):
+        self.evolver = evolver
         super().__init__(*args, **kwargs)
 
     @property
@@ -39,7 +40,7 @@ class HardwareDriver(BaseInterface):
 
 class VialHardwareDriver(HardwareDriver):
     def __init__(self, *args, vials=None, **kwargs):
-        self.vials = vials if vials else list(range(16))
+        self.vials = vials if vials else list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
         super().__init__(*args, **kwargs)
 
 

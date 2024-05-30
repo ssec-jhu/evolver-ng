@@ -1,5 +1,4 @@
 from abc import ABC
-from collections import defaultdict
 import logging
 from pathlib import Path
 from typing import Annotated, Any, Dict
@@ -107,8 +106,8 @@ class ConfigDescriptor(_BaseConfig):
         return super().model_validate(obj, *args, **kwargs)
 
     def create(self,
-               update: Dict[str, Any] | None = defaultdict(),
-               non_config_kwargs: Dict[str, Any] | None = defaultdict(),
+               update: Dict[str, Any] | None = None,
+               non_config_kwargs: Dict[str, Any] | None = None,
                **kwargs):
         """ Create an instance of classinfo from a config.
 
@@ -123,7 +122,8 @@ class ConfigDescriptor(_BaseConfig):
         # Update config from kwargs.
         if update or kwargs:
             config = self.config.copy()
-            config.update(update)
+            if update:
+                config.update(update)
             config.update(kwargs)
         else:
             config = self.config
@@ -136,7 +136,8 @@ class ConfigDescriptor(_BaseConfig):
         config = self.classinfo.Config.model_validate(config)  # Note: we don't pass self due to update from kwargs.
 
         # Return an instance of classinfo.
-        return self.classinfo(**config.model_dump(), **non_config_kwargs)
+        return self.classinfo(**config.model_dump(), **non_config_kwargs) if non_config_kwargs else \
+            self.classinfo(**config.model_dump())
 
     @classmethod
     def load(cls, file_path: Path, encoding: str | None = None):
