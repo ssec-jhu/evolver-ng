@@ -1,15 +1,28 @@
 import asyncio
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from evolver.base import require_all_fields
 from evolver.device import Evolver, EvolverConfig
-from evolver.settings import settings
-from evolver.util import load_config_for_evolver, save_evolver_config
+from evolver.settings import app_settings
 from .. import __project__, __version__
 
 
-app = FastAPI()
-evolver = Evolver()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup:
+    app.state.evolver = Evolver()
+    if app_settings.LOAD_FROM_CONFIG_ON_STARTUP:
+        app.state.evolver.update_config(EvolverConfig.load(app_settings.CONFIG_FILE))
+    asyncio.create_task(evolver_async_loop())
+    yield
+    # Shutdown:
+    ...
+
+
+app = FastAPI(lifespan=lifespan)
+app.state.evolver = None
 
 
 @require_all_fields
@@ -20,33 +33,34 @@ class EvolverConfigWithoutDefaults(EvolverConfig):
 @app.get("/")
 async def describe_evolver():
     return {
-        'config': evolver.config,
-        'state': evolver.state,
-        'last_read': evolver.last_read,
+        'config': app.state.evolver.config,
+        'state': app.state.evolver.state,
+        'last_read': app.state.evolver.last_read,
     }
 
 
 @app.get('/state')
 async def get_state():
     return {
-        'state': evolver.state,
-        'last_read': evolver.last_read,
+        'state': app.state.evolver.state,
+        'last_read': app.state.evolver.last_read,
     }
 
 
 @app.post("/")
 async def update_evolver(config: EvolverConfigWithoutDefaults):
-    evolver.update_config(config)
-    save_evolver_config(config, settings.CONFIG_FILE)
+    app.state.evolver.update_config(config)
+    app.state.evolver.config.save(app_settings.CONFIG_FILE)
+
 
 @app.get('/schema')
 async def get_schema():
-    return evolver.schema
+    return app.state.evolver.schema
 
 
 @app.get('/history/{name}')
 async def get_history(name: str):
-    return evolver.history.get(name)
+    return app.state.evolver.history.get(name)
 
 
 @app.get("/healthz")
@@ -56,26 +70,16 @@ async def healthz():
 
 async def evolver_async_loop():
     while True:
-        evolver.loop_once()
-        await asyncio.sleep(evolver.config.interval)
-
-
-@app.on_event('startup')
-async def start_evolver_loop():
-    asyncio.create_task(evolver_async_loop())
-
-
-@app.on_event('startup')
-async def load_config():
-    load_config_for_evolver(evolver, settings.CONFIG_FILE)
+        app.state.evolver.loop_once()
+        await asyncio.sleep(app.state.evolver.config.interval)
 
 
 def start():
     import uvicorn
     uvicorn.run(
         app,
-        host=settings.HOST,
-        port=settings.PORT,
+        host=app_settings.HOST,
+        port=app_settings.PORT,
         log_level="info"
     )
 
