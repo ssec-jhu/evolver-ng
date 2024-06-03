@@ -67,6 +67,6 @@ def test_app_load_file(app_client):
         'file_test': HardwareDriverDescriptor(driver='evolver.hardware.demo.NoOpSensorDriver')
     })
     config.save(app_settings.CONFIG_FILE)
-    app.evolver.update_config(EvolverConfig.load(app_settings.CONFIG_FILE))
+    app.state.evolver.update_config(EvolverConfig.load(app_settings.CONFIG_FILE))
     client = TestClient(app)
     client.get('/').json()['config']['hardware']['file_test']['driver'] == 'evolver.hardware.demo.NoOpSensorDriver'

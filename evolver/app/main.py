@@ -12,9 +12,9 @@ from .. import __project__, __version__
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup:
-    app.evolver = Evolver()
+    app.state.evolver = Evolver()
     if app_settings.LOAD_FROM_CONFIG_ON_STARTUP:
-        app.evolver.update_config(EvolverConfig.load(app_settings.CONFIG_FILE))
+        app.state.evolver.update_config(EvolverConfig.load(app_settings.CONFIG_FILE))
     asyncio.create_task(evolver_async_loop())
     yield
     # Shutdown:
@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-app.evolver = None
+app.state.evolver = None
 
 
 @require_all_fields
@@ -33,34 +33,34 @@ class EvolverConfigWithoutDefaults(EvolverConfig):
 @app.get("/")
 async def describe_evolver():
     return {
-        'config': app.evolver.config,
-        'state': app.evolver.state,
-        'last_read': app.evolver.last_read,
+        'config': app.state.evolver.config,
+        'state': app.state.evolver.state,
+        'last_read': app.state.evolver.last_read,
     }
 
 
 @app.get('/state')
 async def get_state():
     return {
-        'state': app.evolver.state,
-        'last_read': app.evolver.last_read,
+        'state': app.state.evolver.state,
+        'last_read': app.state.evolver.last_read,
     }
 
 
 @app.post("/")
 async def update_evolver(config: EvolverConfigWithoutDefaults):
-    app.evolver.update_config(config)
-    app.evolver.config.save(app_settings.CONFIG_FILE)
+    app.state.evolver.update_config(config)
+    app.state.evolver.config.save(app_settings.CONFIG_FILE)
 
 
 @app.get('/schema')
 async def get_schema():
-    return app.evolver.schema
+    return app.state.evolver.schema
 
 
 @app.get('/history/{name}')
 async def get_history(name: str):
-    return app.evolver.history.get(name)
+    return app.state.evolver.history.get(name)
 
 
 @app.get("/healthz")
@@ -70,8 +70,8 @@ async def healthz():
 
 async def evolver_async_loop():
     while True:
-        app.evolver.loop_once()
-        await asyncio.sleep(app.evolver.config.interval)
+        app.state.evolver.loop_once()
+        await asyncio.sleep(app.state.evolver.config.interval)
 
 
 def start():

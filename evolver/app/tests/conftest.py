@@ -6,7 +6,7 @@ from evolver.device import EvolverConfig
 from evolver.settings import app_settings
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture
 def app_client(tmp_path, monkeypatch):
     monkeypatch.setattr(app_settings, "CONFIG_FILE", tmp_path / app_settings.CONFIG_FILE)
 
