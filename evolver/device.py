@@ -28,25 +28,9 @@ class Evolver(BaseInterface):
 
     def __init__(self,
                  *args,
-                 hardware: dict[str, HardwareDriver | ConfigDescriptor] = None,
-                 controllers: list[Controller | ConfigDescriptor] = None,
-                 vials: list = None,
-                 serial: Connection | ConfigDescriptor = DEFAULT_SERIAL(),
-                 history: HistoryServer | ConfigDescriptor = DEFAULT_HISTORY(),
                  last_read=defaultdict(lambda: int(-1)),
-                 enable_control: bool = True,
-                 enable_commit: bool = True,
-                 interval: int = settings.DEFAULT_LOOP_INTERVAL,
                  **kwargs):
-        self.hardware = hardware if hardware is not None else {}
         self.last_read = last_read
-        self.controllers = controllers if controllers is not None else []
-        self.vials = vials if vials is not None else list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
-        self.serial = serial
-        self.history = history
-        self.enable_control = enable_control
-        self.enable_commit = enable_commit
-        self.interval = interval
 
         super().__init__(*args, evolver=self, **kwargs)
 

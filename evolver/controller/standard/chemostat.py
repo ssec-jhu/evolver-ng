@@ -6,41 +6,25 @@ from pydantic import Field
 from evolver.base import ConfigDescriptor
 from evolver.controller.interface import Controller
 from evolver.hardware.interface import VialConfigBaseModel, HardwareDriver
-from evolver.settings import settings
 
 
 class Chemostat(Controller):
     class Config(VialConfigBaseModel):
-        od_sensor: str = Field(description="name of OD sensor to use")
-        pump: str = Field(description="name of pump device to use")
-        stirrer: str = Field(description="name of stirrer device to use")
+        od_sensor: HardwareDriver | ConfigDescriptor | str = Field(description="name of OD sensor to use")
+        pump: HardwareDriver | ConfigDescriptor | str = Field(description="name of pump device to use")
+        stirrer: HardwareDriver | ConfigDescriptor | str = Field(description="name of stirrer device to use")
         window: int = Field(7, description="number of OD measurements to collect prior to start")
         min_od: float = Field(0, description="OD at which to start chemostat dilutions")
         start_delay: int = Field(0, description="Time (in hours) after which to start dilutions")
         flow_rate: float = Field(0, description="Flow rate for dilutions")
         stir_rate: float = Field(8, description="Stir rate")
 
-    def __init__(self,
-                 od_sensor: HardwareDriver | ConfigDescriptor | str,
-                 pump: HardwareDriver | ConfigDescriptor | str,
-                 stirrer: HardwareDriver | ConfigDescriptor | str,
-                 *args,
-                 vials: list = None,  # TODO: Derive this cls from a VialCentricController and add this there (#30).
-                 window: int = 7,
-                 min_od: float = 0,
-                 start_delay: int = 0,
-                 flow_rate: float = 0,
-                 stir_rate: float = 8,
-                 **kwargs):
-        self._od_sensor = od_sensor
-        self._pump = pump
-        self._stirrer = stirrer
-        self.vials = vials or list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
-        self.window = window
-        self.min_od = min_od
-        self.start_delay = start_delay
-        self.flow_rate = flow_rate
-        self.stir_rate = stir_rate
+    def __init__(self, *args, **kwargs):
+        self._od_sensor = None
+        self._pump = None
+        self._stirrer = None
+
+        super().__init__(*args, **kwargs)
 
         # buffer could come from history as well
         self.od_buffer = defaultdict(lambda: deque(maxlen=self.window))
@@ -50,19 +34,38 @@ class Chemostat(Controller):
         # come from history similarly
         self.start_time = time.time()
 
-        super().__init__(*args, **kwargs)
-
     @property
     def od_sensor(self):
         return self.evolver.hardware.get(self._od_sensor) if isinstance(self._od_sensor, str) else self._od_sensor
+
+    @od_sensor.setter
+    def od_sensor(self, value):
+        if self._od_sensor is None:
+            self._od_sensor = value
+        else:
+            raise AttributeError()
 
     @property
     def pump(self):
         return self.evolver.hardware.get(self._pump) if isinstance(self._pump, str) else self._pump
 
+    @pump.setter
+    def pump(self, value):
+        if self._pump is None:
+            self._pump = value
+        else:
+            raise AttributeError()
+
     @property
     def stirrer(self):
         return self.evolver.hardware.get(self._stirrer) if isinstance(self._stirrer, str) else self._stirrer
+
+    @stirrer.setter
+    def stirrer(self, value):
+        if self._stirrer is None:
+            self._stirrer = value
+        else:
+            raise AttributeError()
 
     def control(self, *args, **kwargs):
         od_values = self.od_sensor.get()

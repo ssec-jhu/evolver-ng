@@ -5,7 +5,7 @@ from evolver.settings import settings
 
 
 class VialConfigBaseModel(BaseConfig):
-    vials: list[int] | None = None
+    vials: list[int] | None = list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
 
 
 class VialBaseModel(BaseConfig):
@@ -39,8 +39,8 @@ class HardwareDriver(BaseInterface):
 
 
 class VialHardwareDriver(HardwareDriver):
-    def __init__(self, *args, vials=None, **kwargs):
-        self.vials = vials if vials else list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
+    def __init__(self, *args, **kwargs):
+        # self.vials = vials if vials else list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
         super().__init__(*args, **kwargs)
 
 

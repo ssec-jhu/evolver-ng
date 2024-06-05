@@ -199,11 +199,43 @@ class BaseInterface(ABC):
         self.logger = None
         self._setup_logger()
 
+        self.init_vars(kwargs)  # Don't unpack so that this can consume items from kwargs.
+
+        self.post_init_vars(*args, **kwargs)
+
         # Automatically walk over all vars and instantiate any that are ConfigDescriptors.
         # Note: To take advantage of this being here, and not having to explicitly call in child classes, the child's
         # ``__init__`` must call ``super().__init__()`` last, not first. If this instantiation order is not desirable,
         # simply call ``self.init_descriptors()`` explicitly from the child's ``__init__``.
         self.init_descriptors(**kwargs)
+
+    def post_init_vars(self, *args, **kwargs):
+        """ A hook to override and perform additional initialization after instance attrs are assigned but before
+            any ``ConfigDescriptor`` are converted to ``classinfo`` objects. I.e., after ``self.init_vars()`` and before
+            ``self.init_descriptors()``.
+        """
+        ...
+
+    def init_vars(self, kwargs):
+        """ Instance attributes specified by ``self.Config`` are automatically unpacked from kwargs, as passed into
+            ``self.__init__``, and assigned.
+        """
+        for k, v in self.Config.model_fields.items():
+            # Handle kwargs explicitly passed to ``__init__`.
+            if k in kwargs:
+                # Note: don't validate field, if validation is required, use ``cls.create()`` instead of ``cls()``.
+                setattr(self, k, kwargs[k])
+                # Consume kwarg similarly as python would such that post return, ``__init__(**kwargs)`` represents all
+                # non-explicitly specified key word arguments as it normally would. This avoids interfering with
+                # superfluous kwargs getting passed to other methods called from ``__init__``, e.g.,
+                # ``init_descriptors``.
+                del kwargs[k]
+            else:
+                if v.is_required():
+                    raise KeyError(f"The field '{k}' is required but was missing upon instantiation.")
+                else:
+                    # Handle defaults.
+                    setattr(self, k, v.get_default(call_default_factory=True))
 
     def init_descriptors(self, **non_config_kwargs):
         """ Automatically walk over all vars and instantiate any that are ConfigDescriptors. """
