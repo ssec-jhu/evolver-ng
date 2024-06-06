@@ -6,10 +6,9 @@ from evolver.settings import settings
 
 
 class Connection(BaseInterface):
-    """ Interface for a connection protocol, abstracting and wrapping lower-level communication over self.backend. """
+    """Interface for a connection protocol, abstracting and wrapping lower-level communication over self.backend."""
 
-    class Config(BaseConfig):
-        ...
+    class Config(BaseConfig): ...
 
     backend = None  # Backend module/library to use.
 
@@ -19,30 +18,30 @@ class Connection(BaseInterface):
         super().__init__(*args, **kwargs)
 
     @abstractmethod
-    def _open(self,  *args, **kwargs):
-        """ Open a connection using self.backend and return connection instance to be assigned to self.conn by
-            self.open(). See self.open() & self.__enter__().
+    def _open(self, *args, **kwargs):
+        """Open a connection using self.backend and return connection instance to be assigned to self.conn by
+        self.open(). See self.open() & self.__enter__().
         """
         ...
 
     @abstractmethod
     def _close(self, *args, **kwargs):
-        """ Close the connection using either self.backend or self.conn. See self.close() & self.__exit__(). """
+        """Close the connection using either self.backend or self.conn. See self.close() & self.__exit__()."""
         ...
 
     @abstractmethod
     def read(self, *args, **kwargs):
-        """ Implement read protocol. """
+        """Implement read protocol."""
         ...
 
     @abstractmethod
     def write(self, *args, **kwargs):
-        """ Implement write protocol. """
+        """Implement write protocol."""
         ...
 
     @abstractmethod
     def communicate(self, *args, **kwargs):
-        """ Implement write/read protocol all in one. """
+        """Implement write/read protocol all in one."""
         ...
 
     def is_open(self):

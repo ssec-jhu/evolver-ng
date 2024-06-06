@@ -1,5 +1,5 @@
-from collections import defaultdict
 import time
+from collections import defaultdict
 
 from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor
 from evolver.connection.interface import Connection
@@ -8,7 +8,6 @@ from evolver.hardware.interface import EffectorDriver, HardwareDriver, SensorDri
 from evolver.history import HistoryServer
 from evolver.serial import EvolverSerialUART
 from evolver.settings import settings
-
 
 DEFAULT_SERIAL = EvolverSerialUART
 DEFAULT_HISTORY = HistoryServer
@@ -21,7 +20,7 @@ class Evolver(BaseInterface):
         hardware: dict[str, ConfigDescriptor | HardwareDriver] = {}
         controllers: list[ConfigDescriptor | Controller] = []
         serial: ConfigDescriptor | Connection = ConfigDescriptor.model_validate(DEFAULT_SERIAL)
-        history:  ConfigDescriptor | HistoryServer = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
+        history: ConfigDescriptor | HistoryServer = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
         enable_control: bool = True
         enable_commit: bool = True
         interval: int = settings.DEFAULT_LOOP_INTERVAL
@@ -35,33 +34,33 @@ class Evolver(BaseInterface):
 
     @property
     def sensors(self):
-        return {k: v for k,v in self.hardware.items() if isinstance(v, SensorDriver)}
+        return {k: v for k, v in self.hardware.items() if isinstance(v, SensorDriver)}
 
     @property
     def effectors(self):
-        return {k: v for k,v in self.hardware.items() if isinstance(v, EffectorDriver)}
+        return {k: v for k, v in self.hardware.items() if isinstance(v, EffectorDriver)}
 
     @property
     def calibration_status(self):
-        return {name: device.calibrator.status for name,device in self.hardware.items()}
+        return {name: device.calibrator.status for name, device in self.hardware.items()}
 
     @property
     def state(self):
-        return {name: device.get() for name,device in self.sensors.items()}
+        return {name: device.get() for name, device in self.sensors.items()}
 
     @property
     def schema(self):
         hardware_schemas = []
         for n, hw in self.hardware.items():
-            s = {'name': n, 'kind': str(type(hw)),'config': hw.Config.model_json_schema()}
+            s = {"name": n, "kind": str(type(hw)), "config": hw.Config.model_json_schema()}
             if isinstance(hw, SensorDriver):
-                s['output'] = hw.Output.model_json_schema()
+                s["output"] = hw.Output.model_json_schema()
             if isinstance(hw, EffectorDriver):
-                s['input'] = hw.Input.model_json_schema()
+                s["input"] = hw.Input.model_json_schema()
             hardware_schemas.append(s)
         return {
-            'hardware': hardware_schemas,
-            'controllers': [{'kind': str(type(a)), 'config': a.Config.model_json_schema()} for a in self.controllers],
+            "hardware": hardware_schemas,
+            "controllers": [{"kind": str(type(a)), "config": a.Config.model_json_schema()} for a in self.controllers],
         }
 
     def read_state(self):

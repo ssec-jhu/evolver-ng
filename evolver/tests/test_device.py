@@ -5,28 +5,28 @@ import pytest
 import evolver.base
 from evolver.connection.interface import Connection
 from evolver.controller.interface import Controller
-from evolver.device import Evolver, DEFAULT_SERIAL, DEFAULT_HISTORY
-from evolver.hardware.interface import HardwareDriver
+from evolver.device import DEFAULT_HISTORY, DEFAULT_SERIAL, Evolver
 from evolver.hardware.demo import NoOpSensorDriver
+from evolver.hardware.interface import HardwareDriver
 from evolver.history import History
 
 
 @pytest.fixture
 def conf_with_driver():
     return {
-        'name': "evolver",
-        'vials': [0,1,2,3],
-        'hardware': {
-            'testsensor': {
-                'classinfo': 'evolver.hardware.demo.NoOpSensorDriver',
-                'config': {'calibrator': {'classinfo': 'evolver.hardware.demo.NoOpCalibrator', 'config': {}}}
+        "name": "evolver",
+        "vials": [0, 1, 2, 3],
+        "hardware": {
+            "testsensor": {
+                "classinfo": "evolver.hardware.demo.NoOpSensorDriver",
+                "config": {"calibrator": {"classinfo": "evolver.hardware.demo.NoOpCalibrator", "config": {}}},
             },
-            'testeffector': {'classinfo': 'evolver.hardware.demo.NoOpEffectorDriver', 'config': {}},
+            "testeffector": {"classinfo": "evolver.hardware.demo.NoOpEffectorDriver", "config": {}},
         },
-        'controllers': [
-            {'classinfo': 'evolver.controller.demo.NoOpController', 'config': {}},
+        "controllers": [
+            {"classinfo": "evolver.controller.demo.NoOpController", "config": {}},
         ],
-        'serial': {'classinfo': 'evolver.serial.EvolverSerialUARTEmulator'},
+        "serial": {"classinfo": "evolver.serial.EvolverSerialUARTEmulator"},
     }
 
 
@@ -70,7 +70,7 @@ class TestEvolver:
         obj = Evolver.create(conf_with_driver)
         assert obj.config == obj.descriptor.config
 
-        assert obj.config_json == json.dumps(obj.descriptor.config, separators=(',', ':'))
+        assert obj.config_json == json.dumps(obj.descriptor.config, separators=(",", ":"))
         obj2 = Evolver.create(obj.config_json)
         # Note: We can't just test obj.config_json == conf_with_driver because the latter contains empty sub-configs
         # and the former will contain sub-configs with default field values.
@@ -93,18 +93,18 @@ class TestEvolver:
         assert obj1.config == obj2.config
 
     def test_with_driver(self, demo_evolver):
-        assert isinstance(demo_evolver.hardware['testsensor'], NoOpSensorDriver)
+        assert isinstance(demo_evolver.hardware["testsensor"], NoOpSensorDriver)
 
-    @pytest.mark.parametrize('method', ['read_state', 'loop_once'])
+    @pytest.mark.parametrize("method", ["read_state", "loop_once"])
     def test_read_and_get_state(self, demo_evolver, method):
         state = demo_evolver.state
-        assert state['testsensor'] == {}
+        assert state["testsensor"] == {}
         getattr(demo_evolver, method)()
         state = demo_evolver.state
         for vial in demo_evolver.vials:
-            assert state['testsensor'][vial] == NoOpSensorDriver.Output(vial=vial, raw=1, value=2)
+            assert state["testsensor"][vial] == NoOpSensorDriver.Output(vial=vial, raw=1, value=2)
 
-    @pytest.mark.parametrize('enable_control', [True, False])
+    @pytest.mark.parametrize("enable_control", [True, False])
     def test_controller_control_in_loop_if_configured(self, demo_evolver, enable_control):
         assert demo_evolver.controllers[0].ncalls == 0
         demo_evolver.enable_control = enable_control
@@ -112,10 +112,10 @@ class TestEvolver:
         assert demo_evolver.controllers[0].ncalls == (1 if enable_control else 0)
 
     def test_remove_driver(self, demo_evolver, conf_with_driver):
-        assert 'testeffector' in demo_evolver.hardware
-        del(conf_with_driver['hardware']['testeffector'])
+        assert "testeffector" in demo_evolver.hardware
+        del conf_with_driver["hardware"]["testeffector"]
         obj = Evolver.create(conf_with_driver)
-        assert 'testeffector' not in obj.hardware
+        assert "testeffector" not in obj.hardware
 
     def test_schema(self):
         Evolver.Config.model_json_schema()

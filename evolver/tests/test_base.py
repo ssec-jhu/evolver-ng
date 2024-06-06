@@ -15,8 +15,7 @@ class ConcreteInterface(evolver.base.BaseInterface):
 
 @pytest.fixture()
 def mock_descriptor():
-    return evolver.base.ConfigDescriptor(classinfo="evolver.tests.test_base.ConcreteInterface",
-                                         config=dict(a=11, b=22))
+    return evolver.base.ConfigDescriptor(classinfo="evolver.tests.test_base.ConcreteInterface", config=dict(a=11, b=22))
 
 
 @pytest.fixture()
@@ -121,8 +120,7 @@ class TestBaseInterface:
         assert obj.config_model == ConcreteInterface.Config()
 
     def test_create_descriptor_cls_missmatch(self):
-        descriptor = evolver.base.ConfigDescriptor(classinfo=int,
-                                                   config=ConcreteInterface.Config().model_dump())
+        descriptor = evolver.base.ConfigDescriptor(classinfo=int, config=ConcreteInterface.Config().model_dump())
         with pytest.raises(TypeError, match="is not compatible with this class"):
             ConcreteInterface.create(descriptor)
 
@@ -137,22 +135,27 @@ class TestBaseInterface:
             interface: ConcreteInterface
 
         assert Foo.model_json_schema() == {
-            '$defs': {'Config': {'properties': {'name': {'default': 'TestDevice',
-                                                         'title': 'Name',
-                                                         'type': 'string'},
-                                                'a': {'default': 2, 'title': 'A', 'type': 'integer'},
-                                                'b': {'default': 3, 'title': 'B', 'type': 'integer'}},
-                                 'title': 'Config',
-                                 'type': 'object'}},
-            'properties': {'interface': {'$ref': '#/$defs/Config'}},
-            'required': ['interface'],
-            'title': 'Foo',
-            'type': 'object'}
+            "$defs": {
+                "Config": {
+                    "properties": {
+                        "name": {"default": "TestDevice", "title": "Name", "type": "string"},
+                        "a": {"default": 2, "title": "A", "type": "integer"},
+                        "b": {"default": 3, "title": "B", "type": "integer"},
+                    },
+                    "title": "Config",
+                    "type": "object",
+                }
+            },
+            "properties": {"interface": {"$ref": "#/$defs/Config"}},
+            "required": ["interface"],
+            "title": "Foo",
+            "type": "object",
+        }
 
         obj = Foo(interface=ConcreteInterface.Config())
         assert obj.interface.a == 2
         assert obj.interface.b == 3
-        assert obj.model_dump() == {'interface': {'name': 'TestDevice', 'a': 2, 'b': 3}}
+        assert obj.model_dump() == {"interface": {"name": "TestDevice", "a": 2, "b": 3}}
 
     def test_auto_config(self):
         obj = ConcreteInterface()
@@ -205,9 +208,7 @@ class TestConfigDescriptor:
         assert obj.a == 2
         assert obj.b == 3
 
-    @pytest.mark.parametrize("kwargs", (dict(a=101),
-                                        dict(update=dict(a=101)),
-                                        dict(update=dict(a=102), a=101)))
+    @pytest.mark.parametrize("kwargs", (dict(a=101), dict(update=dict(a=101)), dict(update=dict(a=102), a=101)))
     def test_create_with_overrides(self, mock_descriptor, kwargs):
         obj = mock_descriptor.create(**kwargs)
         assert obj.a == 101
@@ -246,7 +247,12 @@ class TestConfigDescriptor:
         assert isinstance(obj.descriptor.classinfo, type)
         assert isinstance(obj.descriptor.model_dump()["classinfo"], type)
         assert isinstance(json.loads(obj.descriptor.model_dump_json())["classinfo"], str)
-        assert isinstance(evolver.base.ConfigDescriptor(classinfo=json.loads(obj.descriptor.model_dump_json())["classinfo"]).classinfo, type)
+        assert isinstance(
+            evolver.base.ConfigDescriptor(
+                classinfo=json.loads(obj.descriptor.model_dump_json())["classinfo"]
+            ).classinfo,
+            type,
+        )
 
 
 def test_require_all_fields():
@@ -256,8 +262,7 @@ def test_require_all_fields():
     ConcreteInterface.Config(a=1)
 
     @evolver.base.require_all_fields
-    class ConfigWithoutDefaults(ConcreteInterface.Config):
-        ...
+    class ConfigWithoutDefaults(ConcreteInterface.Config): ...
 
     for field in ConfigWithoutDefaults.model_fields.values():
         assert field.is_required()
