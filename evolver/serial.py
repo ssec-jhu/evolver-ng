@@ -86,7 +86,7 @@ class PySerialEmulator:
     def readline(self):
         if mapped_response := self.raw_response_map.get(self._data_raw):
             return mapped_response
-        if not self._data or self._data.addr.startswith('X'):
+        if not self._data or self._data.addr.startswith("X"):
             return b"badresponse"
         data = self._data.model_copy()
         data.kind = "e"
