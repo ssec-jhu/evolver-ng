@@ -12,11 +12,6 @@ class ConcreteInterface(evolver.base.BaseInterface):
         a: int = 2
         b: int = 3
 
-    def __init__(self, a, b, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.a = a
-        self.b = b
-
 
 @pytest.fixture()
 def mock_descriptor():
@@ -158,6 +153,45 @@ class TestBaseInterface:
         assert obj.interface.a == 2
         assert obj.interface.b == 3
         assert obj.model_dump() == {'interface': {'name': 'TestDevice', 'a': 2, 'b': 3}}
+
+    def test_auto_config(self):
+        obj = ConcreteInterface()
+        assert obj.a == 2
+        assert obj.b == 3
+
+        obj = ConcreteInterface(a=4, b=5)
+        assert obj.a == 4
+        assert obj.b == 5
+
+    def test_auto_config_off(self):
+        obj = ConcreteInterface(auto_config=False)
+        assert not hasattr(obj, "a")
+        assert not hasattr(obj, "b")
+
+    def test_auto_config_required_field_exception(self):
+        class MyClass(ConcreteInterface):
+            class Config(ConcreteInterface.Config):
+                c: str
+
+        with pytest.raises(KeyError, match="required but was missing upon instantiation"):
+            MyClass()
+
+    def test_auto_config_with_init_params(self):
+        class MyClass(ConcreteInterface):
+            class Config(ConcreteInterface.Config):
+                c: str = "yo!"
+
+            def __init__(self, *args, a=10, b=11, c="yep", **kwargs):
+                self.a = a
+                self.b = b
+                self._c = c
+                super().__init__(*args, auto_config_ignore_fields=("c",), *kwargs)
+
+        obj = MyClass()
+        assert obj.a == 10
+        assert obj.b == 11
+        assert obj._c == "yep"
+        assert not hasattr(obj, "c")
 
 
 class TestConfigDescriptor:

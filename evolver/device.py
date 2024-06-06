@@ -18,10 +18,10 @@ class Evolver(BaseInterface):
     class Config(BaseConfig):
         name: str = "Evolver"
         vials: list = list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
-        hardware: dict[str, ConfigDescriptor] = {}
-        controllers: list[ConfigDescriptor] = []
-        serial: ConfigDescriptor = ConfigDescriptor.model_validate(DEFAULT_SERIAL)
-        history:  ConfigDescriptor = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
+        hardware: dict[str, ConfigDescriptor | HardwareDriver] = {}
+        controllers: list[ConfigDescriptor | Controller] = []
+        serial: ConfigDescriptor | Connection = ConfigDescriptor.model_validate(DEFAULT_SERIAL)
+        history:  ConfigDescriptor | HistoryServer = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
         enable_control: bool = True
         enable_commit: bool = True
         interval: int = settings.DEFAULT_LOOP_INTERVAL

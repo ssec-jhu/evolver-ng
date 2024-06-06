@@ -39,9 +39,8 @@ class HardwareDriver(BaseInterface):
 
 
 class VialHardwareDriver(HardwareDriver):
-    def __init__(self, *args, **kwargs):
-        # self.vials = vials if vials else list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
-        super().__init__(*args, **kwargs)
+    class Config(VialConfigBaseModel):
+        ...
 
 
 class SensorDriver(VialHardwareDriver):

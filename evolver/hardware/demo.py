@@ -7,11 +7,6 @@ class NoOpSensorDriver(SensorDriver):
         echo_raw: int = 1
         echo_val: int = 2
 
-    def __init__(self, *args, echo_raw: int = 1, echo_val: int = 2, **kwargs):
-        self.echo_raw = echo_raw
-        self.echo_val = echo_val
-        super().__init__(*args, **kwargs)
-
     def read(self):
         self.outputs = {
             i: self.Output(vial=i, raw=self.echo_raw, value=self.echo_val)

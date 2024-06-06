@@ -5,7 +5,7 @@ import pytest
 import evolver.base
 from evolver.connection.interface import Connection
 from evolver.controller.interface import Controller
-from evolver.device import Evolver
+from evolver.device import Evolver, DEFAULT_SERIAL, DEFAULT_HISTORY
 from evolver.hardware.interface import HardwareDriver
 from evolver.hardware.demo import NoOpSensorDriver
 from evolver.history import History
@@ -119,3 +119,10 @@ class TestEvolver:
 
     def test_schema(self):
         Evolver.Config.model_json_schema()
+
+    def test_non_descriptor_config_field(self):
+        obj = Evolver(hardware={"a": NoOpSensorDriver()}, serial=DEFAULT_SERIAL(), history=DEFAULT_HISTORY())
+        assert len(obj.hardware) == 1
+        assert isinstance(obj.hardware["a"], NoOpSensorDriver)
+        assert isinstance(obj.serial, DEFAULT_SERIAL)
+        assert isinstance(obj.history, DEFAULT_HISTORY)

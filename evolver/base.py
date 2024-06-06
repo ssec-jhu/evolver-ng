@@ -194,12 +194,19 @@ class BaseInterface(ABC):
         # manually "dump" to dict using the following.
         return cls(**dict(config))
 
-    def __init__(self, *args, name: str = None, **kwargs):
+    def __init__(self,
+                 *args,
+                 name: str = None,
+                 auto_config=True,
+                 auto_config_ignore_fields=None,
+                 **kwargs):
         self.name = name or self.__class__.__name__
         self.logger = None
         self._setup_logger()
 
-        self.init_vars(kwargs)  # Don't unpack so that this can consume items from kwargs.
+        if auto_config:
+            # Don't unpack so that this can consume items from kwargs.
+            self.init_vars(kwargs, auto_config_ignore_fields=auto_config_ignore_fields)
 
         self.post_init_vars(*args, **kwargs)
 
@@ -216,11 +223,18 @@ class BaseInterface(ABC):
         """
         ...
 
-    def init_vars(self, kwargs):
+    def init_vars(self, kwargs, auto_config_ignore_fields=None):
         """ Instance attributes specified by ``self.Config`` are automatically unpacked from kwargs, as passed into
             ``self.__init__``, and assigned.
         """
+        already_initialized_fields = vars(self)
+        auto_config_ignore_fields = auto_config_ignore_fields if auto_config_ignore_fields is not None else []
+
         for k, v in self.Config.model_fields.items():
+            # Ignore those already initialized.
+            if k in auto_config_ignore_fields or k in already_initialized_fields:
+                continue
+
             # Handle kwargs explicitly passed to ``__init__`.
             if k in kwargs:
                 # Note: don't validate field, if validation is required, use ``cls.create()`` instead of ``cls()``.

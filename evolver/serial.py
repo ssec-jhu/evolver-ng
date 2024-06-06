@@ -26,12 +26,6 @@ class EvolverSerialUART(Connection):
         baudrate: int = 9600
         timeout: float = 1
 
-    def __init__(self, *args, port: str = '/dev/ttyAMA0', baudrate: int = 9600, timeout: float = 1, **kwargs):
-        self.port = port
-        self.baudrate = baudrate
-        self.timeout = timeout
-        super().__init__(*args, **kwargs)
-
     def _open(self):
         return self.backend.Serial(port=self.port, baudrate=self.baudrate, timeout=self.timeout)
 
