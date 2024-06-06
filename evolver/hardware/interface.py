@@ -1,21 +1,24 @@
-import pydantic
-from abc import ABC, abstractmethod
+from abc import abstractmethod
+
+from evolver.base import BaseConfig, BaseInterface
+from evolver.settings import settings
 
 
-class VialConfigBaseModel(pydantic.BaseModel):
-    vials: list[int] | None = None
+class VialConfigBaseModel(BaseConfig):
+    vials: list[int] | None = list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
 
 
-class VialBaseModel(pydantic.BaseModel):
+class VialBaseModel(BaseConfig):
     vial: int
 
 
-class BaseCalibrator(ABC):
-    class Config(pydantic.BaseModel):
+class BaseCalibrator(BaseInterface):
+    class Config(BaseConfig):
         calibfile: str = None
 
-    def __init__(self, evovler = None, config: Config = Config()):
-        self.config = config
+    def __init__(self, *args, evolver=None, **kwargs):
+        self.evolver = evolver
+        super().__init__(*args, **kwargs)
 
     @property
     @abstractmethod
@@ -23,34 +26,27 @@ class BaseCalibrator(ABC):
         pass
 
 
-class HardwareDriver(ABC):
-    class Config(pydantic.BaseModel):
+class HardwareDriver(BaseInterface):
+    class Config(BaseConfig):
         pass
     calibrator = None
 
-    def __init__(self, evolver, config = None, calibrator = None):
+    def __init__(self, *args, evolver=None, calibrator=None, **kwargs):
         self.evolver = evolver
-        self.reconfigure(config or self.Config())
         if calibrator:
             self.calibrator = calibrator
-
-    def reconfigure(self, config):
-        self.config = config
+        super().__init__(*args, **kwargs)
 
 
 class VialHardwareDriver(HardwareDriver):
-    def reconfigure(self, config):
-        super().reconfigure(config)
-        if config.vials is None:
-            config.vials = self.evolver.config.vials
-        else:
-            if not set(config.vials).issubset(self.evolver.all_vials):
-                raise ValueError('invalid vials found in config')
+    class Config(VialConfigBaseModel):
+        ...
 
 
 class SensorDriver(VialHardwareDriver):
     class Config(VialConfigBaseModel):
         pass
+
     class Output(VialBaseModel):
         raw: int
         value: float
@@ -67,6 +63,7 @@ class SensorDriver(VialHardwareDriver):
 class EffectorDriver(VialHardwareDriver):
     class Config(VialConfigBaseModel):
         pass
+
     class Input(VialBaseModel):
         value: float
     proposal: dict[int, Input] = {}

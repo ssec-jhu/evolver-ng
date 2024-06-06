@@ -1,84 +1,34 @@
+from collections import defaultdict
 import time
-import pydantic
-from typing import Annotated
 
-from evolver.base import BaseConfig
-from evolver.hardware.interface import SensorDriver, EffectorDriver
-from evolver.serial import EvolverSerialUART
+from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor
+from evolver.connection.interface import Connection
+from evolver.controller.interface import Controller
+from evolver.hardware.interface import EffectorDriver, HardwareDriver, SensorDriver
 from evolver.history import HistoryServer
+from evolver.serial import EvolverSerialUART
+from evolver.settings import settings
 
 
 DEFAULT_SERIAL = EvolverSerialUART
 DEFAULT_HISTORY = HistoryServer
-# pydantics import string alone does not generate a schema, which breaks openapi
-# docs. We wrap it to set schema explicitly.
-ImportString = Annotated[
-    pydantic.ImportString, pydantic.WithJsonSchema({'type': 'string', 'description': 'fully qualified class name'})
-]
 
 
-class ControllerDescriptor(pydantic.BaseModel):
-    driver: ImportString
-    config: dict = {}
+class Evolver(BaseInterface):
+    class Config(BaseConfig):
+        name: str = "Evolver"
+        vials: list = list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
+        hardware: dict[str, ConfigDescriptor | HardwareDriver] = {}
+        controllers: list[ConfigDescriptor | Controller] = []
+        serial: ConfigDescriptor | Connection = ConfigDescriptor.model_validate(DEFAULT_SERIAL)
+        history:  ConfigDescriptor | HistoryServer = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
+        enable_control: bool = True
+        enable_commit: bool = True
+        interval: int = settings.DEFAULT_LOOP_INTERVAL
 
-    def driver_from_descriptor(self, evolver):
-        conf = self.driver.Config.model_validate(self.config)
-        return self.driver(evolver, conf)
-
-
-class HardwareDriverDescriptor(ControllerDescriptor):
-    calibrator: ControllerDescriptor|None = None
-
-
-class EvolverConfig(BaseConfig):
-    name: str = "Evolver"
-    vials: list = list(range(16))
-    hardware: dict[str, HardwareDriverDescriptor] = {}
-    controllers: list[ControllerDescriptor] = []
-    serial: ControllerDescriptor = ControllerDescriptor(driver=DEFAULT_SERIAL)
-    history: ControllerDescriptor = ControllerDescriptor(driver=DEFAULT_HISTORY)
-    enable_control: bool = True
-    enable_commit: bool = True
-    interval: int = 20
-
-
-class Evolver:
-    def __init__(self, config: EvolverConfig = EvolverConfig()):
-        self.hardware = {}
-        self.last_read = {}
-        self.controllers = []
-        self.update_config(config)
-
-    def update_config(self, config: EvolverConfig):
-        self.config = config
-        for name, driver in config.hardware.items():
-            self.setup_driver(name, driver)
-        for name in list(self.hardware.keys()):
-            if name not in config.hardware.keys():
-                del(self.hardware[name])
-                del(self.last_read[name])
-        self.controllers = []
-        for controller in config.controllers:
-            self.setup_controller(controller)
-        if config.serial is not None:
-            self.serial = config.serial.driver_from_descriptor(self)
-        else:
-            self.serial = DEFAULT_SERIAL()
-        if config.history is not None:
-            self.history = config.history.driver_from_descriptor(self)
-        else:
-            self.history = DEFAULT_HISTORY()
-
-    def setup_driver(self, name, driver_config: HardwareDriverDescriptor):
-        config = driver_config.driver.Config.model_validate(driver_config.config)
-        calibrator = None
-        if driver_config.calibrator is not None:
-            calibrator = driver_config.calibrator.driver_from_descriptor(self)
-        self.hardware[name] = driver_config.driver(self, config, calibrator)
-        self.last_read[name] = -1
-
-    def setup_controller(self, controller):
-        self.controllers.append(controller.driver_from_descriptor(self))
+    def __init__(self, *args, **kwargs):
+        self.last_read = defaultdict(lambda: int(-1))
+        super().__init__(*args, evolver=self, **kwargs)
 
     def get_hardware(self, name):
         return self.hardware[name]
@@ -131,7 +81,7 @@ class Evolver:
     def loop_once(self):
         self.read_state()
         # for any hardware awaiting calibration, call calibration update method here
-        if self.config.enable_control:
+        if self.enable_control:
             self.evaluate_controllers()
-        if self.config.enable_commit:
+        if self.enable_commit:
             self.commit_proposals()
