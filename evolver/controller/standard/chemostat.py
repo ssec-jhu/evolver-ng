@@ -1,11 +1,11 @@
-from collections import defaultdict, deque
 import time
+from collections import defaultdict, deque
 
 from pydantic import Field
 
 from evolver.base import ConfigDescriptor
 from evolver.controller.interface import Controller
-from evolver.hardware.interface import VialConfigBaseModel, HardwareDriver
+from evolver.hardware.interface import HardwareDriver, VialConfigBaseModel
 
 
 class Chemostat(Controller):
@@ -19,12 +19,14 @@ class Chemostat(Controller):
         flow_rate: float = Field(0, description="Flow rate for dilutions")
         stir_rate: float = Field(8, description="Stir rate")
 
-    def __init__(self,
-                 *args,
-                 od_sensor: HardwareDriver | ConfigDescriptor | str,
-                 pump: HardwareDriver | ConfigDescriptor | str,
-                 stirrer: HardwareDriver | ConfigDescriptor | str,
-                 **kwargs):
+    def __init__(
+        self,
+        *args,
+        od_sensor: HardwareDriver | ConfigDescriptor | str,
+        pump: HardwareDriver | ConfigDescriptor | str,
+        stirrer: HardwareDriver | ConfigDescriptor | str,
+        **kwargs,
+    ):
         self._od_sensor = od_sensor
         self._pump = pump
         self._stirrer = stirrer
@@ -58,7 +60,7 @@ class Chemostat(Controller):
         elapsed_time = time.time() - self.start_time
 
         if set(self.vials) - set(od_values):
-            raise ValueError(f'missing vials: I want: {self.vials}, OD provides: {od_values.keys()}')
+            raise ValueError(f"missing vials: I want: {self.vials}, OD provides: {od_values.keys()}")
 
         for vial, od_value in od_values.items():
             if self.vials and vial not in self.vials:

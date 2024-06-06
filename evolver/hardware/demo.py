@@ -1,5 +1,6 @@
 from copy import copy
-from evolver.hardware.interface import SensorDriver, EffectorDriver, VialConfigBaseModel, BaseCalibrator
+
+from evolver.hardware.interface import BaseCalibrator, EffectorDriver, SensorDriver, VialConfigBaseModel
 
 
 class NoOpSensorDriver(SensorDriver):
@@ -8,10 +9,7 @@ class NoOpSensorDriver(SensorDriver):
         echo_val: int = 2
 
     def read(self):
-        self.outputs = {
-            i: self.Output(vial=i, raw=self.echo_raw, value=self.echo_val)
-            for i in self.vials
-        }
+        self.outputs = {i: self.Output(vial=i, raw=self.echo_raw, value=self.echo_val) for i in self.vials}
 
     def get(self):
         return self.outputs

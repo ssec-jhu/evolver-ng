@@ -1,3 +1,3 @@
 from .chemostat import Chemostat
 
-__all__ = ['Chemostat']
+__all__ = ["Chemostat"]

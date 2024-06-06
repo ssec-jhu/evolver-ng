@@ -14,5 +14,5 @@ def find_repo_location(package=__project__):
 
 
 def fully_qualified_name(cls):
-    """ The fully qualified classname for cls. """
+    """The fully qualified classname for cls."""
     return f"{cls.__module__}.{cls.__qualname__}"

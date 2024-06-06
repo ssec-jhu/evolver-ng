@@ -1,6 +1,6 @@
+import time
 from abc import abstractmethod
 from collections import defaultdict
-import time
 
 from evolver.base import BaseConfig, BaseInterface
 

@@ -29,6 +29,7 @@ class BaseCalibrator(BaseInterface):
 class HardwareDriver(BaseInterface):
     class Config(BaseConfig):
         pass
+
     calibrator = None
 
     def __init__(self, *args, evolver=None, calibrator=None, **kwargs):
@@ -39,8 +40,7 @@ class HardwareDriver(BaseInterface):
 
 
 class VialHardwareDriver(HardwareDriver):
-    class Config(VialConfigBaseModel):
-        ...
+    class Config(VialConfigBaseModel): ...
 
 
 class SensorDriver(VialHardwareDriver):
@@ -50,6 +50,7 @@ class SensorDriver(VialHardwareDriver):
     class Output(VialBaseModel):
         raw: int
         value: float
+
     outputs: dict[int, Output] = {}
 
     def get(self) -> list[Output]:
@@ -66,6 +67,7 @@ class EffectorDriver(VialHardwareDriver):
 
     class Input(VialBaseModel):
         value: float
+
     proposal: dict[int, Input] = {}
     committed: dict[int, Input] = {}
 
