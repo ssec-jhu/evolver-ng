@@ -1,11 +1,21 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
+import pydantic_settings
+
+
+class BaseSettings(pydantic_settings.BaseSettings):
+    model_config = pydantic_settings.SettingsConfigDict(env_prefix="EVOLVER_", case_sensitive=True)
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="EVOLVER_",
-                                      case_sensitive=True)
-
     CONNECTION_REUSE_POLICY_DEFAULT: bool = True
 
 
+class AppSettings(BaseSettings):
+    CONFIG_FILE: Path = Path('evolver.yml')  # in current directory
+    LOAD_FROM_CONFIG_ON_STARTUP: bool = True
+    HOST: str = "127.0.0.1"
+    PORT: int = 8080
+
+
 settings = Settings()
+app_settings = AppSettings()
