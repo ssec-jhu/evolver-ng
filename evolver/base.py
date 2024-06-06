@@ -152,7 +152,31 @@ class ConfigDescriptor(_BaseConfig):
 
 
 class BaseInterface(ABC):
-    """ Base class for most classes. """
+    """ Base class for most classes.
+
+        There are two instantiation patterns to choose from. The preferred path is using ``cls.create(config)`` where
+        ``config`` fields will be validated against ``cls.Config`` using ``pydantic``. The alternative is normal
+        instantiation i.e., ``cls()``.
+
+        The normal path of ``cls()`` has some developer requirements. Whilst params can be passed to ``cls()`` as
+        normally expected, keyword params explicitly specified in ``cls.__init__()`` are optional when they are also
+        specified by ``cls.Config``. This feature reduces the need to duplicate both type annotations and default values
+        for both config fields and ``__init__`` params. Instead, the base ``__init__`` introspects ``cls.Config``
+        and auto assigns instance attributes of the same config field names. Keyword params explicitly specified in
+        ``cls.__init__()`` are permitted however they must either be assigned in the class' ``__init__`` prior to
+        calling ``super().__init__`` or passed as their field name strings via
+        ``super().__init__(auto_config_ignore_fields=("a", "b")`` so that they are not assigned twice and possibly
+        clobbered.
+
+        Args:
+            auto_config (bool): Turn on/off the above described auto instance attribute assignment functionality via
+              ``cls.Config`` introspection. Defaults to ``True``.
+            auto_config_ignore_fields (:obj: `list` of str): Specify config field names to NOT auto assign from
+              introspecting ``cls.Config`` in the base ``__init__``. Note: any instance attributes assigned prior to
+              calling ``super().__init__`` do not need to be passed using ``auto_config_ignore_fields``, only those that
+              need assignment post ``super().__init__`` or for those that get assigned to asymmetric names, e.g., for
+              initializing protected attributes accessed by properties that match config field names.
+    """
 
     class Config(BaseConfig):
         ...
@@ -206,7 +230,7 @@ class BaseInterface(ABC):
 
         if auto_config:
             # Don't unpack so that this can consume items from kwargs.
-            self.init_vars(kwargs, auto_config_ignore_fields=auto_config_ignore_fields)
+            self.auto_assign_attrs_from_config(kwargs, auto_config_ignore_fields=auto_config_ignore_fields)
 
         self.post_init_vars(*args, **kwargs)
 
@@ -223,9 +247,20 @@ class BaseInterface(ABC):
         """
         ...
 
-    def init_vars(self, kwargs, auto_config_ignore_fields=None):
-        """ Instance attributes specified by ``self.Config`` are automatically unpacked from kwargs, as passed into
-            ``self.__init__``, and assigned.
+    def auto_assign_attrs_from_config(self, kwargs, auto_config_ignore_fields=None):
+        """ Auto instance attribute assignment functionality via ``cls.Config`` introspection.
+
+            Instance attributes specified by ``self.Config`` are automatically unpacked from ``kwargs``, as passed into
+            ``self.__init__``, and assigned. Config fields not present in ``kwargs`` are assigned if the have defaults,
+            an exception is raised if they are required.
+
+            Args:
+                auto_config_ignore_fields (:obj: `list` of str): Specify config field names to NOT auto assign from
+                    introspecting ``cls.Config`` in the base ``__init__``. Note: any instance attributes assigned prior
+                    to calling ``super().__init__`` do not need to be passed using ``auto_config_ignore_fields``, only
+                    those that need assignment post ``super().__init__`` or for those that get assigned to asymmetric
+                    names, e.g., for initializing protected attributes accessed by properties that match config field
+                    names.
         """
         already_initialized_fields = vars(self)
         auto_config_ignore_fields = auto_config_ignore_fields if auto_config_ignore_fields is not None else []
@@ -285,26 +320,28 @@ class BaseInterface(ABC):
 
     @property
     def config_json(self) -> str:
-        """ Return a JSON str from a Config populated from instance attributes. """
+        """Return a JSON str from a Config populated from instance attributes."""
         return self.config_model.model_dump_json()
 
     @property
     def config_model(self) -> BaseConfig:
-        """ Return a dict of Config populated from instance attributes. """
+        """Return a dict of Config populated from instance attributes."""
         return self.Config.model_validate(vars(self))
 
     @property
     def descriptor(self) -> ConfigDescriptor:
+        """Return a ``ConfigDescriptor``."""
         return ConfigDescriptor.model_validate(self)
 
     @property
     def classinfo(self):
+        """Return the class' fully qualified name."""
         return evolver.util.fully_qualified_name(self.__class__)
 
 
 def init_and_set_vars_from_descriptors(obj, **non_config_kwargs):
     """ Instantiate object vars that are ConfigDescriptors and set them on the object.
-        E.g., this can be called from a classes ``__init__`` as ``init_and_set_vars_from_descriptors(self)``.
+        E.g., this can be called from a class' ``__init__`` as ``init_and_set_vars_from_descriptors(self)``.
     """
     for key, value in vars(obj).items():
         if isinstance(value, ConfigDescriptor):
