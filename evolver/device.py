@@ -26,12 +26,8 @@ class Evolver(BaseInterface):
         enable_commit: bool = True
         interval: int = settings.DEFAULT_LOOP_INTERVAL
 
-    def __init__(self,
-                 *args,
-                 last_read=defaultdict(lambda: int(-1)),
-                 **kwargs):
-        self.last_read = last_read
-
+    def __init__(self, *args, **kwargs):
+        self.last_read = defaultdict(lambda: int(-1))
         super().__init__(*args, evolver=self, **kwargs)
 
     def get_hardware(self, name):
