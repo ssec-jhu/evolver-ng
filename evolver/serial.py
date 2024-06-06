@@ -98,3 +98,15 @@ class PySerialEmulator:
 
 class EvolverSerialUARTEmulator(EvolverSerialUART):
     backend = PySerialEmulator
+
+
+def create_mock_serial(raw_response_map):
+    class ResponseBackendEmulator(PySerialEmulator):
+        pass
+
+    ResponseBackendEmulator.raw_response_map = raw_response_map
+
+    class SerialEmulator(EvolverSerialUART):
+        backend = ResponseBackendEmulator
+
+    return SerialEmulator()
