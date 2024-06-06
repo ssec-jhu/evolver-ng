@@ -13,7 +13,7 @@ from evolver.settings import app_settings
 async def lifespan(app: FastAPI):
     # Startup:
     if app_settings.LOAD_FROM_CONFIG_ON_STARTUP:
-        app.state.evolver.create(Evolver.Config.load(app_settings.CONFIG_FILE))
+        app.state.evolver = Evolver.create(Evolver.Config.load(app_settings.CONFIG_FILE))
     else:
         app.state.evolver = Evolver.create()
     asyncio.create_task(evolver_async_loop())
@@ -51,7 +51,7 @@ async def get_state():
 @app.post("/")
 async def update_evolver(config: EvolverConfigWithoutDefaults):
     app.state.evolver = Evolver.create(config)
-    app.state.evolver.config.save(app_settings.CONFIG_FILE)
+    app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
 
 
 @app.get('/schema')

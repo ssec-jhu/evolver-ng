@@ -65,6 +65,17 @@ class _BaseConfig(pydantic.BaseModel):
                                           context=context)
         return super().model_validate(obj, strict=strict, from_attributes=from_attributes, context=context)
 
+    @classmethod
+    def load(cls, file_path: Path, encoding: str | None = None):
+        """Loads the specified config file and return a new instance."""
+        with open(file_path, encoding=encoding) as f:
+            return cls.model_validate(yaml.safe_load(f))
+
+    def save(self, file_path: Path, encoding: str | None = None):
+        """Write out config as yaml file to specified file."""
+        with open(file_path, 'w', encoding=encoding) as f:
+            yaml.dump(self.model_dump(mode='json'), f)
+
 
 class BaseConfig(_BaseConfig):
     name: str | None = None

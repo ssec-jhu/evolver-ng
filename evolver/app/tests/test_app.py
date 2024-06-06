@@ -2,12 +2,12 @@ import json
 import yaml
 
 from fastapi.openapi.utils import get_openapi
-from fastapi.testclient import TestClient
 
 from evolver import __version__
 from evolver.app.main import app, EvolverConfigWithoutDefaults
+from evolver.base import ConfigDescriptor
 from evolver.settings import app_settings
-from evolver.device import Evolver, EvolverConfig, HardwareDriverDescriptor
+from evolver.device import Evolver
 
 
 class TestApp:
@@ -69,12 +69,11 @@ class TestApp:
 
 
 def test_app_load_file(app_client):
-    config = EvolverConfig(hardware={
-        'file_test': HardwareDriverDescriptor(driver='evolver.hardware.demo.NoOpSensorDriver')
+    config = Evolver.Config(hardware={
+        'file_test': ConfigDescriptor(classinfo='evolver.hardware.demo.NoOpSensorDriver')
     })
     config.save(app_settings.CONFIG_FILE)
-    app.state.evolver.update_config(EvolverConfig.load(app_settings.CONFIG_FILE))
-    client = TestClient(app)
-    client.get('/').json()['config']['hardware']['file_test']['driver'] == 'evolver.hardware.demo.NoOpSensorDriver'
+    app.state.evolver = Evolver.create(Evolver.Config.load(app_settings.CONFIG_FILE))
     response = app_client.get('/')
     assert response.status_code == 200
+    assert response.json()['config']['hardware']['file_test']['classinfo'] == 'evolver.hardware.demo.NoOpSensorDriver'
