@@ -27,8 +27,7 @@ class ODSensor(SensorDriver):
 
     def read(self):
         self.outputs = {}
-        cmd_data = str(self.integrations).encode()
-        cmd = SerialData(addr=self.addr, data=[cmd_data], kind="r")
+        cmd = SerialData(addr=self.addr, data=[str(self.integrations).encode()], kind="r")
         with self.serial as comm:
             response = comm.communicate(cmd)
         for vial, raw in enumerate(response.data):
