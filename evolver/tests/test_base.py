@@ -196,12 +196,6 @@ class TestBaseInterface:
         assert obj._c == "yep"
         assert not hasattr(obj, "c")
 
-    def test_log_handler_deduplication(self):
-        x = ConcreteInterface()
-        y = ConcreteInterface()
-        assert len(x.logger.handlers) == 1
-        assert len(y.logger.handlers) == 1
-
 
 class TestConfigDescriptor:
     def test_create(self, mock_descriptor):

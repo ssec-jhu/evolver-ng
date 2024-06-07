@@ -7,7 +7,6 @@ import pydantic
 import pydantic_core
 import yaml
 
-from evolver.settings import settings
 import evolver.util
 
 
@@ -301,19 +300,6 @@ class BaseInterface(ABC):
 
     def _setup_logger(self):
         self.logger = logging.getLogger(self.name)
-
-        ch = logging.StreamHandler()
-        # Don't duplicate handlers of the same type. If one already exists, use that even if it's perhaps not identical
-        # to that as specified below.
-        for handler in self.logger.handlers:
-            if type(handler) == type(ch):
-                return
-
-        ch.setLevel(settings.LOG_LEVEL)
-        formatter = logging.Formatter(settings.LOG_FORMAT)
-        ch.setFormatter(formatter)
-
-        self.logger.addHandler(ch)
 
     @classmethod
     def __get_pydantic_core_schema__(cls, *args, **kwargs):
