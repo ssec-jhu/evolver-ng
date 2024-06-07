@@ -300,14 +300,6 @@ class BaseInterface(ABC):
 
     def _setup_logger(self):
         self.logger = logging.getLogger(self.name)
-        ch = logging.StreamHandler()
-
-        # TODO: #27 move to loglevel & format to settings file.
-        ch.setLevel(logging.INFO)
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-
-        ch.setFormatter(formatter)
-        self.logger.addHandler(ch)
 
     @classmethod
     def __get_pydantic_core_schema__(cls, *args, **kwargs):

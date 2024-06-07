@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     CONNECTION_REUSE_POLICY_DEFAULT: bool = True
     DEFAULT_LOOP_INTERVAL: int = 20
     DEFAULT_NUMBER_OF_VIALS_PER_BOX: int = 16
+    LOG_LEVEL: str = "INFO"
+    LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 
 class AppSettings(BaseSettings):

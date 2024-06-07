@@ -3,10 +3,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+import evolver.util
 from evolver import __project__, __version__
 from evolver.base import require_all_fields
 from evolver.device import Evolver
 from evolver.settings import app_settings
+
+# Setup logging.
+evolver.util.setup_logging()
 
 
 @asynccontextmanager
