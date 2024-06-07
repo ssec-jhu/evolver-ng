@@ -5,7 +5,8 @@ from fastapi import FastAPI
 
 import evolver.util
 from evolver import __project__, __version__
-from evolver.base import require_all_fields
+from evolver.app.models import SchemaResponse
+from evolver.base import ImportString, require_all_fields
 from evolver.device import Evolver
 from evolver.settings import app_settings
 
@@ -57,9 +58,9 @@ async def update_evolver(config: EvolverConfigWithoutDefaults):
     app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
 
 
-@app.get("/schema")
-async def get_schema():
-    return app.state.evolver.schema
+@app.get("/schema/", response_model=SchemaResponse)
+async def get_schema(classinfo: ImportString | None = evolver.util.fully_qualified_name(Evolver)) -> SchemaResponse:
+    return SchemaResponse(classinfo=classinfo)
 
 
 @app.get("/history/{name}")
