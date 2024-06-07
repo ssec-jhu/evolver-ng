@@ -39,6 +39,14 @@ def test_od_sensor(evolver, integs, vials, expect):
         assert od.get()[vial] == ODSensor.Output(vial=vial, raw=expect[vial])
 
 
+def test_od_sensor_pass_serial(serial_mock):
+    with pytest.raises(AttributeError, match="has no attribute 'serial'"):
+        ODSensor(addr="od_90").read()
+    od = ODSensor(addr="od_90", serial_conn=serial_mock)
+    od.read()
+    assert od.get()[0] == ODSensor.Output(vial=0, raw=123)
+
+
 @pytest.mark.parametrize("integs, expect", [(500, (123, 456)), (100, (101, 102))])
 def test_evolver_hookup(serial_mock, integs, expect):
     config = {
