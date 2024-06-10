@@ -16,7 +16,9 @@ class ODSensor(SensorDriver):
     class Config(VialConfigBaseModel):
         addr: str = Field(description="Address of od sensor on serial bus (e.g. od_90)")
         integrations: int = Field(500, description="on read, request average of this number of ADC reads")
-        serial_conn: Connection | ConfigDescriptor | None = Field(None, description="serial connection, default is that on evolver")
+        serial_conn: Connection | ConfigDescriptor | None = Field(
+            None, description="serial connection, default is that on evolver"
+        )
 
     class Output(VialBaseModel):
         raw: int
