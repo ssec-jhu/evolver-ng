@@ -39,6 +39,14 @@ def test_od_sensor(evolver, integs, vials, expect):
         assert od.get()[vial] == ODSensor.Output(vial=vial, raw=expect[vial])
 
 
+def test_od_sensor_vial_update(evolver):
+    od = ODSensor(addr="od_90", evolver=evolver)
+    od.read()
+    assert set(od.get().keys()) == set([0,1])
+    od.vials = [0]
+    od.read()
+    assert set(od.get().keys()) == set([0])
+
 def test_od_sensor_pass_serial(serial_mock):
     with pytest.raises(AttributeError, match="has no attribute 'serial'"):
         ODSensor(addr="od_90").read()

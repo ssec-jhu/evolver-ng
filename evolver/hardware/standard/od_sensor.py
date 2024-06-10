@@ -1,5 +1,6 @@
 from pydantic import Field
 
+from evolver.base import ConfigDescriptor
 from evolver.connection.interface import Connection
 from evolver.hardware.interface import SensorDriver, VialBaseModel, VialConfigBaseModel
 from evolver.serial import SerialData
@@ -15,7 +16,7 @@ class ODSensor(SensorDriver):
     class Config(VialConfigBaseModel):
         addr: str = Field(description="Address of od sensor on serial bus (e.g. od_90)")
         integrations: int = Field(500, description="on read, request average of this number of ADC reads")
-        serial_conn: Connection | None = Field(None, description="serial connection, default is that on evolver")
+        serial_conn: Connection | ConfigDescriptor | None = Field(None, description="serial connection, default is that on evolver")
 
     class Output(VialBaseModel):
         raw: int
