@@ -69,17 +69,23 @@ class EvolverSerialUART(Connection):
 class PySerialEmulator:
     """For testing purposes only!."""
 
+    raw_response_map = {}
+
     @classmethod
     def Serial(cls, *args, **kwargs):
         return cls(*args, **kwargs)
 
     def __init__(self, *args, **kwargs):
         self._data = None
+        self._data_raw = None
 
     def write(self, data):
+        self._data_raw = data
         self._data = EvolverSerialUART._decode_serial_data(data, suffix=EvolverSerialUART.CMD.SEND_SUFFIX.value)
 
     def readline(self):
+        if mapped_response := self.raw_response_map.get(self._data_raw):
+            return mapped_response
         if not self._data or self._data.addr.startswith("X"):
             return b"badresponse"
         data = self._data.model_copy()
@@ -92,3 +98,15 @@ class PySerialEmulator:
 
 class EvolverSerialUARTEmulator(EvolverSerialUART):
     backend = PySerialEmulator
+
+
+def create_mock_serial(raw_response_map):
+    class ResponseBackendEmulator(PySerialEmulator):
+        pass
+
+    ResponseBackendEmulator.raw_response_map = raw_response_map
+
+    class SerialEmulator(EvolverSerialUART):
+        backend = ResponseBackendEmulator
+
+    return SerialEmulator()
