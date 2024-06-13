@@ -42,7 +42,11 @@ class Evolver(BaseInterface):
 
     @property
     def calibration_status(self):
-        return {name: device.calibrator.status for name, device in self.hardware.items()}
+        return {
+            name: device.calibrator.is_calibrated
+            for name, device in self.hardware.items()
+            if hasattr(device, "calibrator")
+        }
 
     @property
     def state(self):

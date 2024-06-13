@@ -8,8 +8,9 @@ import evolver.util
 from evolver import __version__
 from evolver.app.main import EvolverConfigWithoutDefaults, SchemaResponse, app
 from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor
+from evolver.calibration.demo import NoOpCalibrator, SimpleCalibrator
 from evolver.device import Evolver
-from evolver.hardware.demo import NoOpCalibrator, NoOpEffectorDriver, NoOpSensorDriver
+from evolver.hardware.demo import NoOpEffectorDriver, NoOpSensorDriver
 from evolver.hardware.interface import EffectorDriver, SensorDriver
 from evolver.settings import app_settings
 
@@ -90,6 +91,61 @@ class TestApp:
     def test_schema_endpoint_exception(self, app_client, classinfo):
         response = app_client.get("/schema/", params=dict(classinfo=classinfo))
         assert response.status_code == 422
+
+    def test_calibration_status(self, app_client):
+        app.state.evolver = Evolver(
+            hardware={
+                "test_hardware1": NoOpSensorDriver(calibrator=NoOpCalibrator()),
+                "test_hardware2": NoOpSensorDriver(calibrator=SimpleCalibrator()),
+            }
+        )
+
+        response = app_client.get("/calibration_status/", params=dict(name=None))
+        assert response.status_code == 200
+        contents = json.loads(response.content)
+        assert contents["test_hardware1"]
+        assert not contents["test_hardware2"]
+
+    def test_calibrate(self, app_client):
+        app.state.evolver = Evolver(hardware={"test_hardware": NoOpSensorDriver(calibrator=SimpleCalibrator())})
+        response = app_client.get("/calibration_status/", params=dict(name="test_hardware"))
+        assert response.status_code == 200
+        assert json.loads(response.content) is False
+
+        response = app_client.post("/calibrate/test_hardware")
+        assert response.status_code == 200
+
+        response = app_client.get("/calibration_status/", params=dict(name="test_hardware"))
+        assert response.status_code == 200
+        assert json.loads(response.content) is True
+
+    @pytest.mark.parametrize(
+        ("func", "kwargs"),
+        (
+            ("get", dict(url="/calibration_status/", params=dict(name="non_existent_hardware"))),
+            ("post", dict(url="/calibrate/non_existent_hardware")),
+        ),
+    )
+    def test_hardware_not_found_exceptions(self, app_client, func, kwargs):
+        response = getattr(app_client, func)(**kwargs)
+        assert response.status_code == 404
+        contents = json.loads(response.content)
+        assert contents["detail"] == "Hardware not found"
+
+    @pytest.mark.parametrize(
+        ("func", "kwargs"),
+        (
+            ("get", dict(url="/calibration_status/", params=dict(name="test_hardware"))),
+            ("post", dict(url="/calibrate/test_hardware")),
+        ),
+    )
+    def test_calibrator_not_found_exceptions(self, app_client, func, kwargs):
+        app.state.evolver = Evolver(hardware={"test_hardware": NoOpSensorDriver()})
+        response = getattr(app_client, func)(**kwargs)
+        # response = app_client.get("/calibration_status/", params=dict(name="test_hardware"))
+        assert response.status_code == 404
+        contents = json.loads(response.content)
+        assert contents["detail"] == "Hardware has no calibrator"
 
 
 def test_app_load_file(app_client):

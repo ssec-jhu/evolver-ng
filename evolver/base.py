@@ -79,6 +79,7 @@ class _BaseConfig(pydantic.BaseModel):
         """Write out config as yaml file to specified file."""
         with open(file_path, "w", encoding=encoding) as f:
             yaml.dump(self.model_dump(mode="json"), f)
+        return Path(file_path)
 
     def shallow_model_dump(self):
         """

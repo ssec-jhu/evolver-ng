@@ -3,6 +3,7 @@ import json
 import pytest
 
 import evolver.base
+from evolver.calibration.interface import Calibrator
 from evolver.connection.interface import Connection
 from evolver.controller.interface import Controller
 from evolver.device import DEFAULT_HISTORY, DEFAULT_SERIAL, Evolver
@@ -19,7 +20,7 @@ def conf_with_driver():
         "hardware": {
             "testsensor": {
                 "classinfo": "evolver.hardware.demo.NoOpSensorDriver",
-                "config": {"calibrator": {"classinfo": "evolver.hardware.demo.NoOpCalibrator", "config": {}}},
+                "config": {"calibrator": {"classinfo": "evolver.calibration.demo.NoOpCalibrator", "config": {}}},
             },
             "testeffector": {"classinfo": "evolver.hardware.demo.NoOpEffectorDriver", "config": {}},
         },
@@ -36,6 +37,11 @@ def demo_evolver(conf_with_driver):
 
 
 class TestEvolver:
+    def test_demo_evolver(self, demo_evolver, conf_with_driver):
+        testsensor = demo_evolver.hardware["testsensor"]
+        assert hasattr(testsensor, "calibrator")
+        assert isinstance(testsensor.calibrator, Calibrator)
+
     def test_empty_config(self):
         obj = Evolver.Config()
         assert isinstance(obj, evolver.base.BaseConfig)

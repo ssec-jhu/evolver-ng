@@ -1,6 +1,9 @@
 from abc import abstractmethod
 
-from evolver.base import BaseConfig, BaseInterface
+from pydantic import Field
+
+from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor
+from evolver.calibration.interface import Calibrator
 from evolver.settings import settings
 
 
@@ -12,30 +15,12 @@ class VialBaseModel(BaseConfig):
     vial: int
 
 
-class BaseCalibrator(BaseInterface):
+class HardwareDriver(BaseInterface):
     class Config(BaseInterface.Config):
-        calibfile: str = None
+        calibrator: ConfigDescriptor | Calibrator | None = None
 
     def __init__(self, *args, evolver=None, **kwargs):
         self.evolver = evolver
-        super().__init__(*args, **kwargs)
-
-    @property
-    @abstractmethod
-    def status(self):
-        pass
-
-
-class HardwareDriver(BaseInterface):
-    class Config(BaseInterface.Config):
-        pass
-
-    calibrator = None
-
-    def __init__(self, *args, evolver=None, calibrator=None, **kwargs):
-        self.evolver = evolver
-        if calibrator:
-            self.calibrator = calibrator
         super().__init__(*args, **kwargs)
 
 

@@ -1,6 +1,7 @@
 from copy import copy
 
-from evolver.hardware.interface import BaseCalibrator, EffectorDriver, SensorDriver
+from evolver.calibration.interface import Calibrator
+from evolver.hardware.interface import EffectorDriver, SensorDriver
 
 
 class NoOpSensorDriver(SensorDriver):
@@ -11,6 +12,7 @@ class NoOpSensorDriver(SensorDriver):
     def read(self):
         self.outputs = {i: self.Output(vial=i, raw=self.echo_raw, value=self.echo_val) for i in self.vials}
 
+    @Calibrator.calibrate
     def get(self):
         return self.outputs
 
@@ -18,9 +20,3 @@ class NoOpSensorDriver(SensorDriver):
 class NoOpEffectorDriver(EffectorDriver):
     def commit(self):
         self.comitted = copy(self.proposal)
-
-
-class NoOpCalibrator(BaseCalibrator):
-    @property
-    def status(self):
-        return True
