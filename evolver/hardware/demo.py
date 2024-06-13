@@ -10,6 +10,7 @@ class NoOpSensorDriver(SensorDriver):
 
     def read(self):
         self.outputs = {i: self.Output(vial=i, raw=self.echo_raw, value=self.echo_val) for i in self.vials}
+        return self.outputs
 
     def get(self):
         return self.outputs
