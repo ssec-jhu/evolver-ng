@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from evolver.base import BaseConfig, ConfigDescriptor
+from evolver.base import ConfigDescriptor
 from evolver.connection.interface import Connection
 from evolver.hardware.interface import VialBaseModel, VialConfigBaseModel
 

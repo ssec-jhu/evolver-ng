@@ -109,6 +109,8 @@ class SerialVialEffectorHardwareTestSuite:
                 expected_committed[v.vial] = v
             hw.commit()
             assert hw.evolver.serial.backend.hits_map[serial_out[pair_i]] == 1
+            # in case we expect multiple of same, clear for next assertion
+            del hw.evolver.serial.backend.hits_map[serial_out[pair_i]]
             assert hw.committed == expected_committed
 
     def test_from_plain_instantiation(self, config_params, values, serial_out):
