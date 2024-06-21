@@ -48,9 +48,13 @@ requires = ["setuptools>=61.2", "setuptools_scm[toml]>=8.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["evolver"]
 zip-safe = false
 include-package-data = true
+exclude-package-data = {"*" = ["tests/*"]}
+
+[tool.setuptools.packages.find]
+include = ["evolver*"]
+exclude = ["*.tests*"]
 
 [tool.setuptools_scm]
 write_to = "evolver/_version.py"

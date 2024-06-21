@@ -51,7 +51,9 @@ class SensorDriver(VialHardwareDriver):
         raw: int
         value: float
 
-    outputs: dict[int, Output] = {}
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.outputs: dict[int, self.Output] = {}
 
     def get(self) -> list[Output]:
         return self.outputs
@@ -68,8 +70,10 @@ class EffectorDriver(VialHardwareDriver):
     class Input(VialBaseModel):
         value: float
 
-    proposal: dict[int, Input] = {}
-    committed: dict[int, Input] = {}
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.proposal: dict[int, self.Input] = {}
+        self.committed: dict[int, self.Input] = {}
 
     def set(self, input: Input):
         self.proposal[input.vial] = input

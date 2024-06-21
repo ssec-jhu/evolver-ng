@@ -1,3 +1,4 @@
+from collections import defaultdict
 from enum import Enum
 
 import pydantic
@@ -70,6 +71,7 @@ class PySerialEmulator:
     """For testing purposes only!."""
 
     raw_response_map = {}
+    hits_map = defaultdict(int)
 
     @classmethod
     def Serial(cls, *args, **kwargs):
@@ -81,6 +83,7 @@ class PySerialEmulator:
 
     def write(self, data):
         self._data_raw = data
+        self.hits_map[data] += 1
         self._data = EvolverSerialUART._decode_serial_data(data, suffix=EvolverSerialUART.CMD.SEND_SUFFIX.value)
 
     def readline(self):
@@ -105,6 +108,7 @@ def create_mock_serial(raw_response_map):
         pass
 
     ResponseBackendEmulator.raw_response_map = raw_response_map
+    ResponseBackendEmulator.hits_map = defaultdict(int)
 
     class SerialEmulator(EvolverSerialUART):
         backend = ResponseBackendEmulator
