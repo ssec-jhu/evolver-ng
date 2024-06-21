@@ -106,7 +106,8 @@ class SerialVialEffectorHardwareTestSuite:
         for pair_i in range(len(serial_out)):
             for v in values[pair_i]:
                 hw.set(v)
-                expected_committed[v.vial] = v
+                if v.vial in hw.vials:
+                    expected_committed[v.vial] = v
             hw.commit()
             assert hw.evolver.serial.backend.hits_map[serial_out[pair_i]] == 1
             # in case we expect multiple of same, clear for next assertion

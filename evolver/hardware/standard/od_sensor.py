@@ -23,10 +23,10 @@ class ODSensor(SensorDriver):
         return self.serial_conn or self.evolver.serial
 
     def read(self):
-        self.outputs = {}
+        self.outputs.clear()
         cmd = SerialData(addr=self.addr, data=[str(self.integrations).encode()], kind="r")
         with self.serial as comm:
             response = comm.communicate(cmd)
         for vial, raw in enumerate(response.data):
             if vial in self.vials:
-                self.outputs[vial] = self.Output(vial=vial, raw=raw)
+                self.outputs[vial] = self.Output(vial=vial, raw=int(raw))

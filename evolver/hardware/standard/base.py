@@ -14,4 +14,4 @@ class SerialDeviceConfigBase(VialConfigBaseModel):
 
 
 class SerialDeviceOutputBase(VialBaseModel):
-    raw: int
+    raw: int | bytes
