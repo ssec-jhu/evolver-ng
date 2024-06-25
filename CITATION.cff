@@ -23,7 +23,7 @@ authors:
   given-names: "Fatemeh"
   orcid: "https://orcid.org/0009-0006-3239-7112"
 title: "evolver-ng"
-version: 0.0.1
-doi: <insert zenodo DOI>
+version: 0.1.0
+doi: "12532759"
 date-released: 2023-01-01
 url: "https://github.com/ssec-jhu/evolver-ng"

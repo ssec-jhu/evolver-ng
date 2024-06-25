@@ -57,6 +57,7 @@ include = ["evolver*"]
 exclude = ["*.tests*"]
 
 [tool.setuptools_scm]
+fallback_version = "0.1.0"
 write_to = "evolver/_version.py"
 
 [tool.bandit]
