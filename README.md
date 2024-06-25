@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/ssec-jhu/evolver-ng/actions/workflows/ci.yml/badge.svg)](https://github.com/ssec-jhu/evolver-ng/actions/workflows/ci.yml)
 <!---[![Documentation Status](https://readthedocs.org/projects/ssec-jhu-evolver-ng/badge/?version=latest)](https://ssec-jhu-evolver-ng.readthedocs.io/en/latest/?badge=latest) --->
-<!---[![codecov](https://codecov.io/gh/ssec-jhu/evolver-ng/branch/main/graph/badge.svg?token=0KPNKHRC2V)](https://codecov.io/gh/ssec-jhu/evolver-ng) --->
+[![codecov](https://codecov.io/gh/ssec-jhu/evolver-ng/graph/badge.svg?token=mkRet8Fep0)](https://codecov.io/gh/ssec-jhu/evolver-ng)
 [![Security](https://github.com/ssec-jhu/evolver-ng/actions/workflows/security.yml/badge.svg)](https://github.com/ssec-jhu/evolver-ng/actions/workflows/security.yml)
 <!---[![DOI](https://zenodo.org/badge/<insert_ID_number>.svg)](https://zenodo.org/badge/latestdoi/<insert_ID_number>) --->
 
