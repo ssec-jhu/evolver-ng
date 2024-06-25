@@ -4,8 +4,7 @@
 <!---[![Documentation Status](https://readthedocs.org/projects/ssec-jhu-evolver-ng/badge/?version=latest)](https://ssec-jhu-evolver-ng.readthedocs.io/en/latest/?badge=latest) --->
 <!---[![codecov](https://codecov.io/gh/ssec-jhu/evolver-ng/branch/main/graph/badge.svg?token=0KPNKHRC2V)](https://codecov.io/gh/ssec-jhu/evolver-ng) --->
 [![Security](https://github.com/ssec-jhu/evolver-ng/actions/workflows/security.yml/badge.svg)](https://github.com/ssec-jhu/evolver-ng/actions/workflows/security.yml)
-<!---[![DOI](https://zenodo.org/badge/<insert_ID_number>.svg)](https://zenodo.org/badge/latestdoi/<insert_ID_number>) --->
-
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.12532759.svg)](https://doi.org/10.5281/zenodo.12532759)
 
 ![SSEC-JHU Logo](docs/_static/SSEC_logo_horiz_blue_1152x263.png)
 
