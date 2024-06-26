@@ -38,6 +38,13 @@ def mock_conf_as_json(mock_conf_as_dict):
     return json.dumps(mock_conf_as_dict)
 
 
+@pytest.fixture()
+def mock_config_file(tmp_path):
+    file_path = tmp_path / "ConcreteInterfaceConfig.yml"
+    ConcreteInterface.Config(a=44, b=55).save(file_path)
+    return file_path
+
+
 class TestBaseConfig:
     def test_empty_model_validate(self):
         obj = ConcreteInterface.Config.model_validate(None)
@@ -62,6 +69,11 @@ class TestBaseConfig:
         assert isinstance(obj, ConcreteInterface.Config)
         assert obj.a == 8
         assert obj.b == 9
+
+    def test_from_file(self, mock_config_file):
+        obj = ConcreteInterface.Config.model_validate(mock_config_file)
+        assert obj.a == 44
+        assert obj.b == 55
 
 
 class TestBaseInterface:
@@ -196,6 +208,11 @@ class TestBaseInterface:
         assert obj._c == "yep"
         assert not hasattr(obj, "c")
 
+    def test_from_file(self, mock_config_file):
+        obj = ConcreteInterface.create(mock_config_file)
+        assert obj.a == 44
+        assert obj.b == 55
+
 
 class TestConfigDescriptor:
     def test_create(self, mock_descriptor):
@@ -253,6 +270,15 @@ class TestConfigDescriptor:
             ).classinfo,
             type,
         )
+
+    def test_from_file(self, tmp_path, mock_descriptor):
+        file_path = tmp_path / "ConcreteInterfaceConfigDescriptor.yml"
+        mock_descriptor.save(file_path)
+        descriptor = evolver.base.ConfigDescriptor.model_validate(file_path)
+        assert descriptor == mock_descriptor
+        obj = descriptor.create()
+        assert obj.a == 11
+        assert obj.b == 22
 
 
 def test_require_all_fields():
