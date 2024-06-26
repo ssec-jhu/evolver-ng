@@ -1,6 +1,7 @@
 from copy import copy
 
-from evolver.hardware.interface import BaseCalibrator, EffectorDriver, SensorDriver, VialConfigBaseModel
+from evolver.calibration.interface import Calibrator
+from evolver.hardware.interface import EffectorDriver, SensorDriver, VialConfigBaseModel
 
 
 class NoOpSensorDriver(SensorDriver):
@@ -20,7 +21,12 @@ class NoOpEffectorDriver(EffectorDriver):
         self.comitted = copy(self.proposal)
 
 
-class NoOpCalibrator(BaseCalibrator):
+class NoOpCalibrator(Calibrator):
     @property
-    def status(self):
+    def is_calibrated(self):
         return True
+
+    def convert(self, data):
+        return data
+
+    def run_calibration_procedure(self, *args, **kwargs): ...

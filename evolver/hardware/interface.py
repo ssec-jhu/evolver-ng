@@ -12,20 +12,6 @@ class VialBaseModel(BaseConfig):
     vial: int
 
 
-class BaseCalibrator(BaseInterface):
-    class Config(BaseConfig):
-        calibfile: str = None
-
-    def __init__(self, *args, evolver=None, **kwargs):
-        self.evolver = evolver
-        super().__init__(*args, **kwargs)
-
-    @property
-    @abstractmethod
-    def status(self):
-        pass
-
-
 class HardwareDriver(BaseInterface):
     class Config(BaseConfig):
         pass
