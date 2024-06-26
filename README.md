@@ -1,10 +1,10 @@
 # SSEC-JHU evolver-ng
 
 [![CI](https://github.com/ssec-jhu/evolver-ng/actions/workflows/ci.yml/badge.svg)](https://github.com/ssec-jhu/evolver-ng/actions/workflows/ci.yml)
-<!---[![Documentation Status](https://readthedocs.org/projects/ssec-jhu-evolver-ng/badge/?version=latest)](https://ssec-jhu-evolver-ng.readthedocs.io/en/latest/?badge=latest) --->
 [![codecov](https://codecov.io/gh/ssec-jhu/evolver-ng/graph/badge.svg?token=mkRet8Fep0)](https://codecov.io/gh/ssec-jhu/evolver-ng)
 [![Security](https://github.com/ssec-jhu/evolver-ng/actions/workflows/security.yml/badge.svg)](https://github.com/ssec-jhu/evolver-ng/actions/workflows/security.yml)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.12532759.svg)](https://doi.org/10.5281/zenodo.12532759)
+<!---[![Documentation Status](https://readthedocs.org/projects/ssec-jhu-evolver-ng/badge/?version=latest)](https://ssec-jhu-evolver-ng.readthedocs.io/en/latest/?badge=latest) --->
 
 ![SSEC-JHU Logo](docs/_static/SSEC_logo_horiz_blue_1152x263.png)
 
