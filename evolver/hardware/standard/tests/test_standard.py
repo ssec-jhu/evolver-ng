@@ -69,6 +69,11 @@ class TestTempEffectorMode(SerialVialEffectorHardwareTestSuite):
             [[LED.Input(vial=0, brightness=0), LED.Input(vial=1, brightness=0.5)], []],
             [b"od_ledr,0,4095,_!", b"od_ledr,0,4095,_!"],
         ),
+        (
+            {"addr": "od_led", "slots": 3},
+            [[]],
+            [b"od_ledr,4095,4095,4095,_!"],
+        ),
     ],
 )
 class TestLED(SerialVialEffectorHardwareTestSuite):
