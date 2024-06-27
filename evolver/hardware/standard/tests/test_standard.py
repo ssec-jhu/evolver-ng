@@ -1,5 +1,6 @@
 import pytest
 
+from evolver.hardware.standard.led import LED
 from evolver.hardware.standard.od_sensor import ODSensor
 from evolver.hardware.standard.temperature import Temperature
 from evolver.hardware.test_utils import SerialVialEffectorHardwareTestSuite, SerialVialSensorHardwareTestSuite
@@ -53,3 +54,22 @@ class TestTempSensorMode(SerialVialSensorHardwareTestSuite):
 )
 class TestTempEffectorMode(SerialVialEffectorHardwareTestSuite):
     driver = Temperature
+
+
+@pytest.mark.parametrize(
+    "config_params, values, serial_out",
+    [
+        (
+            {"addr": "od_led", "slots": 2},
+            [[LED.Input(vial=0, brightness=1), LED.Input(vial=1, brightness=0.5)], [LED.Input(vial=1, brightness=0)]],
+            [b"od_ledr,4095,2047,_!", b"od_ledr,4095,0,_!"],
+        ),
+        (
+            {"addr": "od_led", "vials": [0], "slots": 2},
+            [[LED.Input(vial=0, brightness=0), LED.Input(vial=1, brightness=0.5)], []],
+            [b"od_ledr,0,4095,_!", b"od_ledr,0,4095,_!"],
+        ),
+    ],
+)
+class TestLED(SerialVialEffectorHardwareTestSuite):
+    driver = LED
