@@ -11,7 +11,6 @@ class LED(EffectorDriver):
     class Config(SerialDeviceConfigBase):
         pwm_max: int = 4095
         default_brightness: float = 1.0
-        pass
 
     class Input(VialBaseModel):
         brightness: float = Field(1.0, ge=0, le=1, description="brightness on scale of 0 to 1")
