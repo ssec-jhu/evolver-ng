@@ -1,4 +1,5 @@
 import logging
+import os
 from abc import ABC
 from pathlib import Path
 from typing import Annotated, Any, Dict
@@ -53,6 +54,8 @@ class _BaseConfig(pydantic.BaseModel):
         """
         if obj is None:
             return cls()
+        elif isinstance(obj, os.PathLike):
+            return cls.load(file_path=obj)
         elif isinstance(obj, (str, bytes, bytearray)):
             return cls.model_validate_json(obj, strict=strict, context=context)
         elif isinstance(obj, ConfigDescriptor):
