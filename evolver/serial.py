@@ -1,13 +1,13 @@
 from collections import defaultdict
 from enum import Enum
 
-import pydantic
 import serial
 
+from evolver.base import BaseConfig
 from evolver.connection.interface import Connection
 
 
-class SerialData(pydantic.BaseModel):
+class SerialData(BaseConfig):
     addr: str
     data: list[bytes]
     kind: str = "r"
@@ -20,7 +20,7 @@ class EvolverSerialUART(Connection):
         SEND_SUFFIX = b"_!"
         RESP_SUFFIX = b"end"
 
-    class Config(pydantic.BaseModel):
+    class Config(BaseConfig):
         name: str = "EvolverSerialUART"
         port: str = "/dev/ttyAMA0"
         baudrate: int = 9600

@@ -4,6 +4,7 @@ import pydantic
 import pytest
 
 import evolver.base
+import evolver.util
 
 
 class ConcreteInterface(evolver.base.BaseInterface):
@@ -11,6 +12,11 @@ class ConcreteInterface(evolver.base.BaseInterface):
         name: str = "TestDevice"
         a: int = 2
         b: int = 3
+
+
+class Nested(evolver.base.BaseInterface):
+    class Config(evolver.base.BaseConfig):
+        stuff: evolver.base.ConfigDescriptor
 
 
 @pytest.fixture()
@@ -279,6 +285,29 @@ class TestConfigDescriptor:
         obj = descriptor.create()
         assert obj.a == 11
         assert obj.b == 22
+
+    @pytest.mark.parametrize("shallow", (True, False))
+    def test_nested(self, monkeypatch, shallow):
+        if not shallow:
+            monkeypatch.setattr(evolver.base._BaseConfig, "shallow_model_dump", lambda x: x.model_dump())
+
+        config = {
+            "stuff": {
+                "classinfo": evolver.util.fully_qualified_name(Nested),
+                "config": {
+                    "stuff": {
+                        "classinfo": evolver.util.fully_qualified_name(ConcreteInterface),
+                        "config": {"a": 33, "b": 44},
+                    }
+                },
+            }
+        }
+        obj = Nested.create(config)
+        if shallow:
+            assert isinstance(obj.stuff, Nested)
+            assert isinstance(obj.stuff.stuff, ConcreteInterface)
+        else:
+            assert isinstance(obj.stuff, dict)
 
 
 def test_require_all_fields():

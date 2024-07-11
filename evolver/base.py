@@ -80,6 +80,19 @@ class _BaseConfig(pydantic.BaseModel):
         with open(file_path, "w", encoding=encoding) as f:
             yaml.dump(self.model_dump(mode="json"), f)
 
+    def shallow_model_dump(self):
+        """
+        When a ``config`` is a complete ``pydantic.BaseModel``, where all fields are adequately created. Any fields
+        annotated as ``ConfigDescriptor`` will have automatically been converted to instances of ``ConfigDescriptor``,
+        including lists & dicts of. One method to instantiate from this is to use ``cls(**config.model_dump())``,
+        however, ``model_dump()`` will revert all of the above, resulting in any list & dicts of instances of
+        ``ConfigDescriptor`` to be reverted back to native dicts. This is not desirable as we want to take advantage
+        of pydantic having done the heavy lifting and keep config descriptors as actual instances so that they can
+        be created calling ``ConfigDescriptor.create()``. ``model_dump()`` has no "shallow" semantics so we instead
+        manually "dump" to dict using the following.
+        """
+        return dict(self)
+
 
 class BaseConfig(_BaseConfig):
     name: str | None = None
@@ -149,9 +162,9 @@ class ConfigDescriptor(_BaseConfig):
 
         # Return an instance of classinfo.
         return (
-            self.classinfo(**config.model_dump(), **non_config_kwargs)
+            self.classinfo(**config.shallow_model_dump(), **non_config_kwargs)
             if non_config_kwargs
-            else self.classinfo(**config.model_dump())
+            else self.classinfo(**config.shallow_model_dump())
         )
 
     @classmethod
@@ -224,15 +237,7 @@ class BaseInterface(ABC):
                 config = cls.Config.model_validate(config)
 
         # Instantiate cls from config.
-        # Note: ``config`` is now a complete ``pydantic.BaseModel``, where all fields are adequately created. Any fields
-        # annotated as ``ConfigDescriptor`` will have automatically been converted to instances of ``ConfigDescriptor``,
-        # including lists & dicts of. One method to instantiate is ``cls(**config.model_dump())``, however,
-        # ``model_dump()`` will revert all of the above, resulting in any list & dicts of instances of
-        # ``ConfigDescriptor`` to be reverted back to native dicts. This is not desirable as we want to take advantage
-        # of pydantic having done the heavy lifting and keep config descriptors as actual instances so that they can
-        # be created calling ``ConfigDescriptor.create()``. ``model_dump()`` has no "shallow" semantics so we instead
-        # manually "dump" to dict using the following.
-        return cls(**dict(config))
+        return cls(**config.shallow_model_dump())
 
     def __init__(self, *args, name: str = None, auto_config=True, auto_config_ignore_fields=None, **kwargs):
         self.name = name or self.__class__.__name__
