@@ -357,4 +357,3 @@ def init_and_set_vars_from_descriptors(obj, **non_config_kwargs):
             for k, v in value.items():
                 if isinstance(v, ConfigDescriptor):
                     value[k] = v.create(non_config_kwargs=non_config_kwargs)
-                    value[k] = v.create(non_config_kwargs=non_config_kwargs)
