@@ -1,7 +1,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 import evolver.util
 from evolver import __project__, __version__
@@ -56,6 +56,14 @@ async def get_state():
 async def update_evolver(config: EvolverConfigWithoutDefaults):
     app.state.evolver = Evolver.create(config)
     app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
+
+
+@app.put("/device/name")
+async def update_evolver_name(name: str):
+    if not name:
+        raise HTTPException(status_code=400, detail="Name must be provided")
+    app.state.evolver.name = name
+    return {"message": "Device name updated successfully", "new_name": app.state.evolver.name}
 
 
 @app.get("/schema/", response_model=SchemaResponse)
