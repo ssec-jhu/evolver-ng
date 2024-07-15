@@ -22,11 +22,18 @@ class GenericPump(EffectorDriver):
     """
 
     class Config(SerialDeviceConfigBase):
-        ipp_pumps: list[int] = Field([], description="Indexes of IPP mode pumps, per solenoid")
+        ipp_pumps: bool | list[int] = Field(False, description="False (no IPP), True (all IPP), or list of IPP ids")
 
     class Input(BaseConfig):
         pump_id: int
         flow_rate: float
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.ipp_pumps is True:
+            self.ipp_pumps = list(range(self.slots / 3))
+        elif not self.ipp_pumps:
+            self.ipp_pumps = []
 
     @property
     def serial(self):
