@@ -35,7 +35,7 @@ app.state.evolver = None
 class EvolverConfigWithoutDefaults(Evolver.Config): ...
 
 
-@app.get("/")
+@app.get("/", operation_id="describe")
 async def describe_evolver():
     return {
         "config": app.state.evolver.config_model,
@@ -44,7 +44,7 @@ async def describe_evolver():
     }
 
 
-@app.get("/state")
+@app.get("/state", operation_id="state")
 async def get_state():
     return {
         "state": app.state.evolver.state,
@@ -52,23 +52,23 @@ async def get_state():
     }
 
 
-@app.post("/")
+@app.post("/", operation_id="update")
 async def update_evolver(config: EvolverConfigWithoutDefaults):
     app.state.evolver = Evolver.create(config)
     app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
 
 
-@app.get("/schema/", response_model=SchemaResponse)
+@app.get("/schema/", response_model=SchemaResponse, operation_id="schema")
 async def get_schema(classinfo: ImportString | None = evolver.util.fully_qualified_name(Evolver)) -> SchemaResponse:
     return SchemaResponse(classinfo=classinfo)
 
 
-@app.get("/history/{name}")
+@app.get("/history/{name}", operation_id="history")
 async def get_history(name: str):
     return app.state.evolver.history.get(name)
 
 
-@app.get("/healthz")
+@app.get("/healthz", operation_id="healthcheck")
 async def healthz():
     return {"message": f"Running '{__project__}' ver: '{__version__}'"}
 
