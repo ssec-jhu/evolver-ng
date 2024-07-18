@@ -167,3 +167,6 @@ cython_debug/
 
 # File system
 .DS_Store
+
+# temp - ignore any files named openapi.json
+openapi.json
