@@ -32,7 +32,7 @@ class GenericPump(EffectorDriver):
         super().__init__(*args, **kwargs)
         if self.ipp_pumps is True:
             self.ipp_pumps = list(range(self.slots / 3))
-        elif not self.ipp_pumps:
+        elif self.ipp_pumps in (False, None):
             self.ipp_pumps = []
 
     @property
