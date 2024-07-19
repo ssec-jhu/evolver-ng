@@ -161,3 +161,10 @@ tox -e test exec -- python -m evolver.app.main
 You should then be able to visit the automatically generated API documentation in your local browser at
 https://localhost:8000/docs (or https://localhost:8000/redoc). From there you can experiment with sending
 data and reading from various endpoints (which will eventually be hooked up to a web user interface).
+
+### Generate openapi schema as a JSON
+To generate `openapi.json` in the project root run:
+
+```
+tox -e generate_openapi
+```
