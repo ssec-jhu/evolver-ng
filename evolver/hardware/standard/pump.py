@@ -86,7 +86,7 @@ class VialIEPump(EffectorDriver):
 
     class Input(VialBaseModel):
         flow_rate_influx: float = Field(description="influx flow rate in ml/s")
-        flow_rate_efflux: float | None = Field(None, description="efflux flow rate in ml/s. Defaults to same as influx")
+        flow_rate_efflux: float = Field(description="efflux flow rate in ml/s")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -104,8 +104,6 @@ class VialIEPump(EffectorDriver):
     def commit(self):
         for p in self.proposal.values():
             if p.vial in self.vials:
-                if p.flow_rate_efflux is None:
-                    p.flow_rate_efflux = p.flow_rate_influx
                 self._generic_pump.set(GenericPump.Input(pump_id=self.influx_map[p.vial], flow_rate=p.flow_rate_influx))
                 self._generic_pump.set(GenericPump.Input(pump_id=self.efflux_map[p.vial], flow_rate=p.flow_rate_efflux))
         self._generic_pump.commit()

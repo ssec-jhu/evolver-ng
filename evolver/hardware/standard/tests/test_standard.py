@@ -113,7 +113,7 @@ class TestStir(SerialVialEffectorHardwareTestSuite):
             {"addr": "pump", "slots": 2},
             [
                 [
-                    VialIEPump.Input(vial=0, flow_rate_influx=1),
+                    VialIEPump.Input(vial=0, flow_rate_influx=1, flow_rate_efflux=1),
                     VialIEPump.Input(vial=1, flow_rate_influx=8, flow_rate_efflux=9),
                 ]
             ],
