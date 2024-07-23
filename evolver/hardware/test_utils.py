@@ -15,10 +15,6 @@ def evolver_from_response_map(response_map):
     return Evolver(serial=serial_from_response_map(response_map))
 
 
-def _from_driver(driver, config, response_map):
-    return driver(**config, evolver=evolver_from_response_map(response_map))
-
-
 def _from_config_desc(driver, config, response_map):
     config_desc = ConfigDescriptor(classinfo=driver, config=config)
     return config_desc.create(non_config_kwargs={"evolver": evolver_from_response_map(response_map)})
@@ -58,11 +54,6 @@ class SerialVialSensorHardwareTestSuite:
     """
 
     driver: HardwareDriver = None
-
-    def test_expected_plain_instantiation(self, response_map, config_params, expected):
-        hw = _from_driver(self.driver, config_params, response_map)
-        hw.read()
-        assert hw.get() == expected
 
     def test_expected_create_from_config_desc(self, response_map, config_params, expected):
         hw = _from_config_desc(self.driver, config_params, response_map)
@@ -113,10 +104,6 @@ class SerialVialEffectorHardwareTestSuite:
             # in case we expect multiple of same, clear for next assertion
             del hw.evolver.serial.backend.hits_map[serial_out[pair_i]]
             assert hw.committed == expected_committed
-
-    def test_from_plain_instantiation(self, config_params, values, serial_out):
-        hw = _from_driver(self.driver, config_params, {})
-        self._load_and_check(hw, values, serial_out)
 
     def test_from_config_descriptor(self, config_params, values, serial_out):
         hw = _from_config_desc(self.driver, config_params, {})

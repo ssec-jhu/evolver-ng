@@ -84,22 +84,24 @@ class VialIEPump(EffectorDriver):
         influx_map: dict[int, int] | None = Field(None, description="map of vial to influx pump ID")
         efflux_map: dict[int, int] | None = Field(None, description="map of vial to efflux pump ID")
 
+        def model_post_init(self, *args, **kwargs) -> None:
+            super().model_post_init(*args, **kwargs)
+            self.influx_map = self.influx_map or {i: i for i in range(0, self.slots * 3)}
+            self.efflux_map = self.efflux_map or {i: i + self.slots for i in range(0, self.slots * 3)}
+
     class Input(VialBaseModel):
         flow_rate_influx: float = Field(description="influx flow rate in ml/s")
         flow_rate_efflux: float = Field(description="efflux flow rate in ml/s")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        p_slots = self.slots * 3  # influx, efflux, spare (or 3 solenoids for IPP)
         self._generic_pump = GenericPump(
             addr=self.addr,
-            slots=p_slots,
+            slots=self.slots * 3,  # influx, efflux, spare (or 3 solenoids for IPP)
             serial=self.serial_conn,
             ipp_pumps=self.ipp_pumps,
             evolver=kwargs.get("evolver"),
         )
-        self.influx_map = self.influx_map or {i: i for i in range(0, p_slots)}
-        self.efflux_map = self.efflux_map or {i: i + self.slots for i in range(0, p_slots)}
 
     def commit(self):
         for p in self.proposal.values():
