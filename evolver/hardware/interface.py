@@ -41,8 +41,10 @@ class SensorDriver(VialHardwareDriver):
     def get(self) -> list[Output]:
         return self.outputs
 
+    @Calibrator.calibrate_output
     @abstractmethod
     def read(self):
+        """Communicate with connection to retrieve data. This must return ``self.outputs``."""
         pass
 
 
@@ -57,6 +59,7 @@ class EffectorDriver(VialHardwareDriver):
         self.proposal: dict[int, self.Input] = {}
         self.committed: dict[int, self.Input] = {}
 
+    @Calibrator.calibrate_input
     def set(self, input: Input):
         self.proposal[input.vial] = input
 

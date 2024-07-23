@@ -1,6 +1,5 @@
 from copy import copy
 
-from evolver.calibration.interface import Calibrator
 from evolver.hardware.interface import EffectorDriver, SensorDriver
 
 
@@ -11,8 +10,8 @@ class NoOpSensorDriver(SensorDriver):
 
     def read(self):
         self.outputs = {i: self.Output(vial=i, raw=self.echo_raw, value=self.echo_val) for i in self.vials}
+        return self.outputs
 
-    @Calibrator.calibrate
     def get(self):
         return self.outputs
 

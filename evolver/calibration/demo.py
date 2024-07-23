@@ -17,8 +17,8 @@ class NoOpCalibrator(Calibrator):
 
 class SimpleCalibrator(Calibrator):
     class Config(Calibrator.Config):
-        conversion_factor: float = 9 / 5
-        conversion_constant: float = 32
+        conversion_factors: dict[int, float] = 9 / 5
+        conversion_constants: dict[int, float] = 32
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -28,20 +28,14 @@ class SimpleCalibrator(Calibrator):
     def is_calibrated(self):
         return self._is_calibrated
 
-    def convert(
-        self, data: NoOpSensorDriver.Output | dict[Any, NoOpSensorDriver.Output]
-    ) -> NoOpSensorDriver.Output | dict[int, NoOpSensorDriver.Output]:
+    def convert_from_raw(self, data: NoOpSensorDriver.Output) -> NoOpSensorDriver.Output:
         """Inplace calibration conversion."""
+        data.value = self.conversion_constants[data.vial] + self.data.raw * self.conversion_factors[data.vial]
+        return data
 
-        def _convert(x):
-            return x * self.conversion_factor + self.conversion_constant
-
-        if isinstance(data, dict):
-            for k, v in data.items():
-                data[k].value = _convert(v.raw)
-        else:
-            data.value = _convert(data.raw)
-
+    def convert_to_raw(self, data: NoOpSensorDriver.Output) -> NoOpSensorDriver.Output:
+        """Inplace calibration conversion."""
+        data.raw = self.data.value / self.conversion_factors[data.vial] - self.conversion_constants[data.vial]
         return data
 
     def run_calibration_procedure(self, *args, **kwargs):

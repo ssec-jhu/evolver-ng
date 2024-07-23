@@ -82,6 +82,11 @@ async def evolver_async_loop():
 
 @app.get("/calibration_status/")
 async def calibration_status(name: str = None):
+
+    # TODO: semantic change: this needs to return calibration status/staleness. I.e., calibration date (that when last
+    # calibrated) and then a delta compared to some configurable time expired, e.g., 6 months, and then a bool for
+    # the semantics of this delta to whether it's stale or ok to still use.
+
     if not name:
         return app.state.evolver.calibration_status
 

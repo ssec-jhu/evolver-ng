@@ -1,11 +1,17 @@
 import datetime
 from abc import abstractmethod
+from enum import auto, StrEnum
 from pathlib import Path
 
 from pydantic import Field
 
 from evolver.base import BaseConfig, BaseInterface
 from evolver.settings import settings
+
+
+class Kind(StrEnum):
+    FROM_RAW = auto()
+    TO_RAW = auto()
 
 
 class Calibrator(BaseInterface):
@@ -34,9 +40,16 @@ class Calibrator(BaseInterface):
         ...
 
     @abstractmethod
-    def convert(self, data):
-        """Return calibrated data.
-        Note: Use Calibrator.calibrate to decorate ``evolver.hardware.interface.SensorDriver.get()``.
+    def convert_from_raw(self, data):
+        """Return calibrated data from raw data. This is the inverse function of ``convert_to_raw``.
+        Note: Use Calibrator.calibrate_output to decorate ``evolver.hardware.interface.SensorDriver.read()``.
+        """
+        ...
+
+    @abstractmethod
+    def convert_to_raw(self, data):
+        """Return raw data from calibrated data. This is the inverse function of ``convert_from_raw``.
+        Note: Use Calibrator.calibrate_input to decorate ``evolver.hardware.interface.SensorDriver.set()``.
         """
         ...
 
@@ -49,16 +62,33 @@ class Calibrator(BaseInterface):
         ...
 
     @staticmethod
-    def calibrate(func):
-        """Use to decorate, e.g., ``evolver.hardware.interface.SensorDriver.get()`` to calibrate returned data."""
+    def calibrate(func, kind: Kind = Kind.FROM_RAW):
+        """Use to decorate, e.g., ``evolver.hardware.interface.SensorDriver.read()`` to calibrate returned data."""
+
+        kind = Kind(kind)
 
         def wrapper(self, *args, **kwargs):
             data = func(self, *args, **kwargs)
 
-            # Only calibrate (convert) calibrated calibrators.
-            if (calibrator := getattr(self, "calibrator", None)) and calibrator.is_calibrated:
-                return calibrator.convert(data)
+            if calibrator := getattr(self, "calibrator", None):
+                # if isinstance(data, dict):
+                #     for k, v in data.items():
+                #         data[k].value = _convert(v.raw)
+                # else:
+                #     data.value = _convert(data.raw)
 
+                if kind is Kind.FROM_RAW:
+                    return calibrator.convert_from_raw(data)
+                elif kind is Kind.TO_RAW:
+                    return calibrator.convert_to_raw(data)
             return data
 
         return wrapper
+
+    @classmethod
+    def calibrate_output(cls, func):
+        return cls.calibrate(func, kind=Kind.FROM_RAW)
+
+    @classmethod
+    def calibrate_input(cls, func):
+        return cls.calibrate(func, kind=Kind.TO_RAW)

@@ -56,6 +56,7 @@ class Temperature(SensorDriver, EffectorDriver):
             if vial in self.vials:
                 # calibration should happen here to populate temperature field from raw
                 self.outputs[vial] = self.Output(vial=vial, raw=int(raw))
+        return self.outputs
 
     def commit(self):
         self._do_serial(from_proposal=True)
