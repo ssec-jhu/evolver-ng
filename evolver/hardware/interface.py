@@ -47,9 +47,7 @@ class SensorDriver(VialHardwareDriver):
     class Config(VialHardwareDriver.Config):
         pass
 
-    class Output(VialBaseModel):
-        raw: int
-        value: float
+    class Output(VialBaseModel): ...
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

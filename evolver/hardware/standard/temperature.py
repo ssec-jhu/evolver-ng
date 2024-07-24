@@ -23,7 +23,7 @@ class Temperature(SensorDriver, EffectorDriver):
     class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         pass
 
-    class Output(SerialDeviceOutputBase):
+    class Output(SerialDeviceOutputBase, SensorDriver.Output):
         temperature: float = Field(None, description="Sensor temperature in degrees celcius")
 
     class Input(EffectorDriver.Input):
