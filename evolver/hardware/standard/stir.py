@@ -2,7 +2,7 @@ from copy import copy
 
 from pydantic import Field
 
-from evolver.hardware.interface import EffectorDriver, VialBaseModel
+from evolver.hardware.interface import EffectorDriver
 from evolver.hardware.standard.base import SerialDeviceConfigBase
 from evolver.serial import SerialData
 
@@ -18,7 +18,7 @@ class Stir(EffectorDriver):
     class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         stir_max: int = 98
 
-    class Input(VialBaseModel):
+    class Input(EffectorDriver.Input):
         rate: int = Field(0, description="Stir rate setting")
 
     @property

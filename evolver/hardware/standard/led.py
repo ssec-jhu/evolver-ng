@@ -2,7 +2,7 @@ from copy import copy
 
 from pydantic import Field
 
-from evolver.hardware.interface import EffectorDriver, VialBaseModel
+from evolver.hardware.interface import EffectorDriver
 from evolver.hardware.standard.base import SerialDeviceConfigBase
 from evolver.serial import SerialData
 
@@ -12,7 +12,7 @@ class LED(EffectorDriver):
         pwm_max: int = 4095
         default_brightness: float = 1.0
 
-    class Input(VialBaseModel):
+    class Input(EffectorDriver.Input):
         brightness: float = Field(1.0, ge=0, le=1, description="brightness on scale of 0 to 1")
 
     @property

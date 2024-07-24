@@ -67,8 +67,7 @@ class EffectorDriver(VialHardwareDriver):
     class Config(VialHardwareDriver.Config):
         pass
 
-    class Input(VialBaseModel):
-        value: float
+    class Input(VialBaseModel): ...
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
