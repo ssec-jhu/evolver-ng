@@ -8,7 +8,8 @@ import evolver.util
 from evolver import __version__
 from evolver.app.main import EvolverConfigWithoutDefaults, SchemaResponse, app
 from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor
-from evolver.calibration.demo import NoOpCalibrator, SimpleCalibrator
+from evolver.calibration.demo import NoOpCalibrator
+from evolver.calibration.standard.linear import SimpleCalibrator
 from evolver.device import Evolver
 from evolver.hardware.demo import NoOpEffectorDriver, NoOpSensorDriver
 from evolver.hardware.interface import EffectorDriver, SensorDriver

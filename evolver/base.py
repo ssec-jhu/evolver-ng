@@ -1,6 +1,8 @@
+import datetime
 import logging
 import os
 from abc import ABC
+from functools import partial
 from pathlib import Path
 from typing import Annotated, Any, Dict
 
@@ -93,6 +95,22 @@ class _BaseConfig(pydantic.BaseModel):
         manually "dump" to dict using the following.
         """
         return dict(self)
+
+
+CreatedTimestampField = partial(
+    pydantic.Field, description="The creation timestamp", default_factory=datetime.datetime.now
+)
+ExpireField = partial(
+    pydantic.Field,
+    default=None,
+    description="The amount of time after which the associated object is considered stale. "
+    "`None` := forever (the default).",
+)
+
+
+class TimeStamp(_BaseConfig):
+    created: pydantic.PastDatetime | None = CreatedTimestampField()
+    expire: datetime.timedelta | None = ExpireField()
 
 
 class BaseConfig(_BaseConfig):
@@ -334,7 +352,7 @@ class BaseInterface(ABC):
 
     @property
     def config_model(self) -> BaseConfig:
-        """Return a dict of Config populated from instance attributes."""
+        """Return an instance of Config populated from instance attributes."""
         return self.Config.model_validate(vars(self))
 
     @property

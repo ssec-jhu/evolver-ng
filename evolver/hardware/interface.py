@@ -1,7 +1,5 @@
 from abc import abstractmethod
 
-from pydantic import Field
-
 from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor
 from evolver.calibration.interface import Calibrator
 from evolver.settings import settings
@@ -29,8 +27,7 @@ class VialHardwareDriver(HardwareDriver):
 
 
 class SensorDriver(VialHardwareDriver):
-    class Config(VialHardwareDriver.Config):
-        pass
+    class Config(VialHardwareDriver.Config): ...
 
     class Output(VialBaseModel): ...
 
@@ -41,10 +38,11 @@ class SensorDriver(VialHardwareDriver):
     def get(self) -> list[Output]:
         return self.outputs
 
-    @Calibrator.calibrate_output
     @abstractmethod
     def read(self):
-        """Communicate with connection to retrieve data. This must return ``self.outputs``."""
+        """Communicate with connection to retrieve data. This must return ``self.outputs``.
+        The implementation is responsible for calling methods of ``self.output_transformer`` as deemed necessary.
+        """
         pass
 
 
@@ -59,8 +57,8 @@ class EffectorDriver(VialHardwareDriver):
         self.proposal: dict[int, self.Input] = {}
         self.committed: dict[int, self.Input] = {}
 
-    @Calibrator.calibrate_input
     def set(self, input: Input):
+        """The implementation is responsible for calling methods of ``self.input_transformer`` as deemed necessary."""
         self.proposal[input.vial] = input
 
     @abstractmethod

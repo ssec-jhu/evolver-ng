@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from evolver.calibration.demo import SimpleCalibrator
+from evolver.calibration.standard.linear import SimpleCalibrator
 from evolver.hardware.demo import NoOpSensorDriver
 from evolver.settings import settings
 
