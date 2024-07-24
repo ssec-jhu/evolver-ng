@@ -21,7 +21,7 @@ class GenericPump(EffectorDriver):
     non-IPP pumps.
     """
 
-    class Config(SerialDeviceConfigBase):
+    class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         ipp_pumps: bool | list[int] = Field(False, description="False (no IPP), True (all IPP), or list of IPP ids")
 
     class Input(BaseConfig):

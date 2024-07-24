@@ -15,7 +15,7 @@ class Stir(EffectorDriver):
     to the max rate available in arduino implementation.
     """
 
-    class Config(SerialDeviceConfigBase):
+    class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         stir_max: int = 98
 
     class Input(VialBaseModel):
