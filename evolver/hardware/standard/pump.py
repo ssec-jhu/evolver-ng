@@ -3,7 +3,7 @@ from copy import copy
 from pydantic import Field
 
 from evolver.base import BaseConfig
-from evolver.hardware.interface import EffectorDriver, VialBaseModel
+from evolver.hardware.interface import EffectorDriver
 from evolver.hardware.standard.base import SerialDeviceConfigBase
 from evolver.serial import SerialData
 
@@ -24,7 +24,7 @@ class GenericPump(EffectorDriver):
     class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         ipp_pumps: bool | list[int] = Field(False, description="False (no IPP), True (all IPP), or list of IPP ids")
 
-    class Input(BaseConfig):
+    class Input(BaseConfig):  # This intentionally doesn't inherit from EffectorDriver.Input.
         pump_id: int
         flow_rate: float
 
@@ -89,7 +89,7 @@ class VialIEPump(EffectorDriver):
             self.influx_map = self.influx_map or {i: i for i in range(0, self.slots * 3)}
             self.efflux_map = self.efflux_map or {i: i + self.slots for i in range(0, self.slots * 3)}
 
-    class Input(VialBaseModel):
+    class Input(EffectorDriver.Input):
         flow_rate_influx: float = Field(description="influx flow rate in ml/s")
         flow_rate_efflux: float = Field(description="efflux flow rate in ml/s")
 

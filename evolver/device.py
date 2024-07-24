@@ -1,7 +1,7 @@
 import time
 from collections import defaultdict
 
-from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor
+from evolver.base import BaseInterface, ConfigDescriptor
 from evolver.connection.interface import Connection
 from evolver.controller.interface import Controller
 from evolver.hardware.interface import EffectorDriver, HardwareDriver, SensorDriver
@@ -14,7 +14,7 @@ DEFAULT_HISTORY = HistoryServer
 
 
 class Evolver(BaseInterface):
-    class Config(BaseConfig):
+    class Config(BaseInterface.Config):
         name: str = "Evolver"
         vials: list = list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
         hardware: dict[str, ConfigDescriptor | HardwareDriver] = {}

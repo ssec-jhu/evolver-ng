@@ -1,10 +1,10 @@
 from copy import copy
 
-from evolver.hardware.interface import BaseCalibrator, EffectorDriver, SensorDriver, VialConfigBaseModel
+from evolver.hardware.interface import BaseCalibrator, EffectorDriver, SensorDriver
 
 
 class NoOpSensorDriver(SensorDriver):
-    class Config(VialConfigBaseModel):
+    class Config(SensorDriver.Config):
         echo_raw: int = 1
         echo_val: int = 2
 

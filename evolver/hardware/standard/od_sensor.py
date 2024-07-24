@@ -12,10 +12,10 @@ class ODSensor(SensorDriver):
     integrating a specified number of ADC readings per vial.
     """
 
-    class Config(SerialDeviceConfigBase):
+    class Config(SerialDeviceConfigBase, SensorDriver.Config):
         integrations: int = Field(500, description="on read, request average of this number of ADC reads")
 
-    class Output(SerialDeviceOutputBase):
+    class Output(SerialDeviceOutputBase, SensorDriver.Output):
         density: float = None
 
     @property

@@ -5,7 +5,6 @@ from pydantic import Field
 from evolver.hardware.interface import (
     EffectorDriver,
     SensorDriver,
-    VialBaseModel,
 )
 from evolver.hardware.standard.base import SerialDeviceConfigBase, SerialDeviceOutputBase
 from evolver.serial import SerialData
@@ -21,13 +20,13 @@ class Temperature(SensorDriver, EffectorDriver):
 
     HEAT_OFF = b"4095"
 
-    class Config(SerialDeviceConfigBase):
+    class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         pass
 
-    class Output(SerialDeviceOutputBase):
+    class Output(SerialDeviceOutputBase, SensorDriver.Output):
         temperature: float = Field(None, description="Sensor temperature in degrees celcius")
 
-    class Input(VialBaseModel):
+    class Input(EffectorDriver.Input):
         temperature: float = Field(None, description="Target temperature in degrees celcius")
 
     @property

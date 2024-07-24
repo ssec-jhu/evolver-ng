@@ -1,14 +1,14 @@
 from abc import abstractmethod
 from threading import RLock
 
-from evolver.base import BaseConfig, BaseInterface
+from evolver.base import BaseInterface
 from evolver.settings import settings
 
 
 class Connection(BaseInterface):
     """Interface for a connection protocol, abstracting and wrapping lower-level communication over self.backend."""
 
-    class Config(BaseConfig): ...
+    class Config(BaseInterface.Config): ...
 
     backend = None  # Backend module/library to use.
 

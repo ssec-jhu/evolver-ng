@@ -2,11 +2,11 @@ import time
 from abc import abstractmethod
 from collections import defaultdict
 
-from evolver.base import BaseConfig, BaseInterface
+from evolver.base import BaseInterface
 
 
 class History(BaseInterface):
-    class Config(BaseConfig):
+    class Config(BaseInterface.Config):
         pass
 
     @abstractmethod
