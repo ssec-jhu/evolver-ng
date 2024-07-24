@@ -2,6 +2,8 @@ import pytest
 
 from evolver.hardware.standard.led import LED
 from evolver.hardware.standard.od_sensor import ODSensor
+from evolver.hardware.standard.pump import VialIEPump
+from evolver.hardware.standard.stir import Stir
 from evolver.hardware.standard.temperature import Temperature
 from evolver.hardware.test_utils import SerialVialEffectorHardwareTestSuite, SerialVialSensorHardwareTestSuite
 
@@ -78,3 +80,51 @@ class TestTempEffectorMode(SerialVialEffectorHardwareTestSuite):
 )
 class TestLED(SerialVialEffectorHardwareTestSuite):
     driver = LED
+
+
+@pytest.mark.parametrize(
+    "config_params, values, serial_out",
+    [
+        (
+            {"addr": "stir", "slots": 2},
+            [[Stir.Input(vial=0, rate=8)], [Stir.Input(vial=1, rate=9)]],
+            [b"stirr,8,0,_!", b"stirr,8,9,_!"],
+        ),
+        (
+            {"addr": "stir", "vials": [1], "slots": 2},
+            [[Stir.Input(vial=0, rate=8)], [Stir.Input(vial=1, rate=9)]],
+            [b"stirr,0,0,_!", b"stirr,0,9,_!"],
+        ),
+    ],
+)
+class TestStir(SerialVialEffectorHardwareTestSuite):
+    driver = Stir
+
+
+@pytest.mark.parametrize(
+    "config_params, values, serial_out",
+    [
+        (
+            {"addr": "pump", "slots": 2},
+            [[VialIEPump.Input(vial=0, flow_rate_influx=1, flow_rate_efflux=2)]],
+            [b"pumpr,1.0|1,--,2.0|2,--,--,--,_!"],
+        ),
+        (
+            {"addr": "pump", "slots": 2},
+            [
+                [
+                    VialIEPump.Input(vial=0, flow_rate_influx=1, flow_rate_efflux=1),
+                    VialIEPump.Input(vial=1, flow_rate_influx=8, flow_rate_efflux=9),
+                ]
+            ],
+            [b"pumpr,1.0|1,8.0|8,1.0|1,9.0|9,--,--,_!"],
+        ),
+        (
+            {"addr": "pump", "ipp_pumps": [0, 1], "slots": 2, "influx_map": {0: 0}, "efflux_map": {0: 1}},
+            [[VialIEPump.Input(vial=0, flow_rate_influx=1, flow_rate_efflux=2)]],
+            [b"pumpr,1.0|0|1,1.0|0|2,1.0|0|3,2.0|1|1,2.0|1|2,2.0|1|3,_!"],
+        ),
+    ],
+)
+class TestPump(SerialVialEffectorHardwareTestSuite):
+    driver = VialIEPump
