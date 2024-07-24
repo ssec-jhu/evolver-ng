@@ -8,14 +8,14 @@ import evolver.util
 
 
 class ConcreteInterface(evolver.base.BaseInterface):
-    class Config(evolver.base.BaseConfig):
+    class Config(evolver.base.BaseInterface.Config):
         name: str = "TestDevice"
         a: int = 2
         b: int = 3
 
 
 class Nested(evolver.base.BaseInterface):
-    class Config(evolver.base.BaseConfig):
+    class Config(evolver.base.BaseInterface.Config):
         stuff: evolver.base.ConfigDescriptor
 
 

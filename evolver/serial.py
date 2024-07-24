@@ -20,7 +20,7 @@ class EvolverSerialUART(Connection):
         SEND_SUFFIX = b"_!"
         RESP_SUFFIX = b"end"
 
-    class Config(BaseConfig):
+    class Config(Connection.Config):
         name: str = "EvolverSerialUART"
         port: str = "/dev/ttyAMA0"
         baudrate: int = 9600

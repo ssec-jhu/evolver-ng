@@ -21,7 +21,7 @@ class Temperature(SensorDriver, EffectorDriver):
 
     HEAT_OFF = b"4095"
 
-    class Config(SerialDeviceConfigBase):
+    class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         pass
 
     class Output(SerialDeviceOutputBase):

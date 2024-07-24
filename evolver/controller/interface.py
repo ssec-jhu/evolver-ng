@@ -1,10 +1,10 @@
 from abc import abstractmethod
 
-from evolver.base import BaseConfig, BaseInterface
+from evolver.base import BaseInterface
 
 
 class Controller(BaseInterface):
-    class Config(BaseConfig): ...
+    class Config(BaseInterface.Config): ...
 
     def __init__(self, *args, evolver=None, **kwargs):
         self.evolver = evolver

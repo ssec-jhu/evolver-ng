@@ -13,7 +13,7 @@ class VialBaseModel(BaseConfig):
 
 
 class BaseCalibrator(BaseInterface):
-    class Config(BaseConfig):
+    class Config(BaseInterface.Config):
         calibfile: str = None
 
     def __init__(self, *args, evolver=None, **kwargs):
@@ -27,7 +27,7 @@ class BaseCalibrator(BaseInterface):
 
 
 class HardwareDriver(BaseInterface):
-    class Config(BaseConfig):
+    class Config(BaseInterface.Config):
         pass
 
     calibrator = None
@@ -40,11 +40,11 @@ class HardwareDriver(BaseInterface):
 
 
 class VialHardwareDriver(HardwareDriver):
-    class Config(VialConfigBaseModel): ...
+    class Config(VialConfigBaseModel, HardwareDriver.Config): ...
 
 
 class SensorDriver(VialHardwareDriver):
-    class Config(VialConfigBaseModel):
+    class Config(VialHardwareDriver.Config):
         pass
 
     class Output(VialBaseModel):
@@ -64,7 +64,7 @@ class SensorDriver(VialHardwareDriver):
 
 
 class EffectorDriver(VialHardwareDriver):
-    class Config(VialConfigBaseModel):
+    class Config(VialHardwareDriver.Config):
         pass
 
     class Input(VialBaseModel):

@@ -9,7 +9,7 @@ from evolver.hardware.interface import HardwareDriver, VialConfigBaseModel
 
 
 class Chemostat(Controller):
-    class Config(VialConfigBaseModel):
+    class Config(Controller.Config, VialConfigBaseModel):
         od_sensor: HardwareDriver | ConfigDescriptor | str = Field(description="name of OD sensor to use")
         pump: HardwareDriver | ConfigDescriptor | str = Field(description="name of pump device to use")
         stirrer: HardwareDriver | ConfigDescriptor | str = Field(description="name of stirrer device to use")

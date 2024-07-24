@@ -8,7 +8,7 @@ from evolver.serial import SerialData
 
 
 class LED(EffectorDriver):
-    class Config(SerialDeviceConfigBase):
+    class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         pwm_max: int = 4095
         default_brightness: float = 1.0
 
