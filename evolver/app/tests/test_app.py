@@ -1,5 +1,7 @@
 import json
+from datetime import datetime, timedelta
 
+import numpy as np
 import pytest
 import yaml
 from fastapi.openapi.utils import get_openapi
@@ -9,7 +11,8 @@ from evolver import __version__
 from evolver.app.main import EvolverConfigWithoutDefaults, SchemaResponse, app
 from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor
 from evolver.calibration.demo import NoOpCalibrator
-from evolver.calibration.standard.linear import SimpleCalibrator
+from evolver.calibration.interface import Status
+from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
 from evolver.device import Evolver
 from evolver.hardware.demo import NoOpEffectorDriver, NoOpSensorDriver
 from evolver.hardware.interface import EffectorDriver, SensorDriver
@@ -94,31 +97,57 @@ class TestApp:
         assert response.status_code == 422
 
     def test_calibration_status(self, app_client):
-        app.state.evolver = Evolver(
-            hardware={
-                "test_hardware1": NoOpSensorDriver(calibrator=NoOpCalibrator()),
-                "test_hardware2": NoOpSensorDriver(calibrator=SimpleCalibrator()),
-            }
-        )
+        hardware = {
+            "test_hardware1": NoOpSensorDriver(calibrator=NoOpCalibrator()),
+            "test_hardware2": NoOpSensorDriver(calibrator=NoOpCalibrator()),
+        }
+        app.state.evolver = Evolver(hardware=hardware)
 
         response = app_client.get("/calibration_status/", params=dict(name=None))
         assert response.status_code == 200
         contents = json.loads(response.content)
-        assert contents["test_hardware1"]
-        assert not contents["test_hardware2"]
+
+        for device in hardware:
+            assert contents[device]
+            for transformer in ("input_transformer", "output_transformer"):
+                status = Status.model_validate(contents[device][transformer])
+                assert status.ok
+                assert status.created - datetime.now() < timedelta(seconds=5)
 
     def test_calibrate(self, app_client):
-        app.state.evolver = Evolver(hardware={"test_hardware": NoOpSensorDriver(calibrator=SimpleCalibrator())})
+        coefficients = [1, 2]
+        # Creat calibrator from transformer with stale (expired) config.
+        calibrator = LinearCalibrator(
+            input_transformer=LinearTransformer(
+                coefficients=coefficients, created=datetime.now() - timedelta(minutes=60), expire=timedelta(minutes=50)
+            )
+        )
+        app.state.evolver = Evolver(hardware={"test_hardware": NoOpSensorDriver(calibrator=calibrator)})
         response = app_client.get("/calibration_status/", params=dict(name="test_hardware"))
         assert response.status_code == 200
-        assert json.loads(response.content) is False
+        # Assert that status is not ok, is stale.
+        assert not Status.model_validate(json.loads(response.content)["input_transformer"]).ok
 
-        response = app_client.post("/calibrate/test_hardware")
+        # Mock new data to calibrate against.
+        new_coefficients = [2, 3]
+        assert new_coefficients != coefficients
+        x = np.linspace(0, 100, 100)
+        y = new_coefficients[0] + x * new_coefficients[1]
+
+        # Recalibrate.
+        response = app_client.post("/calibrate/test_hardware", json=dict(input_transformer=[x.tolist(), y.tolist()]))
         assert response.status_code == 200
 
+        # Assert transformer has new coefficients and has been recalibrated.
+        assert app.state.evolver.hardware["test_hardware"].calibrator.input_transformer.coefficients == pytest.approx(
+            new_coefficients
+        )
+
+        # Assert that new config is no longer stale.
         response = app_client.get("/calibration_status/", params=dict(name="test_hardware"))
         assert response.status_code == 200
-        assert json.loads(response.content) is True
+        # Assert that status is not ok, is stale.
+        assert Status.model_validate(json.loads(response.content)["input_transformer"]).ok
 
     @pytest.mark.parametrize(
         ("func", "kwargs"),

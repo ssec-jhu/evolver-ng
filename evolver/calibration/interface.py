@@ -42,7 +42,7 @@ class Transformer(BaseInterface):
 
         def save(self, file_path: Path = None, encoding: str | None = None):
             if file_path is None:
-                file_path = Path(f"{self.name}_{self.timestamp.strftime(settings.DATETIME_PATH_FORMAT)}").with_suffix(
+                file_path = Path(f"{self.name}_{self.created.strftime(settings.DATETIME_PATH_FORMAT)}").with_suffix(
                     ".yml"
                 )
             return super().save(file_path=self.dir / file_path, encoding=encoding)
@@ -64,20 +64,26 @@ class Transformer(BaseInterface):
     @property
     def status(self) -> Status:
         """Override to return an instance of Status indicating whether the associated transformation config parameters
-        are ok to use or should be considered stale and recalibrated.
+        are OK to use or should be considered stale and recalibrated.
         """
         return Status(created=self.created, expire=self.expire)
 
-    def fit(self, *args, **kwargs) -> Config | None:
+    @classmethod
+    def fit(cls, *args, **kwargs) -> Config:
         """Override to implement a fitting function responsible for returning a ``Config`` instance that can then be
         used for ``convert_to`` and ``convert_from``.
         This can be utilized by ``Calibrator.run_calibration_procedure``, however, because the fit produces config
         parameters directly related to the transformation, such definitions must belong to the transformer and not
         the calibrator class.
-
-        Note: This is intentionally not an abstractmethod.
         """
-        ...  # TODO: Is there use in this base meth returning self.config_model, perhaps with updated timestamp?
+        # Note: This is intentionally not an abstractmethod.
+        raise NotImplementedError
+
+    def refit(self, *args, **kwargs):
+        new_config = self.fit(*args, **kwargs)
+        for k, v in vars(new_config).items():
+            setattr(self, k, v)
+        return new_config
 
 
 class Calibrator(BaseInterface):
@@ -89,6 +95,13 @@ class Calibrator(BaseInterface):
     class Config(Transformer.Config):
         input_transformer: ConfigDescriptor | Transformer | None = None
         output_transformer: ConfigDescriptor | Transformer | None = None
+
+    @property
+    def status(self) -> dict:
+        return {
+            "input_transformer": self.input_transformer.status if self.input_transformer else None,
+            "output_transformer": self.output_transformer.status if self.output_transformer else None,
+        }
 
     @abstractmethod
     def run_calibration_procedure(self, *args, **kwargs):

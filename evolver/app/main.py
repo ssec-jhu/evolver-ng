@@ -93,23 +93,21 @@ async def calibration_status(name: str = None):
         raise HardwareNotFoundError
 
     if calibrator := getattr(driver, "calibrator", None):
-        return calibrator.is_calibrated
+        return calibrator.status
     else:
         raise CalibratorNotFoundError
 
 
 @app.post("/calibrate/{name}")
-async def calibrate(name: str):
+async def calibrate(name: str, data: dict = None):
     if not (driver := app.state.evolver.hardware.get(name)):
         raise HardwareNotFoundError
 
     if not (calibrator := getattr(driver, "calibrator", None)):
         raise CalibratorNotFoundError
 
-    # TODO: Do we warn if calibrator.is_calibrated == True?
-
     # TODO: This is just a placeholder.
-    return calibrator.run_calibration_procedure()
+    return calibrator.run_calibration_procedure(data)  # TODO: or **data?
 
 
 def start():
