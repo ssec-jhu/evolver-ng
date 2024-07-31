@@ -11,7 +11,7 @@ from evolver.settings import settings
 class TestStatus:
     def test_defaults(self):
         obj = Status()
-        assert obj.expire is None
+        assert obj.expire
         assert obj.delta < timedelta(seconds=5)
         assert obj.created - datetime.now() < timedelta(seconds=5)
         assert obj.ok

@@ -1,5 +1,7 @@
 from abc import abstractmethod
 
+from pydantic import Field
+
 from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor
 from evolver.calibration.interface import Calibrator
 from evolver.settings import settings
@@ -15,7 +17,9 @@ class VialBaseModel(BaseConfig):
 
 class HardwareDriver(BaseInterface):
     class Config(BaseInterface.Config):
-        calibrator: ConfigDescriptor | Calibrator | None = None
+        calibrator: ConfigDescriptor | Calibrator | None = Field(
+            None, description="The calibrator used to both calibrate and transform Input and/or Output data."
+        )
 
     def __init__(self, *args, evolver=None, **kwargs):
         self.evolver = evolver

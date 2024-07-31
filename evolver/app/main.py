@@ -7,9 +7,10 @@ import evolver.util
 from evolver import __project__, __version__
 from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError
 from evolver.app.models import SchemaResponse
-from evolver.base import ImportString, require_all_fields
+from evolver.base import require_all_fields
 from evolver.device import Evolver
 from evolver.settings import app_settings
+from evolver.types import ImportString
 
 # Setup logging.
 evolver.util.setup_logging()
@@ -82,10 +83,6 @@ async def evolver_async_loop():
 
 @app.get("/calibration_status/")
 async def calibration_status(name: str = None):
-    # TODO: semantic change: this needs to return calibration status/staleness. I.e., calibration date (that when last
-    # calibrated) and then a delta compared to some configurable time expired, e.g., 6 months, and then a bool for
-    # the semantics of this delta to whether it's stale or ok to still use.
-
     if not name:
         return app.state.evolver.calibration_status
 

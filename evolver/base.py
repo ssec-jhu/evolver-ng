@@ -2,15 +2,15 @@ import datetime
 import logging
 import os
 from abc import ABC
-from functools import partial
 from pathlib import Path
-from typing import Annotated, Any, Dict
+from typing import Any, Dict
 
 import pydantic
 import pydantic_core
 import yaml
 
 import evolver.util
+from evolver.types import CreatedTimestampField, ExpireField, ImportString
 
 
 def require_all_fields(cls):
@@ -37,13 +37,6 @@ def require_all_fields(cls):
 
     cls.model_rebuild(force=True)
     return cls
-
-
-# pydantics import string alone does not generate a schema, which breaks openapi
-# docs. We wrap it to set schema explicitly.
-ImportString = Annotated[
-    pydantic.ImportString, pydantic.WithJsonSchema({"type": "string", "description": "fully qualified class name"})
-]
 
 
 class _BaseConfig(pydantic.BaseModel):
@@ -96,17 +89,6 @@ class _BaseConfig(pydantic.BaseModel):
         manually "dump" to dict using the following.
         """
         return dict(self)
-
-
-CreatedTimestampField = partial(
-    pydantic.Field, description="The creation timestamp", default_factory=datetime.datetime.now
-)
-ExpireField = partial(
-    pydantic.Field,
-    default=None,
-    description="The amount of time after which the associated object is considered stale. "
-    "`None` := forever (the default).",
-)
 
 
 class TimeStamp(_BaseConfig):

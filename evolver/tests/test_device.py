@@ -3,7 +3,7 @@ import json
 import pytest
 
 import evolver.base
-from evolver.calibration.interface import Calibrator
+from evolver.calibration.interface import Calibrator, Status
 from evolver.connection.interface import Connection
 from evolver.controller.interface import Controller
 from evolver.device import DEFAULT_HISTORY, DEFAULT_SERIAL, Evolver
@@ -132,3 +132,10 @@ class TestEvolver:
         assert isinstance(obj.hardware["a"], NoOpSensorDriver)
         assert isinstance(obj.serial, DEFAULT_SERIAL)
         assert isinstance(obj.history, DEFAULT_HISTORY)
+
+    def test_calibration_status(self, demo_evolver):
+        status = demo_evolver.calibration_status
+        assert status.keys() and (status.keys() == demo_evolver.hardware.keys())
+        assert status["testeffector"] is None
+        assert isinstance(status["testsensor"]["input_transformer"], Status)
+        assert isinstance(status["testsensor"]["output_transformer"], Status)

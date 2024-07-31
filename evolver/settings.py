@@ -2,7 +2,8 @@ from datetime import timedelta
 from pathlib import Path
 
 import pydantic_settings
-from pydantic import Field
+
+from evolver.types import ExpireField
 
 
 class BaseSettings(pydantic_settings.BaseSettings):
@@ -16,11 +17,7 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     ROOT_CALIBRATOR_FILE_STORAGE_PATH: Path = Path("calibration_files")
-    DEFAULT_CALIBRATION_EXPIRE: timedelta = Field(
-        timedelta(weeks=4 * 6),  # Approx. 6 months.
-        description="The default amount of time after which a calibration"
-        "configuration is considered stale. `None` := forever",
-    )
+    DEFAULT_CALIBRATION_EXPIRE: timedelta = ExpireField(default=timedelta(weeks=4 * 6))
     DATETIME_PATH_FORMAT: str = "%Y_%m_%dT%H_%M_%S"
 
 
