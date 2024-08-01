@@ -30,3 +30,4 @@ class ODSensor(SensorDriver):
         for vial, raw in enumerate(response.data):
             if vial in self.vials:
                 self.outputs[vial] = self.Output(vial=vial, raw=int(raw))
+        return self.outputs

@@ -5,10 +5,12 @@ from fastapi import FastAPI
 
 import evolver.util
 from evolver import __project__, __version__
+from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError
 from evolver.app.models import SchemaResponse
-from evolver.base import ImportString, require_all_fields
+from evolver.base import require_all_fields
 from evolver.device import Evolver
 from evolver.settings import app_settings
+from evolver.types import ImportString
 
 # Setup logging.
 evolver.util.setup_logging()
@@ -77,6 +79,32 @@ async def evolver_async_loop():
     while True:
         app.state.evolver.loop_once()
         await asyncio.sleep(app.state.evolver.interval)
+
+
+@app.get("/calibration_status/")
+async def calibration_status(name: str = None):
+    if not name:
+        return app.state.evolver.calibration_status
+
+    if not (driver := app.state.evolver.hardware.get(name)):
+        raise HardwareNotFoundError
+
+    if calibrator := getattr(driver, "calibrator", None):
+        return calibrator.status
+    else:
+        raise CalibratorNotFoundError
+
+
+@app.post("/calibrate/{name}")
+async def calibrate(name: str, data: dict = None):
+    if not (driver := app.state.evolver.hardware.get(name)):
+        raise HardwareNotFoundError
+
+    if not (calibrator := getattr(driver, "calibrator", None)):
+        raise CalibratorNotFoundError
+
+    # TODO: This is just a placeholder.
+    return calibrator.run_calibration_procedure(data)  # TODO: or **data?
 
 
 def start():

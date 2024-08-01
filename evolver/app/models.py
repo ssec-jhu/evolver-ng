@@ -2,7 +2,8 @@ from typing import Any
 
 import pydantic
 
-from evolver.base import BaseConfig, BaseInterface, ImportString
+from evolver.base import BaseConfig, BaseInterface
+from evolver.types import ImportString
 
 
 class SchemaResponse(pydantic.BaseModel):

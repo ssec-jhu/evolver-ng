@@ -170,3 +170,6 @@ cython_debug/
 
 # temp - ignore any files named openapi.json
 openapi.json
+
+# repo/project specific stuff
+calibration_files/

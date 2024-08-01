@@ -1,6 +1,9 @@
 from abc import abstractmethod
 
-from evolver.base import BaseConfig, BaseInterface
+from pydantic import Field
+
+from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor
+from evolver.calibration.interface import Calibrator
 from evolver.settings import settings
 
 
@@ -12,30 +15,14 @@ class VialBaseModel(BaseConfig):
     vial: int
 
 
-class BaseCalibrator(BaseInterface):
+class HardwareDriver(BaseInterface):
     class Config(BaseInterface.Config):
-        calibfile: str = None
+        calibrator: ConfigDescriptor | Calibrator | None = Field(
+            None, description="The calibrator used to both calibrate and transform Input and/or Output data."
+        )
 
     def __init__(self, *args, evolver=None, **kwargs):
         self.evolver = evolver
-        super().__init__(*args, **kwargs)
-
-    @property
-    @abstractmethod
-    def status(self):
-        pass
-
-
-class HardwareDriver(BaseInterface):
-    class Config(BaseInterface.Config):
-        pass
-
-    calibrator = None
-
-    def __init__(self, *args, evolver=None, calibrator=None, **kwargs):
-        self.evolver = evolver
-        if calibrator:
-            self.calibrator = calibrator
         super().__init__(*args, **kwargs)
 
 
@@ -44,8 +31,7 @@ class VialHardwareDriver(HardwareDriver):
 
 
 class SensorDriver(VialHardwareDriver):
-    class Config(VialHardwareDriver.Config):
-        pass
+    class Config(VialHardwareDriver.Config): ...
 
     class Output(VialBaseModel): ...
 
@@ -58,6 +44,9 @@ class SensorDriver(VialHardwareDriver):
 
     @abstractmethod
     def read(self):
+        """Communicate with connection to retrieve data. This must return ``self.outputs``.
+        The implementation is responsible for calling methods of ``self.output_transformer`` as deemed necessary.
+        """
         pass
 
 
@@ -73,6 +62,7 @@ class EffectorDriver(VialHardwareDriver):
         self.committed: dict[int, self.Input] = {}
 
     def set(self, input: Input):
+        """The implementation is responsible for calling methods of ``self.input_transformer`` as deemed necessary."""
         self.proposal[input.vial] = input
 
     @abstractmethod

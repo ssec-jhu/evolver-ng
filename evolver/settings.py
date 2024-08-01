@@ -1,6 +1,9 @@
+from datetime import timedelta
 from pathlib import Path
 
 import pydantic_settings
+
+from evolver.types import ExpireField
 
 
 class BaseSettings(pydantic_settings.BaseSettings):
@@ -13,6 +16,9 @@ class Settings(BaseSettings):
     DEFAULT_NUMBER_OF_VIALS_PER_BOX: int = 16
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    ROOT_CALIBRATOR_FILE_STORAGE_PATH: Path = Path("calibration_files")
+    DEFAULT_CALIBRATION_EXPIRE: timedelta = ExpireField(default=timedelta(weeks=4 * 6))
+    DATETIME_PATH_FORMAT: str = "%Y_%m_%dT%H_%M_%S"
 
 
 class AppSettings(BaseSettings):
