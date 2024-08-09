@@ -137,5 +137,7 @@ class TestEvolver:
         status = demo_evolver.calibration_status
         assert status.keys() and (status.keys() == demo_evolver.hardware.keys())
         assert status["testeffector"] is None
-        assert isinstance(status["testsensor"]["input_transformer"], Status)
-        assert isinstance(status["testsensor"]["output_transformer"], Status)
+        assert isinstance(status["testsensor"], Calibrator.Status)
+        assert isinstance(status["testsensor"].input_transformer, Status)
+        assert isinstance(status["testsensor"].output_transformer, Status)
+        assert status["testsensor"].ok

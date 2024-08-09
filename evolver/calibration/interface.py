@@ -5,7 +5,15 @@ from typing import Any
 
 from pydantic import Field, PastDatetime
 
-from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor, CreatedTimestampField, ExpireField, TimeStamp
+from evolver.base import (
+    BaseConfig,
+    BaseInterface,
+    ConfigDescriptor,
+    CreatedTimestampField,
+    ExpireField,
+    TimeStamp,
+    _BaseConfig,
+)
 from evolver.settings import settings
 
 
@@ -96,12 +104,27 @@ class Calibrator(BaseInterface):
         input_transformer: ConfigDescriptor | Transformer | None = None
         output_transformer: ConfigDescriptor | Transformer | None = None
 
+    class Status(_BaseConfig):
+        input_transformer: Status | None = None
+        output_transformer: Status | None = None
+        ok: bool | None = None
+
+        def model_post_init(self, __context: Any) -> None:
+            if self.ok is None:
+                # The following logic accounts for when transformers are None.
+                if self.input_transformer and self.output_transformer:
+                    self.ok = self.input_transformer.ok and self.output_transformer.ok
+                elif self.input_transformer:
+                    self.ok = self.input_transformer.ok
+                elif self.output_transformer:
+                    self.ok = self.output_transformer.ok
+
     @property
-    def status(self) -> dict:
-        return {
-            "input_transformer": self.input_transformer.status if self.input_transformer else None,
-            "output_transformer": self.output_transformer.status if self.output_transformer else None,
-        }
+    def status(self) -> Status:
+        return self.Status(
+            input_transformer=self.input_transformer.status if self.input_transformer else None,
+            output_transformer=self.output_transformer.status if self.output_transformer else None,
+        )
 
     @abstractmethod
     def run_calibration_procedure(self, *args, **kwargs):
