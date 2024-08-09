@@ -1,3 +1,5 @@
+from pydantic import Field
+
 from evolver.base import ConfigDescriptor
 from evolver.calibration.interface import Calibrator, Transformer
 
@@ -11,7 +13,7 @@ class NoOpTransformer(Transformer):
 
 class NoOpCalibrator(Calibrator):
     class Config(Calibrator.Config):
-        input_transformer: ConfigDescriptor | Transformer | None = NoOpTransformer()
-        output_transformer: ConfigDescriptor | Transformer | None = NoOpTransformer()
+        input_transformer: ConfigDescriptor | Transformer | None = Field(default_factory=NoOpTransformer)
+        output_transformer: ConfigDescriptor | Transformer | None = Field(default_factory=NoOpTransformer)
 
     def run_calibration_procedure(self, *args, **kwargs): ...

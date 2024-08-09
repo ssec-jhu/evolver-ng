@@ -31,12 +31,14 @@ class TestTransformer:
         assert (datetime.now() - date) < timedelta(hours=1)
 
     def test_status(self):
+        t0 = datetime.now()
         obj = NoOpTransformer()
         status = obj.status
         assert isinstance(status, Status)
         assert obj.created == status.created
         assert obj.expire == status.expire
         assert status.ok
+        assert status.created > t0
 
 
 class TestCalibrator:
@@ -45,3 +47,15 @@ class TestCalibrator:
         data = NoOpSensorDriver.Output(vial=1)
         calibrated_data = obj.output_transformer.convert_to(data)
         assert calibrated_data is data
+
+    def test_creation_timestamp(self):
+        t0 = datetime.now()
+
+        hardware = {
+            "test_hardware1": NoOpSensorDriver(calibrator=NoOpCalibrator()),
+            "test_hardware2": NoOpSensorDriver(calibrator=NoOpCalibrator()),
+        }
+
+        for _, device in hardware.items():
+            for transformer in ("input_transformer", "output_transformer"):
+                assert t0 < getattr(device.calibrator, transformer).created

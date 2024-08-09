@@ -97,6 +97,7 @@ class TestApp:
         assert response.status_code == 422
 
     def test_calibration_status(self, app_client):
+        t0 = datetime.now()
         hardware = {
             "test_hardware1": NoOpSensorDriver(calibrator=NoOpCalibrator()),
             "test_hardware2": NoOpSensorDriver(calibrator=NoOpCalibrator()),
@@ -111,8 +112,9 @@ class TestApp:
             assert contents[device]
             for transformer in ("input_transformer", "output_transformer"):
                 status = Status.model_validate(contents[device][transformer])
+                assert getattr(hardware[device].calibrator, transformer).created == status.created
+                assert t0 < status.created
                 assert status.ok
-                assert status.created - datetime.now() < timedelta(seconds=5)
 
     def test_calibrate(self, app_client):
         coefficients = [1, 2]
@@ -172,7 +174,6 @@ class TestApp:
     def test_calibrator_not_found_exceptions(self, app_client, func, kwargs):
         app.state.evolver = Evolver(hardware={"test_hardware": NoOpSensorDriver()})
         response = getattr(app_client, func)(**kwargs)
-        # response = app_client.get("/calibration_status/", params=dict(name="test_hardware"))
         assert response.status_code == 404
         contents = json.loads(response.content)
         assert contents["detail"] == "Hardware has no calibrator"

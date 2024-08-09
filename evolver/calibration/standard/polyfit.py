@@ -24,6 +24,9 @@ class PolyFitTransformer(Transformer):
         config = cls.Config.model_validate(dict(coefficients=new_coefficients))
         return config
 
+    def refit(self, x, y, *args, **kwargs):
+        return super().refit(x, y, self.degree, *args, **kwargs)
+
     def convert_to(self, x):
         return poly.polyval(x, self.coefficients)
 
@@ -38,6 +41,9 @@ class LinearTransformer(PolyFitTransformer):
     @classmethod
     def fit(cls, x, y, *args, **kwargs):
         return super().fit(x, y, 1, *args, **kwargs)
+
+    def refit(self, x, y, *args, **kwargs):
+        return super().refit(x, y, *args, **kwargs)
 
     def convert_from(self, y):
         return super().convert_from(y)[0]
