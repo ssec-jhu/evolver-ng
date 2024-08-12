@@ -1,11 +1,13 @@
 import pytest
 
+from evolver.calibration.interface import Calibrator, Transformer
 from evolver.hardware.standard.led import LED
 from evolver.hardware.standard.od_sensor import ODSensor
 from evolver.hardware.standard.pump import VialIEPump
 from evolver.hardware.standard.stir import Stir
 from evolver.hardware.standard.temperature import Temperature
 from evolver.hardware.test_utils import SerialVialEffectorHardwareTestSuite, SerialVialSensorHardwareTestSuite
+from evolver.settings import settings
 
 
 @pytest.mark.parametrize(
@@ -29,13 +31,32 @@ class TestOD(SerialVialSensorHardwareTestSuite):
     driver = ODSensor
 
 
-@pytest.mark.parametrize("response_map", [{b"tempr,4095,4095,_!": b"tempa,1,2,end"}])
+@pytest.mark.parametrize("response_map", [{b"tempr,4095,4095,_!": b"tempa,2020,2500,end"}])
 @pytest.mark.parametrize(
     "config_params, expected",
-    [({"addr": "temp", "slots": 2}, {0: Temperature.Output(vial=0, raw=1), 1: Temperature.Output(vial=1, raw=2)})],
+    [
+        (
+            {"addr": "temp", "slots": 2},
+            {
+                0: Temperature.Output(vial=0, raw=2020, temperature=26.03),
+                1: Temperature.Output(vial=1, raw=2500, temperature=11.9),
+            },
+        )
+    ],
 )
 class TestTempSensorMode(SerialVialSensorHardwareTestSuite):
     driver = Temperature
+
+
+class TestTempSensor:
+    def test_default_calibrator(self):
+        obj = Temperature(addr="temp", slots=2)
+        assert isinstance(obj.calibrator, Calibrator)
+        assert isinstance(obj.calibrator.output_transformer, dict)
+        assert settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX
+        assert len(obj.calibrator.output_transformer) == settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX
+        for vial, transformer in obj.calibrator.output_transformer.items():
+            assert isinstance(transformer, Transformer)
 
 
 @pytest.mark.parametrize(
@@ -44,13 +65,13 @@ class TestTempSensorMode(SerialVialSensorHardwareTestSuite):
         (
             {"addr": "temp", "slots": 2},
             [[Temperature.Input(vial=0, temperature=30.1)], [Temperature.Input(vial=1, temperature=40.5)]],
-            [b"tempr,30,4095,_!", b"tempr,30,40,_!"],
+            [b"tempr,1875,4095,_!", b"tempr,1875,1523,_!"],
         ),
         ({"addr": "temp", "slots": 3}, [[]], [b"tempr,4095,4095,4095,_!"]),
         (
             {"addr": "temp", "vials": [1], "slots": 2},
             [[Temperature.Input(vial=0, temperature=30.1), Temperature.Input(vial=1, temperature=40.5)], []],
-            [b"tempr,4095,40,_!", b"tempr,4095,40,_!"],
+            [b"tempr,4095,1523,_!", b"tempr,4095,1523,_!"],
         ),
     ],
 )

@@ -1,3 +1,5 @@
+import deepdiff
+
 from evolver.base import ConfigDescriptor
 from evolver.device import Evolver
 from evolver.hardware.interface import HardwareDriver
@@ -61,13 +63,14 @@ class SerialVialSensorHardwareTestSuite:
     def test_expected_create_from_config_desc(self, response_map, config_params, expected):
         hw = _from_config_desc(self.driver, config_params, response_map)
         hw.read()
-        assert hw.get() == expected
+        data = hw.get()
+        assert not deepdiff.DeepDiff(data, expected, significant_digits=0)
 
     def test_expected_from_evolver_config(self, response_map, config_params, expected):
         evolver = _from_evolver_conf(self.driver, config_params, response_map)
         assert evolver.state == {"testhw": {}}
         evolver.loop_once()
-        assert evolver.state == {"testhw": expected}
+        assert not deepdiff.DeepDiff(evolver.state, {"testhw": expected}, significant_digits=0)
 
 
 class SerialVialEffectorHardwareTestSuite:

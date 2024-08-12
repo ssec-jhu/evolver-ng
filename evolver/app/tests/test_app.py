@@ -18,6 +18,7 @@ from evolver.hardware.demo import NoOpEffectorDriver, NoOpSensorDriver
 from evolver.hardware.interface import EffectorDriver, SensorDriver
 from evolver.history.demo import InMemoryHistoryServer
 from evolver.settings import app_settings
+from evolver.tests.conftest import tmp_calibration_dir  # noqa: F401
 
 
 class TestApp:
@@ -117,7 +118,7 @@ class TestApp:
                 assert t0 < status.created
                 assert status.ok
 
-    def test_calibrate(self, app_client):
+    def test_calibrate(self, app_client, tmp_calibration_dir):  # noqa: F811
         coefficients = [1, 2]
         # Creat calibrator from transformer with stale (expired) config.
         calibrator = LinearCalibrator(

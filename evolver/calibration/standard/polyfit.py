@@ -5,6 +5,7 @@ from pydantic import Field, model_validator
 
 from evolver.base import ConfigDescriptor
 from evolver.calibration.interface import Calibrator, Transformer
+from evolver.settings import settings
 
 
 class PolyFitTransformer(Transformer):
@@ -50,12 +51,13 @@ class LinearTransformer(PolyFitTransformer):
 
 
 class PolyFitCalibrator(Calibrator):
-    def run_calibration_procedure(self, data: dict):
+    def run_calibration_procedure(self, data: dict, save=settings.AUTO_SAVE_NEW_CALIBRATIONS):
         # TODO: This is just a placeholder.
         calibration_data = {}
         for transformer, (x, y) in data.items():
             calibration_data[transformer] = getattr(self, transformer).refit(x, y)
-            calibration_data[transformer].save()
+            if save:
+                calibration_data[transformer].save()
         return calibration_data
 
 
@@ -63,3 +65,32 @@ class LinearCalibrator(PolyFitCalibrator):
     class Config(PolyFitCalibrator.Config):
         input_transformer: ConfigDescriptor | LinearTransformer | None = None
         output_transformer: ConfigDescriptor | LinearTransformer | None = None
+
+
+class IndependentVialBasedLinearCalibrator(PolyFitCalibrator):
+    class Config(PolyFitCalibrator.Config):
+        """Specify transformers for each vial independently. Whilst they may all use the same transformer class, each
+        vial will mostly likely have different transformer config parameters and thus require their own transformer
+        instance.
+        """
+
+        input_transformer: dict[int, ConfigDescriptor | LinearTransformer | None] | None = None
+        output_transformer: dict[int, ConfigDescriptor | LinearTransformer | None] | None = None
+
+    def run_calibration_procedure(self, data: dict):
+        """Override to implement a calibration procedure that is vial-dependant and thus calibrates all vials either
+        simultaneously or entirely as desired."""
+
+        calibration_data = dict(input_transformer={}, output_transformer={})
+
+        # Sequentially run calibration procedure for the input transformer for each vial.
+        for vial, input_transformer in self.input_transformer.items():
+            calibration_data["input_transformer"][vial] = input_transformer.run_calibration_procedure(
+                data["input_transformer"][vial]
+            )
+
+        # Sequentially run calibration procedure for the output transformer for each vial.
+        for vial, output_transformer in self.output_transformer.items():
+            calibration_data["output_transformer"][vial] = output_transformer.run_calibration_procedure(
+                data["output_transformer"][vial]
+            )
