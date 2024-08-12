@@ -1,5 +1,7 @@
 import json
+from datetime import datetime, timedelta
 
+import numpy as np
 import pytest
 import yaml
 from fastapi.openapi.utils import get_openapi
@@ -8,8 +10,11 @@ import evolver.util
 from evolver import __version__
 from evolver.app.main import EvolverConfigWithoutDefaults, SchemaResponse, app
 from evolver.base import BaseConfig, BaseInterface, ConfigDescriptor
+from evolver.calibration.demo import NoOpCalibrator
+from evolver.calibration.interface import Status
+from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
 from evolver.device import Evolver
-from evolver.hardware.demo import NoOpCalibrator, NoOpEffectorDriver, NoOpSensorDriver
+from evolver.hardware.demo import NoOpEffectorDriver, NoOpSensorDriver
 from evolver.hardware.interface import EffectorDriver, SensorDriver
 from evolver.settings import app_settings
 
@@ -90,6 +95,88 @@ class TestApp:
     def test_schema_endpoint_exception(self, app_client, classinfo):
         response = app_client.get("/schema/", params=dict(classinfo=classinfo))
         assert response.status_code == 422
+
+    def test_calibration_status(self, app_client):
+        t0 = datetime.now()
+        hardware = {
+            "test_hardware1": NoOpSensorDriver(calibrator=NoOpCalibrator()),
+            "test_hardware2": NoOpSensorDriver(calibrator=NoOpCalibrator()),
+        }
+        app.state.evolver = Evolver(hardware=hardware)
+
+        response = app_client.get("/calibration_status/", params=dict(name=None))
+        assert response.status_code == 200
+        contents = json.loads(response.content)
+
+        for device in hardware:
+            assert contents[device]
+            for transformer in ("input_transformer", "output_transformer"):
+                status = Status.model_validate(contents[device][transformer])
+                assert getattr(hardware[device].calibrator, transformer).created == status.created
+                assert t0 < status.created
+                assert status.ok
+
+    def test_calibrate(self, app_client):
+        coefficients = [1, 2]
+        # Creat calibrator from transformer with stale (expired) config.
+        calibrator = LinearCalibrator(
+            input_transformer=LinearTransformer(
+                coefficients=coefficients, created=datetime.now() - timedelta(minutes=60), expire=timedelta(minutes=50)
+            )
+        )
+        app.state.evolver = Evolver(hardware={"test_hardware": NoOpSensorDriver(calibrator=calibrator)})
+        response = app_client.get("/calibration_status/", params=dict(name="test_hardware"))
+        assert response.status_code == 200
+        # Assert that status is not ok, is stale.
+        assert not Status.model_validate(json.loads(response.content)["input_transformer"]).ok
+
+        # Mock new data to calibrate against.
+        new_coefficients = [2, 3]
+        assert new_coefficients != coefficients
+        x = np.linspace(0, 100, 100)
+        y = new_coefficients[0] + x * new_coefficients[1]
+
+        # Recalibrate.
+        response = app_client.post("/calibrate/test_hardware", json=dict(input_transformer=[x.tolist(), y.tolist()]))
+        assert response.status_code == 200
+
+        # Assert transformer has new coefficients and has been recalibrated.
+        assert app.state.evolver.hardware["test_hardware"].calibrator.input_transformer.coefficients == pytest.approx(
+            new_coefficients
+        )
+
+        # Assert that new config is no longer stale.
+        response = app_client.get("/calibration_status/", params=dict(name="test_hardware"))
+        assert response.status_code == 200
+        # Assert that status is not ok, is stale.
+        assert Status.model_validate(json.loads(response.content)["input_transformer"]).ok
+
+    @pytest.mark.parametrize(
+        ("func", "kwargs"),
+        (
+            ("get", dict(url="/calibration_status/", params=dict(name="non_existent_hardware"))),
+            ("post", dict(url="/calibrate/non_existent_hardware")),
+        ),
+    )
+    def test_hardware_not_found_exceptions(self, app_client, func, kwargs):
+        response = getattr(app_client, func)(**kwargs)
+        assert response.status_code == 404
+        contents = json.loads(response.content)
+        assert contents["detail"] == "Hardware not found"
+
+    @pytest.mark.parametrize(
+        ("func", "kwargs"),
+        (
+            ("get", dict(url="/calibration_status/", params=dict(name="test_hardware"))),
+            ("post", dict(url="/calibrate/test_hardware")),
+        ),
+    )
+    def test_calibrator_not_found_exceptions(self, app_client, func, kwargs):
+        app.state.evolver = Evolver(hardware={"test_hardware": NoOpSensorDriver()})
+        response = getattr(app_client, func)(**kwargs)
+        assert response.status_code == 404
+        contents = json.loads(response.content)
+        assert contents["detail"] == "Hardware has no calibrator"
 
 
 def test_app_load_file(app_client):

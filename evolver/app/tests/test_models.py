@@ -3,8 +3,9 @@ import pytest
 import evolver.util
 from evolver.app.models import SchemaResponse
 from evolver.base import BaseInterface
+from evolver.calibration.demo import NoOpCalibrator
 from evolver.device import Evolver
-from evolver.hardware.demo import NoOpCalibrator, NoOpEffectorDriver, NoOpSensorDriver
+from evolver.hardware.demo import NoOpEffectorDriver, NoOpSensorDriver
 from evolver.hardware.interface import EffectorDriver, SensorDriver
 
 

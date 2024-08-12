@@ -42,7 +42,13 @@ class Evolver(BaseInterface):
 
     @property
     def calibration_status(self):
-        return {name: device.calibrator.status for name, device in self.hardware.items()}
+        """Return the calibration Status for each device's calibrator, or None if hardware has no calibrator. This is explicit and returns all available
+        hardware even those without calibrators.
+        """
+        return {
+            name: device.calibrator.status if getattr(device, "calibrator", None) else None
+            for name, device in self.hardware.items()
+        }
 
     @property
     def state(self):

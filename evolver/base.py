@@ -1,14 +1,16 @@
+import datetime
 import logging
 import os
 from abc import ABC
 from pathlib import Path
-from typing import Annotated, Any, Dict
+from typing import Any, Dict
 
 import pydantic
 import pydantic_core
 import yaml
 
 import evolver.util
+from evolver.types import CreatedTimestampField, ExpireField, ImportString
 
 
 def require_all_fields(cls):
@@ -35,13 +37,6 @@ def require_all_fields(cls):
 
     cls.model_rebuild(force=True)
     return cls
-
-
-# pydantics import string alone does not generate a schema, which breaks openapi
-# docs. We wrap it to set schema explicitly.
-ImportString = Annotated[
-    pydantic.ImportString, pydantic.WithJsonSchema({"type": "string", "description": "fully qualified class name"})
-]
 
 
 class _BaseConfig(pydantic.BaseModel):
@@ -77,8 +72,10 @@ class _BaseConfig(pydantic.BaseModel):
 
     def save(self, file_path: Path, encoding: str | None = None):
         """Write out config as yaml file to specified file."""
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, "w", encoding=encoding) as f:
             yaml.dump(self.model_dump(mode="json"), f)
+        return Path(file_path)
 
     def shallow_model_dump(self):
         """
@@ -92,6 +89,11 @@ class _BaseConfig(pydantic.BaseModel):
         manually "dump" to dict using the following.
         """
         return dict(self)
+
+
+class TimeStamp(_BaseConfig):
+    created: pydantic.PastDatetime | None = CreatedTimestampField()
+    expire: datetime.timedelta | None = ExpireField()
 
 
 class BaseConfig(_BaseConfig):
@@ -175,6 +177,7 @@ class ConfigDescriptor(_BaseConfig):
 
     def save(self, file_path: Path, encoding: str | None = None):
         """Write out config as yaml file to specified file."""
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, "w", encoding=encoding) as f:
             yaml.dump(self.model_dump(mode="json"), f)
 
@@ -333,7 +336,7 @@ class BaseInterface(ABC):
 
     @property
     def config_model(self) -> BaseConfig:
-        """Return a dict of Config populated from instance attributes."""
+        """Return an instance of Config populated from instance attributes."""
         return self.Config.model_validate(vars(self))
 
     @property
