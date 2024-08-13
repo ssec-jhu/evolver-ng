@@ -37,8 +37,11 @@ see Build instructions below ❗❗
 
 ### Config file
 
-Configuration of the eVolver system including provisioned hardware and experiments can be expressed in a single yaml
-file, for example:
+Configuration of the eVolver system including provisioned hardware and experiments must be expressed in a single yaml.
+
+By default the config file is named `evolver.yml` and is stored in the project root directory file. This filename and path is determined by [`evolver.settings.AppSettings.CONFIG_FILE`](https://github.com/ssec-jhu/evolver-ng/blob/main/evolver/settings.py) and can be customized.
+
+for example:
 
 ```yaml
 enable_react: true  # run the experiment controllers
@@ -62,6 +65,41 @@ controllers:
 
 This enables both sharing of the eVolver setup and experiment with others, and also the ability to easily resume the
 experiment on hardware failure.
+
+#### Bootstrapping the `evolver.yml` config file
+
+By default `evolver-ng` requires an `evolver.yml` (file name can be configured at [`settings.app_settings.CONFIG_FILE`](https://github.com/ssec-jhu/evolver-ng/blob/main/evolver/settings.py)) file to exist in the project's root directory for it to start.
+
+However, sometimes you want to start `evolver-ng` before `evolver.yml` exists. For example the very first time you run the app.
+
+For this reason there is an escape hatch that allows `evolver-ng` to start without `evolver.yml`.
+
+`EVOLVER_LOAD_FROM_CONFIG_ON_STARTUP=false`
+
+For example, if you run `evolver-ng` for local development or testing, without `evolver.yml` existing you must pass this flag:
+
+```shellscript
+EVOLVER_LOAD_FROM_CONFIG_ON_STARTUP=false tox -e test exec -- python -m evolver.app.main
+```
+
+##### Creating a valid config file
+
+There are a few distinct ways to create a valid evolver config.
+
+- If you passed the `EVOLVER_LOAD_FROM_CONFIG_ON_STARTUP=false` flag. The evolver will be given an in-memory config with default values. The `/` endpoint will available on the evolver-ng HTTP API, this endpoint accepts POST requests with a config payload, if you attempt to submit an invalid config to this endpoint it will respond with detailed validation errors. If you submit a valid config to the `/` endpoint the `evolver.yml` file will be created so the flag needn't be passed the next time you run the app. The [`evolver-ui`](https://github.com/ssec-jhu/evolver-ui) package provides a webapp that can be used to interact with the `/` endpoint and update the config.
+
+- Or, a valid config file can also be created programmatically using the Evolver SDK
+
+```python
+
+from evolver.device import Evolver
+
+Evolver.Config().save(settings.app_settings.CONFIG_FILE)
+
+```
+
+- Or, A valid config can be copied from another evolver instance. 
+
 
 ### Web api
 
@@ -151,15 +189,21 @@ tox -e test
 
 ### Example run
 
-We can leverage the tox testing environment, which contains all required dependencies, to run the application locally
-for evaluation:
+We can leverage the tox testing environment, which contains all required dependencies, to run the application locally for evaluation:
 
+#### Running **without** `evolver.yml` configuration file
+
+```shellscript
+EVOLVER_LOAD_FROM_CONFIG_ON_STARTUP=false tox -e test exec -- python -m evolver.app.main
+```
+
+#### Running **with** `evolver.yml` configuration file
 ```
 tox -e test exec -- python -m evolver.app.main
 ```
 
 You should then be able to visit the automatically generated API documentation in your local browser at
-https://localhost:8000/docs (or https://localhost:8000/redoc). From there you can experiment with sending
+https://localhost:8080/docs (or https://localhost:8080/redoc). From there you can experiment with sending
 data and reading from various endpoints (which will eventually be hooked up to a web user interface).
 
 ### Generate openapi schema as a JSON
