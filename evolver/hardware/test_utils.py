@@ -27,7 +27,10 @@ def _from_evolver_conf(driver, config, response_map):
                 "classinfo": fully_qualified_name(driver),
                 "config": config,
             }
-        }
+        },
+        "history": {
+            "classinfo": "evolver.history.demo.InMemoryHistoryServer",
+        },
     }
     evolver = Evolver.create(evolver_config)
     evolver.serial = serial_from_response_map(response_map)

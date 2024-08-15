@@ -16,6 +16,7 @@ from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransfo
 from evolver.device import Evolver
 from evolver.hardware.demo import NoOpEffectorDriver, NoOpSensorDriver
 from evolver.hardware.interface import EffectorDriver, SensorDriver
+from evolver.history.demo import InMemoryHistoryServer
 from evolver.settings import app_settings
 
 
@@ -177,6 +178,26 @@ class TestApp:
         assert response.status_code == 404
         contents = json.loads(response.content)
         assert contents["detail"] == "Hardware has no calibrator"
+
+    @pytest.mark.parametrize(
+        "query_params",
+        [{}, {"n_max": 1}, {"name": "nonexistent"}, {"name": "test", "t_start": 0, "t_stop": 1, "n_max": 1}],
+    )
+    def test_history(self, app_client, query_params):
+        app.state.evolver = Evolver(history=InMemoryHistoryServer(), hardware={"test": NoOpSensorDriver()})
+        response = app_client.get("/history/", params=query_params)
+        assert response.status_code == 200
+        assert response.json() == {"data": {}}
+        app.state.evolver.loop_once()
+        app.state.evolver.loop_once()
+        response = app_client.get("/history/", params=query_params)
+        assert response.status_code == 200
+        if query_params.get("name", "test") == "test":
+            assert response.json()["data"]["test"][0]["timestamp"] > 0
+            assert isinstance(response.json()["data"]["test"][0]["data"], dict)
+            assert len(response.json()["data"]["test"]) <= query_params.get("n_max", 2)
+        else:
+            assert response.json() == {"data": {}}
 
 
 def test_app_load_file(app_client):

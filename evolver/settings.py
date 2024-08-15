@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     LOG_FORMAT: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     ROOT_CALIBRATOR_FILE_STORAGE_PATH: Path = Path("calibration_files")
+    EXPERIMENT_FILE_STORAGE_PATH: Path = Path("experiment_files")
     DEFAULT_CALIBRATION_EXPIRE: timedelta = ExpireField(default=timedelta(weeks=4 * 6))
     DATETIME_PATH_FORMAT: str = "%Y_%m_%dT%H_%M_%S"
 

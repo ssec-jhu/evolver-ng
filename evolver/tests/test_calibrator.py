@@ -44,7 +44,7 @@ class TestTransformer:
 class TestCalibrator:
     def test_conversion(self):
         obj = NoOpCalibrator()
-        data = NoOpSensorDriver.Output(vial=1)
+        data = NoOpSensorDriver.Output(vial=1, raw=1, value=2)
         calibrated_data = obj.output_transformer.convert_to(data)
         assert calibrated_data is data
 
