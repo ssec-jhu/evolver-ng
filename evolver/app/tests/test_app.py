@@ -181,7 +181,14 @@ class TestApp:
 
     @pytest.mark.parametrize(
         "query_params",
-        [{}, {"n_max": 1}, {"name": "nonexistent"}, {"name": "test", "t_start": 0, "t_stop": 1, "n_max": 1}],
+        [
+            {},
+            {"n_max": 1},
+            {"name": "nonexistent"},
+            {"name": "test", "t_start": 0, "t_stop": 1, "n_max": 1},
+            {"name": "test", "vials": [0, 1]},
+            {"name": "test", "properties": ["value"]},
+        ],
     )
     def test_history(self, app_client, query_params):
         app.state.evolver = Evolver(history=InMemoryHistoryServer(), hardware={"test": NoOpSensorDriver()})

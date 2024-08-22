@@ -30,7 +30,7 @@ def test_history_server(history_server, sensor):
     result = history_server.get(name="test")
     assert "test" in result.data
     assert result.data["test"][0].timestamp >= t0
-    assert result.data["test"][0].data == {str(k): v.model_dump() for k, v in sensor_read.items()}
+    assert result.data["test"][0].data == {k: v.model_dump() for k, v in sensor_read.items()}
     result = history_server.get(name="test", t_stop=t0)
     assert result == HistoryResult(data={})
     # Add another record in order to test t_start parameter assuring we skip the first record
@@ -42,6 +42,12 @@ def test_history_server(history_server, sensor):
     result = history_server.get(name="test", t_start=t1)
     assert len(result.data["test"]) == 1
     assert result.data["test"][0].timestamp >= t1
+    # filter by vial and property
+    result = history_server.get(name="test", vials=[1], properties=["value"])
+    assert result.data["test"][0].data == {1: {"value": sensor_read[1].value}}
+    # filter by vial and property, but no match
+    result = history_server.get(name="test", vials=[100])
+    assert result == HistoryResult(data={})
 
 
 def test_history_server_nonexistent_empty_result(history_server, sensor):

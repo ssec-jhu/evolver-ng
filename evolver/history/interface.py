@@ -31,7 +31,15 @@ class History(BaseInterface):
         pass
 
     @abstractmethod
-    def get(self, name: str = None, t_start: float = None, t_stop: float = None, n_max: int = None) -> HistoryResult:
+    def get(
+        self,
+        name: str = None,
+        t_start: float = None,
+        t_stop: float = None,
+        vials: list[int] | None = None,
+        properties: list[str] | None = None,
+        n_max: int = None,
+    ) -> HistoryResult:
         """Get saved history data.
 
         Implementations must override this method and return a HistoryResult object

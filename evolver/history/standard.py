@@ -8,6 +8,7 @@ from fastapi.encoders import jsonable_encoder
 
 from evolver.history.interface import HistoricDatum, History, HistoryResult
 from evolver.settings import settings
+from evolver.util import filter_vial_data
 
 
 class HistoryServer(History):
@@ -63,7 +64,15 @@ class HistoryServer(History):
         json.dump(record, self.current_file)
         self.current_file.flush()
 
-    def get(self, name: str = None, t_start: float = None, t_stop: float = None, n_max: int = None):
+    def get(
+        self,
+        name: str = None,
+        t_start: float = None,
+        t_stop: float = None,
+        vials: list[int] | None = None,
+        properties: list[str] | None = None,
+        n_max: int = None,
+    ):
         if t_start is None:
             t_start = (t_stop or time.time()) - self.default_window
 
@@ -93,6 +102,22 @@ class HistoryServer(History):
         data = defaultdict(deque)
 
         while row := res.fetchone():
-            data[row[0]].appendleft(HistoricDatum(timestamp=row[1], data=row[2]))
+            row_data = row[2]
+            # Attempt data cleaning and filtering, but pass data as-is if these
+            # operations fail, in order to support arbitrary data shapes.
+            try:
+                # json only allows string keys, might want to revisit the assumptions
+                # here, and/or have a more concrete vial-data container
+                row_data = {int(k): v for k, v in row_data.items()}
+            except Exception:
+                pass
+            try:
+                row_data = filter_vial_data(row_data, vials, properties)
+            except Exception:
+                pass
+            if not row_data:
+                continue
+
+            data[row[0]].appendleft(HistoricDatum(timestamp=row[1], data=row_data))
 
         return HistoryResult(data=data)
