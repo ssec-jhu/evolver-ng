@@ -192,12 +192,12 @@ class TestApp:
     )
     def test_history(self, app_client, query_params):
         app.state.evolver = Evolver(history=InMemoryHistoryServer(), hardware={"test": NoOpSensorDriver()})
-        response = app_client.get("/history/", params=query_params)
+        response = app_client.post("/history/", params=query_params)
         assert response.status_code == 200
         assert response.json() == {"data": {}}
         app.state.evolver.loop_once()
         app.state.evolver.loop_once()
-        response = app_client.get("/history/", params=query_params)
+        response = app_client.post("/history/", params=query_params)
         assert response.status_code == 200
         if query_params.get("name", "test") == "test":
             assert response.json()["data"]["test"][0]["timestamp"] > 0

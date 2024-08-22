@@ -67,6 +67,7 @@ async def get_schema(classinfo: ImportString | None = evolver.util.fully_qualifi
 
 
 @app.get("/history/", operation_id="history")
+@app.post("/history/", operation_id="history")
 async def get_history(
     name: str = None,
     t_start: float = None,
