@@ -9,7 +9,7 @@ from evolver.controller.interface import Controller
 from evolver.device import DEFAULT_HISTORY, DEFAULT_SERIAL, Evolver
 from evolver.hardware.demo import NoOpSensorDriver
 from evolver.hardware.interface import HardwareDriver
-from evolver.history import History
+from evolver.history.interface import History
 
 
 @pytest.fixture
@@ -28,6 +28,7 @@ def conf_with_driver():
             {"classinfo": "evolver.controller.demo.NoOpController", "config": {}},
         ],
         "serial": {"classinfo": "evolver.serial.EvolverSerialUARTEmulator"},
+        "history": {"classinfo": "evolver.history.demo.InMemoryHistoryServer"},
     }
 
 

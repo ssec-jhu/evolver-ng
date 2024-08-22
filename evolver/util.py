@@ -22,3 +22,12 @@ def fully_qualified_name(cls):
 
 def setup_logging(level=settings.LOG_LEVEL, format=settings.LOG_FORMAT):
     logging.basicConfig(level=level, format=format)
+
+
+def filter_vial_data(data, vials=[], properties=[]):
+    filtered = {}
+    for vial, value in data.items():
+        if vials and vial not in vials:
+            continue
+        filtered[vial] = {k: v for k, v in value.items() if not properties or k in properties}
+    return filtered

@@ -9,6 +9,7 @@ from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundErro
 from evolver.app.models import SchemaResponse
 from evolver.base import require_all_fields
 from evolver.device import Evolver
+from evolver.history.interface import HistoryResult
 from evolver.settings import app_settings
 from evolver.types import ImportString
 
@@ -65,9 +66,19 @@ async def get_schema(classinfo: ImportString | None = evolver.util.fully_qualifi
     return SchemaResponse(classinfo=classinfo)
 
 
-@app.get("/history/{name}", operation_id="history")
-async def get_history(name: str):
-    return app.state.evolver.history.get(name)
+@app.get("/history/", operation_id="history")
+@app.post("/history/", operation_id="history")
+async def get_history(
+    name: str = None,
+    t_start: float = None,
+    t_stop: float = None,
+    vials: list[int] | None = None,
+    properties: list[str] | None = None,
+    n_max: int = None,
+) -> HistoryResult:
+    return app.state.evolver.history.get(
+        name=name, t_start=t_start, t_stop=t_stop, vials=vials, properties=properties, n_max=n_max
+    )
 
 
 @app.get("/healthz", operation_id="healthcheck")
