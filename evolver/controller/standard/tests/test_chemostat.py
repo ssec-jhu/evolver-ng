@@ -4,6 +4,8 @@ import pytest
 
 from evolver.controller.standard import Chemostat
 from evolver.device import Evolver
+from evolver.hardware.standard.pump import VialIEPump
+from evolver.hardware.standard.stir import Stir
 
 
 def add_mock_hardware(evolver):
@@ -11,14 +13,15 @@ def add_mock_hardware(evolver):
     evolver.hardware["od"].get.return_value = {0: MagicMock(density=0), 1: MagicMock(density=1)}
 
     # setup mock for enabling assert on set values for effectors. Pulls out all
-    # named attributes from the given input and stores in call list upon set
-    def setup_hw_mock(mock):
+    # named attributes from the given input, validates against cls's Input model
+    # and stores in call list upon set
+    def setup_hw_mock(mock, cls):
         mock.inputs = []
-        mock.Input.side_effect = lambda **a: a
+        mock.Input.side_effect = lambda **a: cls.Input(**a)
         mock.set.side_effect = lambda a: mock.inputs.append(a)
 
-    setup_hw_mock(evolver.hardware["pump"])
-    setup_hw_mock(evolver.hardware["stirrer"])
+    setup_hw_mock(evolver.hardware["pump"], VialIEPump)
+    setup_hw_mock(evolver.hardware["stirrer"], Stir)
 
 
 @pytest.fixture
@@ -57,12 +60,14 @@ def test_chemostat_standard_operation(mock_hardware, window, min_od, stir_rate, 
     # After window is complete, we expect to have started dilutions, where we
     # expect commands to have been sent to pump and stir
     if min_od == 0:
-        assert pump.inputs == [{"vial": 0, "flow_rate": flow_rate}, {"vial": 1, "flow_rate": flow_rate}]
-        assert stir.inputs == [{"vial": 0, "stir_rate": stir_rate}, {"vial": 1, "stir_rate": stir_rate}]
+        assert pump.inputs == [
+            VialIEPump.Input(vial=v, flow_rate_influx=flow_rate, flow_rate_efflux=flow_rate) for v in [0, 1]
+        ]
+        assert stir.inputs == [Stir.Input(vial=v, stir_rate=stir_rate) for v in [0, 1]]
     else:
         # only vial 1 meets the mean OD requirements
-        assert pump.inputs == [{"vial": 1, "flow_rate": flow_rate}]
-        assert stir.inputs == [{"vial": 1, "stir_rate": stir_rate}]
+        assert pump.inputs == [VialIEPump.Input(vial=1, flow_rate_influx=flow_rate, flow_rate_efflux=flow_rate)]
+        assert stir.inputs == [Stir.Input(vial=1, stir_rate=stir_rate)]
 
 
 def test_evolver_based_setup():  # test to ensure evolver pluggability via config/loop
