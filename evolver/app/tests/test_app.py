@@ -40,7 +40,7 @@ class TestApp:
     def test_evolver_app_default_config_dump_endpoint(self, app_client):
         response = app_client.get("/")
         assert response.status_code == 200
-        assert sorted(response.json().keys()) == ["config", "last_read", "state"]
+        assert sorted(response.json().keys()) == ["config", "id", "last_read", "state"]
 
     def test_EvolverConfigWithoutDefaults(self):
         EvolverConfigWithoutDefaults.model_validate(Evolver.Config().model_dump())
