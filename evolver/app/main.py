@@ -44,6 +44,7 @@ async def describe_evolver():
         "config": app.state.evolver.config_model,
         "state": app.state.evolver.state,
         "last_read": app.state.evolver.last_read,
+        "id": app.state.evolver.id,
     }
 
 

@@ -1,4 +1,5 @@
 import time
+import uuid
 from collections import defaultdict
 
 from evolver.base import BaseInterface, ConfigDescriptor
@@ -28,6 +29,7 @@ class Evolver(BaseInterface):
         interval: int = settings.DEFAULT_LOOP_INTERVAL
 
     def __init__(self, *args, **kwargs):
+        self.id = uuid.uuid4().hex[:6]
         self.last_read = defaultdict(lambda: int(-1))
         super().__init__(*args, evolver=self, **kwargs)
 
