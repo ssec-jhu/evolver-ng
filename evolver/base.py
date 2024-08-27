@@ -72,6 +72,7 @@ class _BaseConfig(pydantic.BaseModel):
 
     def save(self, file_path: Path, encoding: str | None = None):
         """Write out config as yaml file to specified file."""
+        file_path = Path(file_path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, "w", encoding=encoding) as f:
             yaml.dump(self.model_dump(mode="json"), f)
@@ -177,6 +178,7 @@ class ConfigDescriptor(_BaseConfig):
 
     def save(self, file_path: Path, encoding: str | None = None):
         """Write out config as yaml file to specified file."""
+        file_path = Path(file_path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, "w", encoding=encoding) as f:
             yaml.dump(self.model_dump(mode="json"), f)
