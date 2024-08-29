@@ -72,7 +72,7 @@ By default `evolver-ng` requires an `evolver.yml` (file name can be configured a
 
 However, sometimes you want to start `evolver-ng` before `evolver.yml` exists. For example the very first time you run the app.
 
-For this reason there is an escape hatch that allows `evolver-ng` to start without `evolver.yml`.
+For this reason there is an escape hatch that allows `evolver-ng` to start without `evolver.yml` using the following environment variable.
 
 `EVOLVER_LOAD_FROM_CONFIG_ON_STARTUP=false`
 
