@@ -1,7 +1,9 @@
 import asyncio
+import socket
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 
 import evolver.util
 from evolver import __project__, __version__
@@ -81,9 +83,24 @@ async def get_history(
     )
 
 
-@app.get("/healthz", operation_id="healthcheck")
+@app.get("/healthz", operation_id="healthcheck", response_class=HTMLResponse)
 async def healthz():
-    return {"message": f"Running '{__project__}' ver: '{__version__}'"}
+    hostname = socket.gethostname()
+    ip_address = socket.gethostbyname(hostname)
+    html_content = f"""
+    <html>
+        <head>
+            <title>Evolver</title>
+        </head>
+        <body>
+            <h1>Health Check</h1>
+            <p>Running '{__project__}' ver: '{__version__}'</p>
+            <p>Hostname: {hostname}</p>
+            <p>IP Address: {ip_address}</p>
+        </body>
+    </html>
+    """
+    return html_content
 
 
 async def evolver_async_loop():

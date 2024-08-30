@@ -34,8 +34,11 @@ class TestApp:
     def test_healthz(self, app_client):
         response = app_client.get("/healthz")
         assert response.status_code == 200
+        assert response.headers["content-type"] == "text/html; charset=utf-8"
+        
+        html_content = response.text
         if __version__:
-            assert __version__ in response.json()["message"], response.json()
+            assert __version__ in html_content 
 
     def test_evolver_app_default_config_dump_endpoint(self, app_client):
         response = app_client.get("/")
