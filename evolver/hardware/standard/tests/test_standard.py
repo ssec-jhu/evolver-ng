@@ -128,3 +128,13 @@ class TestStir(SerialVialEffectorHardwareTestSuite):
 )
 class TestPump(SerialVialEffectorHardwareTestSuite):
     driver = VialIEPump
+
+
+def test_vialiepump_input_validation():
+    VialIEPump.Input(vial=0, flow_rate_influx=1, flow_rate_efflux=2)
+    with pytest.raises(ValueError, match="cannot specify both flow_rate and flow_rate_influx/efflux"):
+        VialIEPump.Input(vial=0, flow_rate=1, flow_rate_influx=1)
+    with pytest.raises(ValueError, match="must specify either flow_rate or both flow_rate_influx/efflux"):
+        VialIEPump.Input(vial=0, flow_rate_influx=1)
+    input = VialIEPump.Input(vial=0, flow_rate=1)
+    assert input.flow_rate_influx == input.flow_rate_efflux == 1

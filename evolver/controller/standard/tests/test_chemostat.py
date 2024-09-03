@@ -60,13 +60,11 @@ def test_chemostat_standard_operation(mock_hardware, window, min_od, stir_rate, 
     # After window is complete, we expect to have started dilutions, where we
     # expect commands to have been sent to pump and stir
     if min_od == 0:
-        assert pump.inputs == [
-            VialIEPump.Input(vial=v, flow_rate_influx=flow_rate, flow_rate_efflux=flow_rate) for v in [0, 1]
-        ]
+        assert pump.inputs == [VialIEPump.Input(vial=v, flow_rate=flow_rate) for v in [0, 1]]
         assert stir.inputs == [Stir.Input(vial=v, stir_rate=stir_rate) for v in [0, 1]]
     else:
         # only vial 1 meets the mean OD requirements
-        assert pump.inputs == [VialIEPump.Input(vial=1, flow_rate_influx=flow_rate, flow_rate_efflux=flow_rate)]
+        assert pump.inputs == [VialIEPump.Input(vial=1, flow_rate=flow_rate)]
         assert stir.inputs == [Stir.Input(vial=1, stir_rate=stir_rate)]
 
 

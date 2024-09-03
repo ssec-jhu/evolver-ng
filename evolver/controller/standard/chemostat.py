@@ -80,5 +80,5 @@ class Chemostat(Controller):
             # Inputs assume the relevant device has its calibration and takes
             # the target real value. These may be missing spec, for example does
             # pump need bolus value also?
-            self.pump.set(self.pump.Input(vial=vial, flow_rate_influx=self.flow_rate, flow_rate_efflux=self.flow_rate))
+            self.pump.set(self.pump.Input(vial=vial, flow_rate=self.flow_rate))
             self.stirrer.set(self.stirrer.Input(vial=vial, stir_rate=self.stir_rate))

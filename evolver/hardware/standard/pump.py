@@ -1,4 +1,5 @@
 from copy import copy
+from typing import Any
 
 from pydantic import Field
 
@@ -90,8 +91,18 @@ class VialIEPump(EffectorDriver):
             self.efflux_map = self.efflux_map or {i: i + self.slots for i in range(0, self.slots * 3)}
 
     class Input(EffectorDriver.Input):
-        flow_rate_influx: float = Field(description="influx flow rate in ml/s")
-        flow_rate_efflux: float = Field(description="efflux flow rate in ml/s")
+        flow_rate: float = Field(None, description="influx/efflux flow rate in ml/s")
+        flow_rate_influx: float = Field(None, description="influx flow rate in ml/s")
+        flow_rate_efflux: float = Field(None, description="efflux flow rate in ml/s")
+
+        def model_post_init(self, __context: Any) -> None:
+            super().model_post_init(__context)
+            if self.flow_rate is not None:
+                if self.flow_rate_influx is not None or self.flow_rate_efflux is not None:
+                    raise ValueError("cannot specify both flow_rate and flow_rate_influx/efflux")
+                self.flow_rate_influx = self.flow_rate_efflux = self.flow_rate
+            elif self.flow_rate_influx is None or self.flow_rate_efflux is None:
+                raise ValueError("must specify either flow_rate or both flow_rate_influx/efflux")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
