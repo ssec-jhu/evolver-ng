@@ -109,12 +109,6 @@ class Calibrator(BaseInterface):
     class Config(Transformer.Config):
         input_transformer: ConfigDescriptor | Transformer | None = None
         output_transformer: ConfigDescriptor | Transformer | None = None
-        measured_data: dict | None = Field(
-            None,
-            description="The data measured by a calibration procedure run. This can be specified instead of specifying "
-            "some transformer config params, e.g., polynomial coefficients. This data will be fitted upon "
-            "first use.",
-        )
 
     class Status(_BaseConfig):
         input_transformer: Status | None = None
