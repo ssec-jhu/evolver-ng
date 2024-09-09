@@ -4,7 +4,10 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
+import evolver.settings
+from evolver.base import ConfigDescriptor
 from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
+from evolver.tests.conftest import tmp_calibration_dir  # noqa: F401
 
 
 @pytest.fixture(scope="class")
@@ -59,7 +62,7 @@ class TestLinearTransformer:
 
 
 class TestLinearCalibrator:
-    def test_calibration_procedure(self, mock_linear_data):
+    def test_calibration_procedure(self, mock_linear_data, tmp_calibration_dir):  # noqa: F811
         x, y, c = mock_linear_data
         obj = LinearCalibrator(input_transformer=LinearTransformer(coefficients=c))
         old_config = obj.input_transformer.config_model
@@ -75,3 +78,14 @@ class TestLinearCalibrator:
         y_prime = obj.input_transformer.convert_to(x_prime)
         assert y_prime == pytest.approx(c_prime[0] + x_prime * c_prime[1])
         assert obj.input_transformer.convert_from(y_prime) == pytest.approx(x_prime)
+
+
+class TestIndependentVialBasedLinearCalibrator:
+    def test_config(self):
+        descriptor = ConfigDescriptor.load(evolver.settings.settings.DEFAULT_TEMPERATURE_CALIBRATION_CONFIG_FILE)
+        calibrator = descriptor.create()
+        assert isinstance(calibrator.output_transformer, dict)
+        assert evolver.settings.settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX
+        assert len(calibrator.output_transformer) == evolver.settings.settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX
+        for vial, transformer in calibrator.output_transformer.items():
+            assert isinstance(transformer, LinearTransformer)

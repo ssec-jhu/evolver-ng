@@ -33,6 +33,11 @@ class Status(TimeStamp):
             self.ok = self.delta <= self.expire
 
 
+def root_calibrator_file_storage_path():
+    """Defer this such that it can be monkeypatched during tests."""
+    return settings.ROOT_CALIBRATOR_FILE_STORAGE_PATH
+
+
 class Transformer(BaseInterface):
     """Base Interface class for implementing transformations.
 
@@ -43,7 +48,8 @@ class Transformer(BaseInterface):
 
     class Config(BaseConfig):
         dir: Path = Field(
-            settings.ROOT_CALIBRATOR_FILE_STORAGE_PATH, description="Directory for saving new configuration files to."
+            default_factory=root_calibrator_file_storage_path,
+            description="Directory for saving new configuration files to.",
         )
         created: PastDatetime | None = CreatedTimestampField()
         expire: datetime.timedelta | None = ExpireField(default=settings.DEFAULT_CALIBRATION_EXPIRE)
