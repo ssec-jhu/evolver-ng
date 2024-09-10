@@ -1,9 +1,12 @@
 import socket
+
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+
 from evolver import __project__, __version__
 
 html_app = FastAPI()
+
 
 @html_app.get("/network", operation_id="network_state_html", response_class=HTMLResponse)
 async def network_html():

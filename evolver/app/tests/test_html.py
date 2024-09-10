@@ -1,5 +1,7 @@
 import pytest
+
 from evolver import __version__
+
 
 class TestHtmlApp:
     def test_html_network(self, app_client):
