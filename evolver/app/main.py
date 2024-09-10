@@ -1,9 +1,7 @@
 import asyncio
-import socket
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
 
 import evolver.util
 from evolver import __project__, __version__

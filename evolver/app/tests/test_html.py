@@ -1,5 +1,3 @@
-import pytest
-
 from evolver import __version__
 
 
