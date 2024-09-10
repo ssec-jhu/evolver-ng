@@ -23,6 +23,7 @@ dependencies = [
 dev = [
     "bandit>=1.7",
     "build",
+    "deepdiff",
     "httpx",
     "pytest",
     "pytest-cov",

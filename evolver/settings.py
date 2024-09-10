@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     EXPERIMENT_FILE_STORAGE_PATH: Path = Path("experiment_files")
     DEFAULT_CALIBRATION_EXPIRE: timedelta = ExpireField(default=timedelta(weeks=4 * 6))
     DATETIME_PATH_FORMAT: str = "%Y_%m_%dT%H_%M_%S"
+    DEFAULT_TEMPERATURE_CALIBRATION_CONFIG_FILE: Path = (
+        ROOT_CALIBRATOR_FILE_STORAGE_PATH / "default_temperature_calibration_config.yml"
+    )
+    AUTO_SAVE_NEW_CALIBRATIONS: bool = True
 
 
 class AppSettings(BaseSettings):

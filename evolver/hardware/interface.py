@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from typing import Any
 
 from pydantic import Field
 
@@ -24,6 +25,18 @@ class HardwareDriver(BaseInterface):
     def __init__(self, *args, evolver=None, **kwargs):
         self.evolver = evolver
         super().__init__(*args, **kwargs)
+
+    def _transform(self, transformer: str, func: str, x: Any, vial: int = None):
+        """Helper func to reduce boilerplate when transforming input and output data."""
+        if self.calibrator and (_transformer := getattr(self.calibrator, transformer, None)):
+            if isinstance(_transformer, dict):
+                y = getattr(_transformer[vial], func)(x)
+            else:
+                y = getattr(_transformer, func)(x)
+        else:
+            y = x
+
+        return y
 
 
 class VialHardwareDriver(HardwareDriver):
