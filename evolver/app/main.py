@@ -6,6 +6,7 @@ from fastapi import FastAPI
 import evolver.util
 from evolver import __project__, __version__
 from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError
+from evolver.app.html_routes import html_app
 from evolver.app.models import SchemaResponse
 from evolver.base import require_all_fields
 from evolver.device import Evolver
@@ -116,6 +117,9 @@ async def calibrate(name: str, data: dict = None):
 
     # TODO: This is just a placeholder.
     return calibrator.run_calibration_procedure(data)  # TODO: or **data?
+
+
+app.mount("/html", html_app)
 
 
 def start():
