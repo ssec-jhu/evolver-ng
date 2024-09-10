@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse
 import evolver.util
 from evolver import __project__, __version__
 from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError
+from evolver.app.html_routes import html_app 
 from evolver.app.models import SchemaResponse
 from evolver.base import require_all_fields
 from evolver.device import Evolver
@@ -82,26 +83,9 @@ async def get_history(
         name=name, t_start=t_start, t_stop=t_stop, vials=vials, properties=properties, n_max=n_max
     )
 
-
-@app.get("/healthz", operation_id="healthcheck", response_class=HTMLResponse)
+@app.get("/healthz", operation_id="healthcheck")
 async def healthz():
-    hostname = socket.gethostname()
-    ip_address = socket.gethostbyname(hostname)
-    html_content = f"""
-    <html>
-        <head>
-            <title>Evolver</title>
-        </head>
-        <body>
-            <h1>Health Check</h1>
-            <p>Running '{__project__}' ver: '{__version__}'</p>
-            <p>Hostname: {hostname}</p>
-            <p>IP Address: {ip_address}</p>
-        </body>
-    </html>
-    """
-    return html_content
-
+    return {"message": f"Running '{__project__}' ver: '{__version__}'"}
 
 async def evolver_async_loop():
     while True:
@@ -134,6 +118,8 @@ async def calibrate(name: str, data: dict = None):
     # TODO: This is just a placeholder.
     return calibrator.run_calibration_procedure(data)  # TODO: or **data?
 
+
+app.mount("/html", html_app)
 
 def start():
     import uvicorn
