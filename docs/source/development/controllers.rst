@@ -86,7 +86,7 @@ given set of configuration parameters is run on all vials on the box. The
 eVolver accepts a list of controllers, which can represent either distinct
 experiment logic on separate vials, or distinctly configured instances of the
 same experiment on separate vials. Their ``control`` methods are run in order
-during the control loop (wee :doc:`concepts` for more details on experiment
+during the control loop (wee :doc:`/concepts` for more details on experiment
 setup).
 
 For example, given the above experiment, an end-user could run on half the vials
