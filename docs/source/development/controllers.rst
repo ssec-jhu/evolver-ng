@@ -1,25 +1,33 @@
 Developing a new controller
 ===========================
 
-In eVolver controllers are the components that implement experiment logic. They
+In eVolver, controllers are the components that implement experiment logic. They
 can read the state and history of the eVolver environment (e.g. the sensor
 values) and subsequently modify it (via effectors). In a typical eVolver setup
 controller logic is executed once during a device loop, after reading the state
-of all sensors. See :doc:`/concepts` for more details on the device
-operation.
+of all sensors. See :doc:`/concepts` for more details on the device operation.
 
 Controllers are implemented as Python classes that inherit from the
 :class:`evolver.controller.Controller` class, the logic of which is executed via
 a call to the :meth:`evolver.controller.Controller.control` method. Developing a
 new controller is a matter of implementing this method. Within
-:meth:`evolver.controller.Controller.control`, code can read sensor values (e.g.
-by calling :meth:`evolver.hardware.interface.SensorDriver.get`) and effect the
-environment based on read sensor values (e.g. by calling
-:meth:`evolver.hardware.interface.EffectorDriver.set` with appropriate input).
+:meth:`evolver.controller.Controller.control`, code can get read-in sensor
+values (e.g. by calling :meth:`evolver.hardware.interface.SensorDriver.get`) and
+make proposals to effect the environment based on read sensor values (e.g. by
+calling :meth:`evolver.hardware.interface.EffectorDriver.set` with appropriate
+input).
+
+.. note::
+
+    Be aware that ``get`` typically doesn't directly read values from hardware,
+    and ``set`` typically doesn't immediately send hardware commands. These
+    actions are done in the device loop. For more details on the control loop
+    operation - and in particular the differences between getting and reading
+    sensors and setting and committing effectors - see :doc:`/concepts`.
 
 As with other eVolver components, controllers contain `Config` classes that
 define the configuration options for the experiment, which can be read from
-on-disk config and modified via the API and UIs. authors should provide a
+on-disk config and modified via the API and UIs. Authors should provide a
 `Config` class that inherits from :class:`evolver.controller.Controller.Config`
 with appropriate options for the experiment. See :doc:`config` for
 more details on configuration.
@@ -27,7 +35,7 @@ more details on configuration.
 Getting started
 ---------------
 
-A breif example will help illustrate what is required to implement a new
+A brief example will help illustrate what is required to implement a new
 controller. In the example below, we define a simple experiment::
 
     from evolver.controller import Controller
@@ -37,14 +45,16 @@ controller. In the example below, we define a simple experiment::
         class Config(Controller.Config):
             limit: int = 42
             hysteresis: int = 2
+            low_temp: int = 30
+            high_temp: int = 38
 
         def control(self):
             for vial in self.vials:
-                density = self.evolver.hardware['temp'].get[vial].density
+                density = self.evolver.hardware['od'].get[vial].density
                 if density > self.limit:
-                    self.evolver.hardware['temp'].set(Temperature.Input(vial=vial, value=30))
+                    self.evolver.hardware['temp'].set(Temperature.Input(vial=vial, value=self.low_temp))
                 elif density < self.limit - self.hysteresis:
-                    self.evolver.hardware['temp'].set(Temperature.Input(vial=vial, value=38))
+                    self.evolver.hardware['temp'].set(Temperature.Input(vial=vial, value=self.high_temp))
 
 In the above you can note that all the business logic is contained within the
 `control` method, while configuration parameters are available as attributes of
@@ -62,7 +72,7 @@ set desired state.
     class, and represents a list of vials to operate on.
 
 Support multiple vial configurations
-------------------------------------
+-------------   -----------------------
 
 You might note in the above example that:
 
@@ -73,12 +83,14 @@ You might note in the above example that:
 The concept here is that each instance of a controller is a specific instance of
 the experiment on a set of vials. In the simplest case one experiment with a
 given set of configuration parameters is run on all vials on the box. The
-eVolver accepts a list of controllers, however, which can represent either
-distinct experiment logic on separate vials, or distinctly configured instances
-of the same experiment on separate vials.
+eVolver accepts a list of controllers, which can represent either distinct
+experiment logic on separate vials, or distinctly configured instances of the
+same experiment on separate vials. Their ``control`` methods are run in order
+during the control loop (wee :doc:`concepts` for more details on experiment
+setup).
 
-For example, given the above experiment, and end-user could run on half the
-vials with a different set of parameters as follows:
+For example, given the above experiment, an end-user could run on half the vials
+with a different set of parameters as follows:
 
 .. code-block:: yaml
 
@@ -98,7 +110,7 @@ vials with a different set of parameters as follows:
 Testing the controller
 ----------------------
 
-Because the controllers main function is to modify the environment based on
+Because the controller's main function is to modify the environment based on
 inputs, we can test a controller by mocking the hardware dependencies and
 asserting expected outputs are sent to particular hardware.
 
@@ -111,7 +123,7 @@ example for mocking hardware within an eVolver environment can be seen in the
 Logging in the controller
 -------------------------
 
-All components in the eVolver framework contain in internal logger which is an
+All components in the eVolver framework contain an internal logger which is an
 instance of a python standard library `logging.Logger`. This logger can be used
 to emit messages from within a controller which, unless otherwise configured,
 will get routed through the eVolver logging mechanism.
@@ -120,7 +132,7 @@ will get routed through the eVolver logging mechanism.
 
     At present, the logger is configured only with basic handling, and will
     print to stdout. In future releases more advanced logging and event handling
-    is planned, along with retreival of logs from the API.
+    is planned, along with retrieval of logs from the API.
 
 
 Example::
@@ -143,7 +155,7 @@ consequences in the case of reboot or even a reconfiguration of the eVolver
 (which reallocates all objects): the buffer would be lost.
 
 eVolver provides a history server which is backed by persistent storage designed
-to be queried via the API or within a controller. This means controllers code
+to be queried via the API or within a controller. This means controller code
 can remain simple and focus on core logic, as opposed to maintaining file-based
 historic data or error-prone in-memory buffers.
 
@@ -158,7 +170,7 @@ For example::
                 # Get the temperature history for all vials for past hour
                 temp_history = self.evolver.history.get('temp', t_start=time.time() - 3600)
                 for vial in self.vials:
-                    mean_temp = np.mean([i.data[0]['value'] for i in  history.get(name='test').data['test']])
+                    mean_temp = np.mean([i.data[vial]['value'] for i in  temp_history.data['temp']])
 
 .. note::
 
@@ -177,7 +189,7 @@ Evolver hookup and portability
 You might notice that the controller in the example above implicitly requires an
 instance of `evolver.device.Evolver` to be passed into its constructor, in order
 to access the hardware it needs. The framework normally does this for you (it
-will both construct the object and pass in the Evovler), but it may be desired
+will both construct the object and pass in the eVolver), but it may be desired
 to have a controller which depends only on that which is specified in its config
 and takes in hardware explicitly, which can operate independently of the
 application framework.
@@ -197,9 +209,9 @@ hardware class, then a property which dispatches appropriately, for example::
             return self.temp_sensor
 
 In the above case, when the controller operates within the application, the
-temp_sensor will be specified as the name of the hardware in the evolver
+temp_sensor will be specified as the name of the hardware in the eVolver
 configuration file, and the controller will use the hardware instance from the
-evolver.
+eVolver.
 
 If the controller should be instantiated outside the framework (and without an
 evolver instance), the instantiated Temperature object can be passed in
@@ -208,6 +220,11 @@ directly::
     temp_sensor = Temperature()
     controller = MyController(temp_sensor=temp_sensor)
 
+or with a dict, from create given the class info::
+
+    config = {'temp_sensor': {'classinfo': 'evolver.hardware.standard.temperature.Temperature'}}
+    controller = MyController.create(config)
+
 Finally, if a ConfigDescriptor (the config object representing how to construct
 the appropriate class) is supplied, it will automatically be processed and
 instantiated::
@@ -215,7 +232,3 @@ instantiated::
     descriptor = ConfigDescriptor(classinfo='evolver.hardware.standard.Temperature')
     controller = MyController(temp_sensor=descriptor)
 
-or with a dict, from create::
-
-    config = {'temp_sensor': {'classinfo': 'evolver.hardware.standard.temperature.Temperature'}}
-    controller = MyController.create(config)
