@@ -26,6 +26,7 @@ sensor_ids = sensor_manager.list_sensors()
 
 """
 
+
 class SensorManager:
     def __init__(self):
         """

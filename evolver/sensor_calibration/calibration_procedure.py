@@ -2,7 +2,7 @@ class CalibrationProcedure:
     def __init__(self, sensor_type: str):
         """
         Initialize the CalibrationProcedure with a sensor type and an empty list of steps.
-        
+
         :param sensor_type: The type of sensor being calibrated (e.g., "temperature", "optical_density").
         """
         self.sensor_type = sensor_type
@@ -12,7 +12,7 @@ class CalibrationProcedure:
     def add_step(self, step):
         """
         Add a calibration step to the procedure.
-        
+
         :param step: A CalibrationStep object to be added to the procedure.
         """
         self.steps.append(step)
@@ -20,7 +20,7 @@ class CalibrationProcedure:
     def execute_step(self, device, sensors):
         """
         Execute the current calibration step for all selected sensors.
-        
+
         :param device: The hardware device that interacts with the sensors.
         :param sensors: A list of sensor objects to execute the step on.
         """
@@ -40,7 +40,7 @@ class CalibrationProcedure:
     def is_complete(self) -> bool:
         """
         Check if the procedure has completed all steps.
-        
+
         :return: True if all steps have been executed, False otherwise.
         """
         return self.current_step >= len(self.steps)
@@ -54,7 +54,7 @@ class CalibrationProcedure:
     def run(self, device, sensors):
         """
         Run all the calibration steps in sequence for the selected sensors.
-        
+
         :param device: The hardware device that interacts with the sensors.
         :param sensors: A list of sensor objects to execute the steps on.
         """
@@ -71,7 +71,7 @@ class MultiSensorCalibrationProcedure(CalibrationProcedure):
     def execute_step(self, device):
         """
         Execute the current calibration step for all sensors. Wait for user input if required.
-        
+
         :param device: The hardware device that interacts with the sensors.
         """
         if self.current_step < len(self.steps):

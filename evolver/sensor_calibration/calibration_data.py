@@ -2,6 +2,8 @@
 Each sensor registered with the SensorManager has a unique ID and a CalibrationData object associated with it.
 The CalibrationData object stores calibration points that are later used to fit a model to the data.
 """
+
+
 class TempSensor:
     def __init__(self, sensor_id):
         self.id = sensor_id
@@ -13,11 +15,13 @@ class ODSensor:
         self.id = sensor_id
         self.calibration_data = CalibrationData(sensor_type="optical_density")
 
-'''
+
+"""
 The CalibrationData class pairs sets of reference and on-board data points together for each sensor.
 This is used to fit a model to the data points and store the model for future use.
 TODO: the fit_model should be named... so users can fit metadata, e.g. "name", "last_calibrated".
-'''
+"""
+
 
 class CalibrationData:
     def __init__(self, sensor_type):
@@ -27,15 +31,18 @@ class CalibrationData:
 
     def add_calibration_point(self, real_world_data, system_data):
         # real_world_data and system_data are dictionaries with flexible key-value pairs
-        self.calibration_points.append({
-            "real_world_data": real_world_data,  # Real-world values like temp, pressure, etc.
-            "system_data": system_data  # System values like raw voltage, time, etc.
-        })
+        self.calibration_points.append(
+            {
+                "real_world_data": real_world_data,  # Real-world values like temp, pressure, etc.
+                "system_data": system_data,  # System values like raw voltage, time, etc.
+            }
+        )
 
     def set_fit_model(self, model):
         self.fit_model = model
 
-'''
+
+"""
 Example.
 {
   "sensor_id": "complex_sensor_1",
@@ -62,4 +69,4 @@ Example.
   }
 }
 
-'''
+"""

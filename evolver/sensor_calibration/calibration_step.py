@@ -48,6 +48,7 @@ class InstructionStep(CalibrationStep):
         print("Waiting for user to mark this step as complete...")
         # The user will mark this step as complete via the UI or API.
 
+
 class ReadSensorDataStep(CalibrationStep):
     def __init__(self):
         super().__init__(name="Read Sensor Data", instructions="Reading data from sensor...", input_required=False)
@@ -74,7 +75,7 @@ class LoopStep(CalibrationStep):
     def action(self, device, sensors):
         """
         Execute the loop steps and check the exit condition.
-        
+
         :param device: The hardware device.
         :param sensors: List of sensor objects.
         """
