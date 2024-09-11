@@ -63,28 +63,31 @@ class ReadSensorDataStep(CalibrationStep):
 class LoopStep(CalibrationStep):
     def __init__(self, name, steps, exit_condition):
         """
-        :param name: Name of the loop step
-        :param steps: List of steps to execute inside the loop
-        :param exit_condition: Function that returns True when the loop should exit
+        :param name: Name of the loop step.
+        :param steps: List of steps to execute inside the loop.
+        :param exit_condition: Function that returns True when the loop should exit.
         """
         super().__init__(name=name, instructions="Looping through steps")
         self.steps = steps
         self.exit_condition = exit_condition
-        self.iteration = 0
 
-    def action(self, device, sensor):
-        print(f"Starting loop iteration {self.iteration}")
+    def action(self, device, sensors):
+        """
+        Execute the loop steps and check the exit condition.
         
-        # Execute the steps in the loop
-        for step in self.steps:
-            step.action(device, sensor)
-        
-        self.iteration += 1
-        # Check the exit condition
-        if not self.exit_condition(device, sensor):
-            # If the condition isn't met, repeat the loop
-            return "repeat"
-        else:
-            # Exit the loop
+        :param device: The hardware device.
+        :param sensors: List of sensor objects.
+        """
+        print("Starting a loop iteration")
+
+        # Execute the steps in the loop for each sensor
+        for sensor in sensors:
+            for step in self.steps:
+                step.action(device, sensor)
+
+        # Check the exit condition (all sensors must have 16 calibration points)
+        if self.exit_condition(device, sensors):
+            self.mark_complete()
             return "exit"
-
+        else:
+            return "repeat"
