@@ -5,19 +5,30 @@ import TempSensor from evolver.sensor_calibration.calibration_data
 
 # A custom step to set the ambient temperature in the calibration procedure context.
 class SetAmbientTemperatureStep(CalibrationStep):
-    def __init__(self):
-        super().__init__(name="Set Ambient Temperature", instructions="Enter the ambient room temperature.", input_required=True, global_step=True)
+    def __init__(self, temperature: float):
+        """
+        Initialize the SetAmbientTemperatureStep with a target temperature.
+
+        :param temperature: The target ambient temperature to set.
+        """
+        super().__init__(name=f"Set Ambient Temperature to {temperature}°C", instructions=f"Set the device to {temperature}°C.", input_required=True, global_step=True)
+        self.temperature = temperature
 
     def action(self, context, ambient_temp=None):
         """
-        This step sets the ambient temperature in the calibration procedure context.
-        
+        Set the ambient temperature in the calibration procedure context and instruct the user.
+
         :param context: The calibration procedure's context dictionary.
-        :param ambient_temp: The ambient temperature entered by the user.
+        :param ambient_temp: The ambient temperature entered by the user, which should match the target temperature.
         """
         if ambient_temp is not None:
-            context['ambient_temperature'] = ambient_temp
-            self.mark_complete()
+            if ambient_temp == self.temperature:
+                context['ambient_temperature'] = ambient_temp
+                print(f"Ambient temperature set to {ambient_temp}°C.")  # This would be a UI/API message in a real system
+                self.mark_complete()
+            else:
+                print(f"Expected ambient temperature is {self.temperature}°C. Please set the correct temperature.")
+
 
 class TempSensorCalibrationProcedure(CalibrationProcedure):
     def __init__(self, sensors):
@@ -31,7 +42,7 @@ class TempSensorCalibrationProcedure(CalibrationProcedure):
         self.add_step(WaitStep(instructions="Wait for 5 minutes.", max_wait_time=300, exit_condition=lambda sensor, context: False, global_step=True))
 
         # Step 3: Set ambient temperature to 20°C
-        self.add_step(SetAmbientTemperatureStep(global_step=True))
+        self.add_step(SetAmbientTemperatureStep(temperature=20, global_step=True))
 
         # Step 4: Loop through the following steps for each sensor
         def sensor_loop_steps():
@@ -60,7 +71,7 @@ class TempSensorCalibrationProcedure(CalibrationProcedure):
         ))
 
         # Step 5: Set ambient temperature to 30°C and repeat loop
-        self.add_step(SetAmbientTemperatureStep(global_step=True))
+        self.add_step(SetAmbientTemperatureStep(temperature=40, global_step=True))
         self.add_step(LoopStep(
             name="Sensor Calibration Loop - 30°C",
             steps=sensor_loop_steps(),
@@ -68,7 +79,7 @@ class TempSensorCalibrationProcedure(CalibrationProcedure):
         ))
 
         # Step 6: Set ambient temperature to 40°C and repeat loop
-        self.add_step(SetAmbientTemperatureStep(global_step=True))
+        self.add_step(SetAmbientTemperatureStep(temperature=50, global_step=True))
         self.add_step(LoopStep(
             name="Sensor Calibration Loop - 40°C",
             steps=sensor_loop_steps(),
