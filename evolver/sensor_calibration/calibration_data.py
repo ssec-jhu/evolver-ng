@@ -1,46 +1,53 @@
-"""
-Each sensor registered with the SensorManager has a unique ID and a CalibrationData object associated with it.
-The CalibrationData object stores calibration points that are later used to fit a model to the data.
-"""
-
-
-class TempSensor:
-    def __init__(self, sensor_id):
+class Sensor:
+    """
+    A generic Sensor class that contains a sensor_id and CalibrationData.
+    The sensor_type is now stored directly in CalibrationData.
+    """
+    def __init__(self, sensor_id, sensor_type):
         self.id = sensor_id
-        self.calibration_data = CalibrationData(sensor_type="temperature")
+        self.calibration_data = CalibrationData(sensor_type=sensor_type)
 
-
-class ODSensor:
-    def __init__(self, sensor_id):
-        self.id = sensor_id
-        self.calibration_data = CalibrationData(sensor_type="optical_density")
-
-
-"""
-The CalibrationData class pairs sets of reference and on-board data points together for each sensor.
-This is used to fit a model to the data points and store the model for future use.
-TODO: the fit_model should be named... so users can fit metadata, e.g. "name", "last_calibrated".
-"""
-
+    def read(self) -> dict:
+        """
+        Mock method to simulate reading the raw voltage from the sensor.
+        This would be replaced by actual sensor reading logic depending on the sensor type.
+        
+        :return: A dictionary containing the sensor data.
+        """
+        # Example: Returning mocked sensor data
+        return {
+            "sensor_id": self.id,
+            "sensor_type": self.calibration_data.sensor_type,
+            "data": {"voltage": 0.75, "time": "2024-09-11T10:15:30"}
+        }
 
 class CalibrationData:
+    """
+    The CalibrationData class stores calibration points and the fit model, derived from those points.
+    It fundamentally it pairs reference and system data points together to allow fitting a model for each sensor.
+    """
     def __init__(self, sensor_type):
         self.sensor_type = sensor_type
-        self.calibration_points = []  # List to store multiple real-world and system data points
+        self.calibration_points = []  # Store multiple real-world and system data points
         self.fit_model = None  # Store the computed fit model
 
-    def add_calibration_point(self, real_world_data, system_data):
-        # real_world_data and system_data are dictionaries with flexible key-value pairs
+    def add_calibration_point(self, reference_data, system_data):
+        """
+        Add a calibration point that pairs reference data (e.g., temperature, pressure) with system data
+        (e.g., raw voltage).
+        
+        :param reference_data: Known reference values (e.g., temperature, optical density).
+        :param system_data: Measured sensor values (e.g., raw voltage, system time).
+        """
         self.calibration_points.append(
             {
-                "real_world_data": real_world_data,  # Real-world values like temp, pressure, etc.
-                "system_data": system_data,  # System values like raw voltage, time, etc.
+                "reference_data": reference_data,
+                "system_data": system_data,
             }
         )
 
     def set_fit_model(self, model):
         self.fit_model = model
-
 
 """
 Example.
@@ -48,7 +55,7 @@ Example.
   "sensor_id": "complex_sensor_1",
   "calibration_points": [
     {
-      "real_world_data": {
+      "reference_data": {
         "temperature": 25.0,
         "air_pressure": 1013.25,
         "altitude": 100
