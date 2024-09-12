@@ -2,6 +2,7 @@
 # by extension the SensorManager should have a method to check if all selected sensors are ready for calibration or similar.
 # I feel like Hardware class likely already manages this stuff.
 
+
 class CalibrationProcedure:
     def __init__(self, sensor_type: str, sensors):
         """
@@ -11,7 +12,7 @@ class CalibrationProcedure:
         :param sensors: List of sensors involved in the calibration procedure.
         """
         self.sensor_type = sensor_type
-        self.sensors = sensors # TODO: Refactor or add validation to make sure all sensors are of the same type, then consider deriving self.sensor_type from sensors
+        self.sensors = sensors  # TODO: Refactor or add validation to make sure all sensors are of the same type, then consider deriving self.sensor_type from sensors
         self.steps = []  # List to hold the sequence of calibration steps
         self.current_step = 0  # Track the current step in the procedure
 

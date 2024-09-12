@@ -32,6 +32,7 @@ that stores calibration points and fit models. The class is modular, allowing it
 complex sensor operations in the future.
 """
 
+
 class SensorManager:
     def __init__(self):
         """

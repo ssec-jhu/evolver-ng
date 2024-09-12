@@ -1,4 +1,6 @@
 import time
+
+
 class CalibrationStep:
     def __init__(self, name: str, instructions: str = "", input_required: bool = False, global_step: bool = False):
         """
@@ -114,22 +116,30 @@ class InputReferenceStep(CalibrationStep):
         """
         if not isinstance(value, (int, float)):
             raise ValueError("Reference value must be a number.")
-        
+
         self.reference_value = value
         self.mark_complete()  # Mark the step as complete once the reference value is set
+
 
 class CalculateFitStep(CalibrationStep):
     def __init__(self):
         super().__init__(name="Calculate Fit", instructions="Calculate the fit model for the sensor")
 
     def action(self, sensor, context=None):
-        raw_voltages = [point['system_data']['raw_voltage'] for point in sensor.calibration_data.calibration_points if 'raw_voltage' in point['system_data']]
-        reference_values = [point['reference_data'] for point in sensor.calibration_data.calibration_points if point['reference_data']]
+        raw_voltages = [
+            point["system_data"]["raw_voltage"]
+            for point in sensor.calibration_data.calibration_points
+            if "raw_voltage" in point["system_data"]
+        ]
+        reference_values = [
+            point["reference_data"] for point in sensor.calibration_data.calibration_points if point["reference_data"]
+        ]
 
         # Assuming calculate_linear_fit is already implemented
         fit_model = calculate_linear_fit(raw_voltages, reference_values)
         sensor.calibration_data.set_fit_model(fit_model)
         print(f"Fit model for {sensor.id}: {fit_model}")
+
 
 class LoopStep(CalibrationStep):
     def __init__(self, name: str, steps: list, exit_condition: callable):
