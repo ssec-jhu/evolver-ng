@@ -4,7 +4,7 @@ import numpy.polynomial.polynomial as poly
 from pydantic import Field, model_validator
 
 from evolver.base import ConfigDescriptor
-from evolver.calibration.interface import Calibrator, Transformer
+from evolver.calibration.interface import Calibrator, IndependentVialBasedCalibrator, Transformer
 from evolver.settings import settings
 
 
@@ -67,16 +67,7 @@ class LinearCalibrator(PolyFitCalibrator):
         output_transformer: ConfigDescriptor | LinearTransformer | None = None
 
 
-class IndependentVialBasedLinearCalibrator(PolyFitCalibrator):
-    class Config(PolyFitCalibrator.Config):
-        """Specify transformers for each vial independently. Whilst they may all use the same transformer class, each
-        vial will mostly likely have different transformer config parameters and thus require their own transformer
-        instance.
-        """
-
-        input_transformer: dict[int, ConfigDescriptor | LinearTransformer | None] | None = None
-        output_transformer: dict[int, ConfigDescriptor | LinearTransformer | None] | None = None
-
+class IndependentVialBasedLinearCalibrator(IndependentVialBasedCalibrator):
     def run_calibration_procedure(self, data: dict):
         """Override to implement a calibration procedure that is vial-dependant and thus calibrates all vials either
         simultaneously or entirely as desired."""

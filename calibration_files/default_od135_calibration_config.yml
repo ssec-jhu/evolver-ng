@@ -1,0 +1,180 @@
+classinfo: evolver.calibration.standard.curve_fit.IndependentVialBasedCurveFitCalibrator
+config:
+  input_transformer: null
+  output_transformer:
+    '0':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 15.361409079929091
+        - -0.0002831883405076742
+        - -0.00013797258278699858
+        - 5.568722925552211e-10
+        - 2.3192045759452088e-09
+        - -1.0891852257557923e-10
+        created: '2019-09-06T00:00:00'
+    '1':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 22.63726720724552
+        - -0.0004370231824921231
+        - -0.00023043798773755397
+        - 1.288255951990636e-09
+        - 3.4894162421377957e-09
+        - 6.747216342646435e-11
+        created: '2019-09-06T00:00:00'
+    '10':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 11.75891601924426
+        - -0.00021633970317384965
+        - -7.49164890272995e-05
+        - 3.8175014913580936e-10
+        - 1.3628911812984987e-09
+        - -1.7746627517246363e-10
+        created: '2019-09-06T00:00:00'
+    '11':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 4.4936731879203675
+        - 2.57706684794889e-05
+        - -2.3832773816480295e-05
+        - -1.2681502501393517e-09
+        - -4.518141979524657e-12
+        - 1.656418496282043e-10
+        created: '2019-09-06T00:00:00'
+    '12':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - -1.7190515043753891
+        - 0.00014976769565351922
+        - 8.252131951504111e-05
+        - -1.873570773656514e-09
+        - -1.240567425632901e-09
+        - -2.6374844930831324e-10
+        created: '2019-09-06T00:00:00'
+    '13':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 13.258331969341269
+        - -0.00024908079046834025
+        - -9.004282976350286e-05
+        - 5.968084027522195e-10
+        - 1.4831220649276407e-09
+        - -1.272033374169946e-10
+        created: '2019-09-06T00:00:00'
+    '14':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 10.618712830534315
+        - -0.00016341885151076769
+        - -7.464942340711304e-05
+        - -1.582328475460034e-10
+        - 1.3192157187262511e-09
+        - -1.6470611315389868e-10
+        created: '2019-09-06T00:00:00'
+    '15':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 10.287640032183935
+        - -0.000177467381678139
+        - -8.46496264716175e-05
+        - 1.874882706593096e-10
+        - 1.3926204770517715e-09
+        - -7.781678117899437e-11
+        created: '2019-09-06T00:00:00'
+    '2':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 18.34011938793681
+        - -0.0003525947843818188
+        - -0.00014946331924706687
+        - 9.981494801153643e-10
+        - 2.596232973005481e-09
+        - -2.2713234539478986e-10
+        created: '2019-09-06T00:00:00'
+    '3':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 16.008353863500833
+        - -0.0003391779685038511
+        - -0.0001635718556123535
+        - 1.1417520046285012e-09
+        - 3.026532545235072e-09
+        - -2.4168168114640334e-10
+        created: '2019-09-06T00:00:00'
+    '4':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 9.36904544957634
+        - -0.00015260830694862042
+        - -7.164824223484227e-05
+        - -5.8375509164957045e-12
+        - 1.2624468849100468e-09
+        - -1.7654262114668683e-10
+        created: '2019-09-06T00:00:00'
+    '5':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 10.472760151905074
+        - -0.00018466851836629138
+        - -6.119933929253222e-05
+        - 1.3471038994193936e-10
+        - 1.369562556783191e-09
+        - -3.64323895790705e-10
+        created: '2019-09-06T00:00:00'
+    '6':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 25.442365651612544
+        - -0.0005539681005625055
+        - -0.00023227436309533378
+        - 2.3762778533302222e-09
+        - 3.6878141737932593e-09
+        - -2.5027181800906737e-11
+        created: '2019-09-06T00:00:00'
+    '7':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 11.925707187386395
+        - -0.00019218878643415444
+        - -8.523919667988522e-05
+        - 1.800760198221206e-11
+        - 1.4541904484006213e-09
+        - -2.2835013347748154e-10
+        created: '2019-09-06T00:00:00'
+    '8':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - -1.1930439169259741
+        - 0.00019291067474260757
+        - 6.834569839594361e-05
+        - -2.7693382493044777e-09
+        - -8.589781329008005e-10
+        - -5.172894552988452e-10
+        created: '2019-09-06T00:00:00'
+    '9':
+      classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
+      config:
+        coefficients:
+        - 9.053869831378954
+        - -0.00010539808368912342
+        - -5.1325293716096055e-05
+        - -7.474247520719741e-10
+        - 1.1465900597600973e-09
+        - -3.8928459015841646e-10
+        created: '2019-09-06T00:00:00'

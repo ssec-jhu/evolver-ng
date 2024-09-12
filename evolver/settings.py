@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     DEFAULT_TEMPERATURE_CALIBRATION_CONFIG_FILE: Path = (
         ROOT_CALIBRATOR_FILE_STORAGE_PATH / "default_temperature_calibration_config.yml"
     )
+    DEFAULT_OD90_CALIBRATION_CONFIG_FILE: Path = (
+        ROOT_CALIBRATOR_FILE_STORAGE_PATH / "default_od90_calibration_config.yml"
+    )
+    DEFAULT_OD135_CALIBRATION_CONFIG_FILE: Path = (
+        ROOT_CALIBRATOR_FILE_STORAGE_PATH / "default_od135_calibration_config.yml"
+    )
     AUTO_SAVE_NEW_CALIBRATIONS: bool = True
 
 

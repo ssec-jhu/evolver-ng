@@ -2,7 +2,7 @@ import pytest
 
 from evolver.calibration.interface import Calibrator, Transformer
 from evolver.hardware.standard.led import LED
-from evolver.hardware.standard.od_sensor import ODSensor
+from evolver.hardware.standard.od_sensor import OD90, ODSensor
 from evolver.hardware.standard.pump import VialIEPump
 from evolver.hardware.standard.stir import Stir
 from evolver.hardware.standard.temperature import Temperature
@@ -14,21 +14,27 @@ from evolver.settings import settings
     "response_map",
     [
         {
-            b"od_90r,500,_!": b"od_90a,123,456,end",
-            b"od_90r,100,_!": b"od_90a,101,102,end",
+            b"od_90r,500,_!": b"od_90a,54321,45678,end",
+            b"od_90r,100,_!": b"od_90a,41234,42345,end",
         }
     ],
 )
 @pytest.mark.parametrize(
     "config_params, expected",
     [
-        ({"addr": "od_90"}, {0: ODSensor.Output(vial=0, raw=123), 1: ODSensor.Output(vial=1, raw=456)}),
-        ({"addr": "od_90", "vials": [0]}, {0: ODSensor.Output(vial=0, raw=123)}),
-        ({"addr": "od_90", "vials": [1], "integrations": 100}, {1: ODSensor.Output(vial=1, raw=102)}),
+        (
+            {"addr": "od_90"},
+            {
+                0: ODSensor.Output(vial=0, raw=54321, density=1.0189),
+                1: ODSensor.Output(vial=1, raw=45678, density=1.788),
+            },
+        ),
+        ({"addr": "od_90", "vials": [0]}, {0: ODSensor.Output(vial=0, raw=54321, density=1.0189)}),
+        ({"addr": "od_90", "vials": [1], "integrations": 100}, {1: ODSensor.Output(vial=1, raw=42345, density=2.115)}),
     ],
 )
 class TestOD(SerialVialSensorHardwareTestSuite):
-    driver = ODSensor
+    driver = OD90
 
 
 @pytest.mark.parametrize("response_map", [{b"tempr,4095,4095,_!": b"tempa,2020,2500,end"}])

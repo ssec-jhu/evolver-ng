@@ -16,6 +16,7 @@ dependencies = [
     "pydantic",
     "pydantic-settings",
     "pyserial",
+    "scipy",
     "uvicorn"
 ]
 
