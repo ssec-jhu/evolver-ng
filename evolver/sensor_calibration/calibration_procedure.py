@@ -22,7 +22,6 @@ class CalibrationProcedure:
         }
         self.lock = asyncio.Lock()  # For thread safety
 
-
     def add_step(self, step: CalibrationStep):
         """
         Add a calibration step to the procedure.

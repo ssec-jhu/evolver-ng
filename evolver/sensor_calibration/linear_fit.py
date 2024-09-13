@@ -16,10 +16,5 @@ def calculate_linear_fit(raw_voltages, reference_values):
     slope = 1.0  # Replace with actual calculation
     intercept = 0.0  # Replace with actual calculation
 
-    fit_model = {
-        "type": "linear",
-        "slope": slope,
-        "intercept": intercept,
-        "date_calibrated": "2024-09-11T10:15:30"
-    }
+    fit_model = {"type": "linear", "slope": slope, "intercept": intercept, "date_calibrated": "2024-09-11T10:15:30"}
     return fit_model

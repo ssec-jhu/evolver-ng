@@ -6,13 +6,15 @@ app = FastAPI()
 
 # Store calibration procedures by session ID
 # TODO: Explore persistent storage options, so calibration procedures can be resumed after server restarts
-calibration_sessions: Dict[str, 'CalibrationProcedure'] = {}
+calibration_sessions: Dict[str, "CalibrationProcedure"] = {}
 
 # Assume sensor_manager is already initialized and populated with sensors
 sensor_manager = SensorManager()
 
+
 class StartCalibrationRequest(BaseModel):
     sensor_ids: List[str]
+
 
 @app.post("/calibration/{session_id}/start")
 async def start_calibration(session_id: str, request: StartCalibrationRequest):
@@ -22,9 +24,9 @@ async def start_calibration(session_id: str, request: StartCalibrationRequest):
     procedure = CalibrationProcedure(sensor_type="temperature", sensors=sensors, session_id=session_id)
     # Add steps
     procedure.add_step(InstructionGlobalStep("Ensure all sensors are connected and click 'Next'."))
-    procedure.add_step(InstructionSensorStep(
-        instructions_template="Place sensor {sensor_id} into the calibration environment."
-    ))
+    procedure.add_step(
+        InstructionSensorStep(instructions_template="Place sensor {sensor_id} into the calibration environment.")
+    )
     procedure.add_step(ReadSensorDataStep())
     procedure.add_step(InputReferenceValueStep(reference_type="temperature"))
     procedure.add_step(CalculateFitGlobalStep())
@@ -49,6 +51,7 @@ async def acknowledge_global_instruction(session_id: str):
     else:
         raise HTTPException(status_code=404, detail="Calibration session not found.")
 
+
 @app.post("/calibration/{session_id}/sensor/{sensor_id}/acknowledge-instruction")
 async def acknowledge_sensor_instruction(session_id: str, sensor_id: str):
     procedure = calibration_sessions.get(session_id)
@@ -67,8 +70,10 @@ async def acknowledge_sensor_instruction(session_id: str, sensor_id: str):
     else:
         raise HTTPException(status_code=404, detail="Calibration session not found.")
 
+
 class ReferenceValueRequest(BaseModel):
     value: float
+
 
 @app.post("/calibration/{session_id}/sensor/{sensor_id}/input-reference")
 async def input_reference_value(session_id: str, sensor_id: str, request: ReferenceValueRequest):
