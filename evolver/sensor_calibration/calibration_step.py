@@ -1,4 +1,5 @@
 import time
+import asyncio
 import calculate_linear_fit from evolver.sensor_calibration.linear_fit
 
 # Base class for all calibration steps
@@ -15,7 +16,7 @@ class CalibrationStep:
         self.instructions = instructions
         self.input_required = input_required
 
-    def action(self, context=None):
+    async def action(self, context=None):
         """
         Perform the action for the step. Must be implemented by subclasses.
 
@@ -39,6 +40,7 @@ class CalibrationStep:
 
 
 # GlobalCalibrationStep applies to all sensors collectively
+# GlobalCalibrationStep applies to all sensors collectively
 class GlobalCalibrationStep(CalibrationStep):
     def __init__(self, name: str, instructions: str = "", input_required: bool = False):
         """
@@ -51,7 +53,7 @@ class GlobalCalibrationStep(CalibrationStep):
         super().__init__(name, instructions, input_required)
         self.completed = False  # Tracks if the step is completed
 
-    def action(self, context=None):
+    async def action(self, context=None):
         """
         Perform the global action. To be implemented by subclasses if needed.
 
@@ -79,7 +81,7 @@ class GlobalCalibrationStep(CalibrationStep):
         """
         self.completed = False
 
-
+# SensorCalibrationStep applies to individual sensors and tracks per-sensor completion
 # SensorCalibrationStep applies to individual sensors and tracks per-sensor completion
 class SensorCalibrationStep(CalibrationStep):
     def __init__(self, name: str, instructions: str = "", input_required: bool = False):
@@ -93,7 +95,7 @@ class SensorCalibrationStep(CalibrationStep):
         super().__init__(name, instructions, input_required)
         self.completed_sensors = set()  # Set to track sensors that have completed the step
 
-    def action(self, sensor, context=None):
+    async def action(self, sensor, context=None):
         """
         Perform the action for a specific sensor. Must be implemented by subclasses.
 
@@ -128,7 +130,6 @@ class SensorCalibrationStep(CalibrationStep):
         """
         self.completed_sensors.clear()
 
-
 # Example of a GlobalCalibrationStep subclass
 class InstructionGlobalStep(GlobalCalibrationStep):
     def __init__(self, instructions: str):
@@ -139,21 +140,23 @@ class InstructionGlobalStep(GlobalCalibrationStep):
         """
         super().__init__(name="Global Instruction", instructions=instructions, input_required=True)
 
-    def action(self, context=None):
+    async def action(self, context=None):
         """
         Display instructions to the user. The user will acknowledge and mark the step as complete.
 
         :param context: Optional context dictionary.
         """
+        # Send the instructions to the UI or logging system
         print(self.instructions)
-        # In a real application, you would send this instruction to the UI
-        # and wait for the user to acknowledge it via the UI or API.
+        # Since we can't block, we return control and wait for user acknowledgment
+        pass
 
     def mark_instruction_complete(self):
         """
         Mark the instruction as complete, typically called when the user acknowledges the instruction.
         """
         self.mark_complete()
+
 
 # SensorInstructionStep provides dynamic, sensor-specific instructions
 class InstructionSensorStep(SensorCalibrationStep):
@@ -166,7 +169,7 @@ class InstructionSensorStep(SensorCalibrationStep):
         super().__init__(name="Sensor Instruction", instructions="", input_required=True)
         self.instructions_template = instructions_template
 
-    def action(self, sensor, context=None):
+    async def action(self, sensor, context=None):
         """
         Display sensor-specific instructions to the user. The user will acknowledge and mark the step as complete for each sensor.
 
@@ -178,9 +181,10 @@ class InstructionSensorStep(SensorCalibrationStep):
             sensor_id=sensor.id,
             sensor_type=sensor.calibration_data.sensor_type
         )
+        # Send the instructions to the UI or logging system
         print(f"Instructions for sensor {sensor.id}: {self.instructions}")
-        # In a real application, you would send this instruction to the UI
-        # and wait for the user to acknowledge it via the UI or API.
+        # Since we can't block, we return control and wait for user acknowledgment
+        pass
 
     def mark_instruction_complete(self, sensor_id):
         """
@@ -191,6 +195,7 @@ class InstructionSensorStep(SensorCalibrationStep):
         self.mark_complete(sensor_id)
 
 
+
 # Example of a SensorCalibrationStep subclass
 class ReadSensorDataStep(SensorCalibrationStep):
     def __init__(self):
@@ -199,23 +204,27 @@ class ReadSensorDataStep(SensorCalibrationStep):
         """
         super().__init__(name="Read Sensor Data", instructions="Reading data from sensor...", input_required=False)
 
-    def action(self, sensor, context=None):
+    async def action(self, sensor, context=None):
         """
-        Read data from the sensor and store it in the calibration data.
+        Read data from the sensor and store it in the procedure's calibration data.
 
         :param sensor: The sensor object.
-        :param context: Optional context dictionary.
+        :param context: Context dictionary containing the procedure and other info.
         """
         # Simulate reading data from the sensor
-        sensor_data = sensor.read()
-        # For the purpose of calibration, we may need to store raw voltage or other specific data
-        sensor.calibration_data.add_calibration_point(
+        sensor_data = await sensor.read()
+        # Access the procedure's calibration data
+        procedure = context['procedure']
+        calibration_data = procedure.session_calibration_data[sensor.id]
+        # Store the data in the procedure's calibration data
+        calibration_data.add_calibration_point(
             reference_data=None,  # Reference data will be added in a separate step
             system_data=sensor_data["data"]
         )
         print(f"Sensor data for {sensor.id}: {sensor_data}")
         # Mark this step as complete for the sensor
         self.mark_complete(sensor.id)
+
 
 # Another example of a SensorCalibrationStep subclass
 class InputReferenceValueStep(SensorCalibrationStep):
@@ -229,7 +238,7 @@ class InputReferenceValueStep(SensorCalibrationStep):
         self.reference_type = reference_type
         self.reference_values = {}  # Dictionary to store reference values per sensor ID
 
-    def action(self, sensor, context=None):
+    async def action(self, sensor, context=None):
         """
         Request the reference value from the user for a specific sensor.
 
@@ -237,9 +246,10 @@ class InputReferenceValueStep(SensorCalibrationStep):
         :param context: Optional context dictionary.
         """
         self.instructions = f"Please input the {self.reference_type} for sensor {sensor.id}."
+        # Send the instructions to the UI or logging system
         print(self.instructions)
-        # In a real application, this instruction would be sent to the UI
-        # and the user would input the reference value via the UI or API.
+        # Since we can't block, we return control and wait for user input
+        pass
 
     def set_reference_value(self, sensor_id, value):
         """
@@ -250,18 +260,22 @@ class InputReferenceValueStep(SensorCalibrationStep):
         """
         if not isinstance(value, (int, float)):
             raise ValueError("Reference value must be a number.")
-        self.reference_values[sensor_id] = value
-        # Update the calibration data with the reference value
-        for point in sensor_manager.get_sensor(sensor_id).calibration_data.calibration_points:
+        # Access the procedure's calibration data
+        calibration_data = self.context['procedure'].session_calibration_data[sensor_id]
+        # Update the calibration data within the procedure
+        for point in calibration_data.calibration_points:
             if point["reference_data"] is None:
                 point["reference_data"] = value
-                break  # Assume we update the first point without reference data
+                break  # Update the first point without reference data
         # Mark this step as complete for the sensor
         self.mark_complete(sensor_id)
 
 
 
+
 # Example of a GlobalCalibrationStep subclass for calculating the fit model
+# TODO: the CalibrationProcedure should have a method to store the calibration data for each sensor once the procedure reaches the end.
+# Right now this step saves the procedure session calibration data to the SensorManager.
 class CalculateFitGlobalStep(GlobalCalibrationStep):
     def __init__(self):
         """
@@ -269,15 +283,17 @@ class CalculateFitGlobalStep(GlobalCalibrationStep):
         """
         super().__init__(name="Calculate Fit", instructions="Calculating fit model...", input_required=False)
 
-    def action(self, context=None):
+    async def action(self, context=None):
         """
-        Calculate the fit model for each sensor based on their calibration data.
+        Calculate the fit model for each sensor based on their calibration data within the procedure.
 
-        :param context: Optional context dictionary.
+        :param context: Context dictionary containing the procedure and other info.
         """
+        procedure = context['procedure']
         sensors = context.get("sensors", [])
         for sensor in sensors:
-            calibration_data = sensor.calibration_data
+            # Access the procedure's calibration data
+            calibration_data = procedure.session_calibration_data[sensor.id]
             # Extract raw voltages and reference values
             raw_voltages = [
                 point["system_data"]["voltage"]
@@ -291,10 +307,12 @@ class CalculateFitGlobalStep(GlobalCalibrationStep):
             ]
             # Check if we have enough data points
             if len(raw_voltages) >= 2 and len(reference_values) >= 2:
-                # Perform linear fit (this function needs to be implemented)
+                # Perform linear fit (assuming calculate_linear_fit is implemented)
                 fit_model = calculate_linear_fit(raw_voltages, reference_values)
                 calibration_data.set_fit_model(fit_model)
                 print(f"Fit model for sensor {sensor.id}: {fit_model}")
+                # Update the sensor's calibration data
+                sensor.calibration_data = calibration_data
             else:
                 print(f"Not enough data to calculate fit for sensor {sensor.id}")
         # Mark the step as complete

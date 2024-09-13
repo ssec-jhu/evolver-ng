@@ -8,14 +8,16 @@ class Sensor:
         self.id = sensor_id
         self.calibration_data = CalibrationData(sensor_type=sensor_type)
 
-    def read(self) -> dict:
+    async def read_async(self) -> dict:
         """
-        Mock method to simulate reading the raw voltage from the sensor.
+        Mock async method to simulate reading the raw voltage from the sensor.
         This would be replaced by actual sensor reading logic depending on the sensor type.
 
         :return: A dictionary containing the sensor data.
         """
-        # Example: Returning mocked sensor data
+        # Simulate I/O delay
+        await asyncio.sleep(0.1)
+        # Return mocked sensor data
         return {
             "sensor_id": self.id,
             "sensor_type": self.calibration_data.sensor_type,
