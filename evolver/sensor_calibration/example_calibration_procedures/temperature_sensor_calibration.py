@@ -90,7 +90,7 @@ class TempSensorCalibrationProcedure(CalibrationProcedure):
         self.add_step(InstructionStep("Displaying all calibration data for each selected sensor.", global_step=True))
 
         # Step 8: Global step to prompt the user to confirm the fits are linear
-        self.add_step(InstructionStep("Please confirm if the fits are linear.", global_step=True))
+        self.add_step(InstructionStep("Please confirm if the fits for the sensors you just calibrated are linear.", global_step=True))
 
         # Step 9: Global step to end the procedure
         self.add_step(InstructionStep("Calibration procedure complete.", global_step=True))

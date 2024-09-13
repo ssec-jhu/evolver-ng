@@ -9,7 +9,7 @@ class CalibrationStep:
         :param name: The name of the step (e.g., "Read Sensor Data").
         :param instructions: Instructions to be shown to the user, if any.
         :param input_required: Whether user input is required to complete this step.
-        :param global_step: Whether the step is global (applies to all sensors) or sensor-specific.
+        :param global_step: Whether the step is global, e.g. "Fill all the vials with 15ml of water" 
         """
         self.name = name
         self.instructions = instructions
