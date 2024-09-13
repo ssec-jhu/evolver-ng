@@ -1,13 +1,11 @@
 class CalibrationProcedure:
-    def __init__(self, sensor_type: str, sensors, session_id: str):
+    def __init__(self, sensors, session_id: str):
         """
         Initialize the CalibrationProcedure with a sensor type, selected sensors, and a session ID.
 
-        :param sensor_type: The type of sensor being calibrated.
         :param sensors: List of sensors involved in the calibration procedure.
         :param session_id: Unique identifier for the calibration session.
         """
-        self.sensor_type = sensor_type
         self.sensors = sensors  # List of Sensor objects
         self.session_id = session_id  # Unique session ID
         self.steps = []  # List to hold the sequence of calibration steps
@@ -17,9 +15,7 @@ class CalibrationProcedure:
             "procedure": self,  # Add self to context for access in steps
         }
         # Store calibration data per sensor within the procedure
-        self.session_calibration_data = {
-            sensor.id: CalibrationData(sensor_type=sensor.calibration_data.sensor_type) for sensor in sensors
-        }
+        self.session_calibration_data = {sensor.id: CalibrationData() for sensor in sensors}
         self.lock = asyncio.Lock()  # For thread safety
 
     def add_step(self, step: CalibrationStep):

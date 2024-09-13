@@ -24,7 +24,7 @@ async def start_calibration(session_id: str, request: StartCalibrationRequest):
     sensors = sensor_manager.select_sensors_for_calibration(request.sensor_ids)
 
     # Create calibration procedure with session ID
-    procedure = CalibrationProcedure(sensor_type="temperature", sensors=sensors, session_id=session_id)
+    procedure = CalibrationProcedure( sensors=sensors, session_id=session_id)
 
     # Example of a calibration procedure for temperature sensors
     # Add global instructions

@@ -1,12 +1,11 @@
 class Sensor:
     """
     A generic Sensor class that contains a sensor_id and CalibrationData.
-    The sensor_type is now stored directly in CalibrationData.
     """
 
-    def __init__(self, sensor_id, sensor_type):
+    def __init__(self, sensor_id):
         self.id = sensor_id
-        self.calibration_data = CalibrationData(sensor_type=sensor_type)
+        self.calibration_data = CalibrationData()
 
     async def read_async(self) -> dict:
         """
@@ -20,7 +19,6 @@ class Sensor:
         # Return mocked sensor data
         return {
             "sensor_id": self.id,
-            "sensor_type": self.calibration_data.sensor_type,
             "data": {"voltage": 0.75, "time": "2024-09-11T10:15:30"},
         }
 
@@ -31,8 +29,7 @@ class CalibrationData:
     It fundamentally it pairs reference and system data points together to allow fitting a model for each sensor.
     """
 
-    def __init__(self, sensor_type):
-        self.sensor_type = sensor_type
+    def __init__(self):
         self.calibration_points = []  # Store multiple real-world and system data points
         self.fit_model = None  # Store the computed fit model
 

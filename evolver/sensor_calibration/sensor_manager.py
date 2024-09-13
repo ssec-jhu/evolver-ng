@@ -7,29 +7,10 @@ This class provides basic CRUD functionality for managing sensors and their asso
 It allows for the registration of sensors, selecting sensors for calibration, reading data from sensors, and removing or 
 listing sensors. Each sensor is expected to implement a 'read()' method for retrieving its current data.
 
-Example usage:
-
-# Initialize the SensorManager
-sensor_manager = SensorManager()
-
-# Register sensors
-
-# In this example, a sensor for vials 1 and 2 is registered. The key is a combination of the sensor type and the vial number.
-sensor_manager.register_sensor("temp_sensor_1", temp_sensor)
-sensor_manager.register_sensor("temp_sensor_2", temp_sensor)
-
-# Select sensors for calibration
-selected_sensors = sensor_manager.select_sensors_for_calibration(["temp_sensor_1", "temp_sensor_2"])
-
-# Read data from all sensors
-sensor_data = sensor_manager.read_sensors()
-
-# List all sensors
-sensor_ids = sensor_manager.list_sensors()
 
 The SensorManager is designed to handle generic Sensor objects, each of which contains a CalibrationData instance
-that stores calibration points and fit models. The class is modular, allowing it to be extended to support more
-complex sensor operations in the future.
+that stores calibration points and fit models. Note, a sensor's calibration data is only set once a CalibrationProcedure has completed.
+This ensures that the calibration data is only updated when a calibration procedure for that sensor has been successfully executed.
 """
 
 

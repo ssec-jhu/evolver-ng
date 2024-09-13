@@ -40,7 +40,6 @@ class CalibrationStep:
 
 
 # GlobalCalibrationStep applies to all sensors collectively
-# GlobalCalibrationStep applies to all sensors collectively
 class GlobalCalibrationStep(CalibrationStep):
     def __init__(self, name: str, instructions: str = "", input_required: bool = False):
         """
@@ -178,7 +177,6 @@ class InstructionSensorStep(SensorCalibrationStep):
         # Format the instructions using sensor-specific information
         self.instructions = self.instructions_template.format(
             sensor_id=sensor.id,
-            sensor_type=sensor.calibration_data.sensor_type
         )
         # Send the instructions to the UI or logging system
         print(f"Instructions for sensor {sensor.id}: {self.instructions}")
