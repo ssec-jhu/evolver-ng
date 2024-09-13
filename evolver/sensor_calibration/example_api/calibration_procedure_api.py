@@ -4,10 +4,13 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
+# Notes:
+# TODO: If ui needs more info on valid inputs for current step, expand Step class a la acknowledge_url. I can imagine for example including  min/max values for input, number of inputs etc...
+# TODO: Current step index isn't perfect, it doesn't account for SensorStep steps, a SensorStep = 1 step for each sensor in self.sensors
+
+
 # Store calibration procedures by session ID
 # TODO: Explore persistent storage options, so calibration procedures can be resumed after server restarts
-# TODO: procedure resumption.
-
 calibration_sessions: Dict[str, "CalibrationProcedure"] = {}
 
 # Assume sensor_manager is already initialized and populated with sensors
@@ -16,6 +19,28 @@ sensor_manager = SensorManager()
 
 class StartCalibrationRequest(BaseModel):
     sensor_ids: List[str]
+
+@app.get("/calibration/{session_id}/current-step", response_model=CurrentStepResponse)
+async def get_current_step(session_id: str):
+    procedure = calibration_sessions.get(session_id)
+    if not procedure:
+        raise HTTPException(status_code=404, detail="Calibration session not found.")
+    
+    current_step = procedure.steps[procedure.current_step_index]
+    
+    # Determine the acknowledge URL by calling the method on the step
+    if isinstance(current_step, InstructionSensorStep):
+        # Example: Provide a specific sensor ID, possibly the first sensor for now (adjust as needed)
+        acknowledge_url = current_step.acknowledge_url(session_id, procedure.sensors[0].id)
+    else:
+        acknowledge_url = current_step.acknowledge_url(session_id)
+    
+    return {
+        "step_name": current_step.name,
+        "instructions": current_step.instructions,
+        "input_required": current_step.input_required,
+        "acknowledge_url": acknowledge_url
+    }
 
 
 @app.post("/calibration/{session_id}/start")

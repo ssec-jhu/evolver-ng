@@ -38,6 +38,10 @@ class CalibrationStep:
         """
         raise NotImplementedError("Subclasses must implement this method.")
 
+    def acknowledge_url(self, session_id: str, sensor_id: str = None) -> str:
+        """ Return the URL to acknowledge this step. Override in subclasses as needed. """
+        raise NotImplementedError("This method should be overridden by subclasses.")
+
 
 # GlobalCalibrationStep applies to all sensors collectively
 class GlobalCalibrationStep(CalibrationStep):
@@ -155,6 +159,9 @@ class InstructionGlobalStep(GlobalCalibrationStep):
         """
         self.mark_complete()
 
+    def acknowledge_url(self, session_id: str, sensor_id: str = None) -> str:
+        return f"/calibration/{session_id}/acknowledge-global-instruction"
+
 
 # SensorInstructionStep provides dynamic, sensor-specific instructions
 class InstructionSensorStep(SensorCalibrationStep):
@@ -191,6 +198,8 @@ class InstructionSensorStep(SensorCalibrationStep):
         """
         self.mark_complete(sensor_id)
 
+    def acknowledge_url(self, session_id: str, sensor_id: str) -> str:
+        return f"/calibration/{session_id}/sensor/{sensor_id}/acknowledge-instruction"
 
 
 # Example of a SensorCalibrationStep subclass
@@ -266,6 +275,9 @@ class InputReferenceValueStep(SensorCalibrationStep):
                 break  # Update the first point without reference data
         # Mark this step as complete for the sensor
         self.mark_complete(sensor_id)
+
+    def acknowledge_url(self, session_id: str, sensor_id: str) -> str:
+        return f"/calibration/{session_id}/sensor/{sensor_id}/input-reference"
 
 
 
