@@ -7,12 +7,6 @@ Make collecting data required to accurately calibrate sensors customizable using
 From a high level this is what a temperature calibration procedure looks like. OD calibration can be represented too, I'll have a shot at that shortly.
 https://github.com/ssec-jhu/evolver-ng/blob/iainland/calibration-system/evolver/sensor_calibration/example_api/calibration_procedure_api.py#L51-L78
 
-### Caveats:
-
-In putting this together, to make the manageable, i've ignored the existing framework, i'm sure it can provide some features like those provided by the SensorManager in this example. I've just ignored it pending approval / discussion of this proposal. Similarly this design is not integrated with the existing api, there's a reference api in the example_api directory, that should be not too hard to integrate with what's already available.
-
-I've also ignored the existing calibration features, my understanding is they mostly pertain to linear fits, and other fits the user might put together. The scope of this work isn't to touch any of that, though it ought to provide an interface that makes integrating with that possible.
-
 ### Detailed description:
 
 The core of this system is a datastructure, called `CalibrationData` that pairs reference values with raw values, e.g. Actual temp measured in a vial and the voltage for that vial's temp sensor. These pairs are fed into function that calculates, linear fit, the result of this calculation is also included in the data structure. Since `CalibrationData` stores data points as a dict, whatever any kind of data required to calibrate a sensor can be put there.
@@ -45,3 +39,16 @@ a `CalibrationStep`'s behavior is first  distinguished by the Class it inherits 
 Upon completion a `CalibrationProcedure` should save the `CalibrationData` it has been collating to the respective `Sensors` in the `SensorManager`
 
 At that point the `SensorManager` is able to provide the broader framework with calibration data for the sensors.
+
+### Caveats:
+ 
+None of this has been run or tested. I wanted to make sure all the requirements of the existing calibration procedures could be covered with this system with enhancements like a simple API and resumable procedures. I think all requirements can be accomodated. If everyone approves of this approach I can spend the time to stand up a running demo.
+
+As you read through this, there are areas that are not consistent or don't fully work.
+For example I haven't written the logic to unwrap steps that iterate over sensors, to give a complete count of steps in a procedure. The CalibrationData structure doesn't enforce 1:1 mapping of reference to raw values.
+
+Ignore that level of detail if you can.
+
+In putting this together, to make the manageable, i've also ignored the existing framework, i'm sure it can provide some features like those provided by the SensorManager in this example. I've just ignored it pending approval / discussion of this proposal. Similarly this design is not integrated with the existing api, there's a reference api in the example_api directory, that should be not too hard to integrate with what's already available.
+
+I've also ignored the existing calibration features, my understanding is they mostly pertain to linear fits, and other fits the user might put together. The scope of this work isn't to touch any of that, though it ought to provide an interface that makes integrating with that possible.
