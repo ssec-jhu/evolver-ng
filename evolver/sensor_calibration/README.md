@@ -5,7 +5,7 @@ Make collecting data required to accurately calibrate sensors customizable using
 
 ### Demo:
 From a high level this is what a temperature calibration procedure looks like. OD calibration can be represented too, I'll have a shot at that shortly.
-https://github.com/ssec-jhu/evolver-ng/blob/iainland/calibration-system/evolver/sensor_calibration/example_api/calibration_procedure_api.py#L29-L53
+https://github.com/ssec-jhu/evolver-ng/blob/iainland/calibration-system/evolver/sensor_calibration/example_api/calibration_procedure_api.py#L51-L78
 
 ### Caveats:
 
