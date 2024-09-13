@@ -1,8 +1,11 @@
-Sensor Calibration proposal / 1 pager.
-
+Sensor Calibration 1 pager.
 
 ### Scope: 
 Make collecting data required to accurately calibrate sensors customizable using a convenient api and to handle the collection of that data.
+
+### Demo:
+From a high level this is what a temperature calibration procedure looks like. OD calibration can be represented too, I'll have a shot at that shortly.
+https://github.com/ssec-jhu/evolver-ng/blob/iainland/calibration-system/evolver/sensor_calibration/example_api/calibration_procedure_api.py#L29-L53
 
 ### Caveats:
 
@@ -10,18 +13,13 @@ In putting this together, to make the manageable, i've ignored the existing fram
 
 I've also ignored the existing calibration features, my understanding is they mostly pertain to linear fits, and other fits the user might put together. The scope of this work isn't to touch any of that, though it ought to provide an interface that makes integrating with that possible.
 
-
-### TL;DR:
-From a high level this is what a temperature calibration procedure looks like. OD calibration can be represented too, I'll have a shot at that shortly.
-https://github.com/ssec-jhu/evolver-ng/blob/iainland/calibration-system/evolver/sensor_calibration/example_api/calibration_procedure_api.py#L29-L53
-
 ### Detailed description:
 
-The core of this system is a datastructure, called `CalibrationData` that pairs reference values with raw values, e.g. Actual temp measured in a vial and the voltage for that vial's temp sensor. These pairs are fed into a model that calculates, linear fit that's also included in the data structure. Since `CalibrationData` is a dict, whatever reference, raw, global ... whatever data required to calibrate a sensor can be put there.
+The core of this system is a datastructure, called `CalibrationData` that pairs reference values with raw values, e.g. Actual temp measured in a vial and the voltage for that vial's temp sensor. These pairs are fed into function that calculates, linear fit, the result of this calculation is also included in the data structure. Since `CalibrationData` stores data points as a dict, whatever any kind of data required to calibrate a sensor can be put there.
 
-For illustrative purposes we're focussed on the simplest use case of calibrating temperature sensors. In this case pairings of reference value to raw value is all that is required to make a usable fit.
+For illustrative purposes we're focussed on the simplest use case of calibrating temperature sensors. In this case pairings of reference value to raw value is all that is required to calculate a usable fit.
 
-A `SensorManager` maps `CalibrationData`  to an individual `Sensor`  for example the temp sensor on vial 1 may have id: `temp_sensor_1`
+A `SensorManager` maps `CalibrationData`  to an individual `Sensor` for example the temp sensor on vial 1 may have id: `temp_sensor_1`. It's anticipated that all sensors attached to the device are registered with the manager when it initializes.
 
 `CalibrationStep` handles building the `CalibrationData` structure.
 
@@ -36,19 +34,14 @@ https://github.com/ssec-jhu/evolver-ng/blob/iainland/calibration-system/evolver/
 - instruct the user to take some action
 https://github.com/ssec-jhu/evolver-ng/blob/iainland/calibration-system/evolver/sensor_calibration/calibration_step.py#L161
 
-Steps behavior is first  distinguished by the Class they inherit from
+a `CalibrationStep`'s behavior is first  distinguished by the Class it inherits from.
+
 `GlobalCalibrationStep` will not loop over selected sensors, they'll execute once for the `CalibrationProcedure`.
+
 `SensorCalibrationStep` will loop over selected sensors, executing that step once for each selected sensor.
 
-`CalibrationProcedure` coordinates the steps into a cohesive procedure that is complete when all constituent steps are complete.
+`CalibrationProcedure` is used to coordinate and organize the steps into a cohesive procedure that is complete when all constituent steps are complete. It provides shared state as necessary between steps, manages procedure state like the overall procedure progress and provides async features to enable non-blocking procedures. The CalibrationProcedure can be enhanced to support resumable/recoverable calibration procedures, especially with the procedure session concept introduced in this proposal.
 
 Upon completion a `CalibrationProcedure` should save the `CalibrationData` it has been collating to the respective `Sensors` in the `SensorManager`
 
 At that point the `SensorManager` is able to provide the broader framework with calibration data for the sensors.
-
-There are some additional features and details that facilitate the coordination of the different parts of the system
-
-A SensorStep will happen for every selected sensor in a procedure
-A GlobalStep will happen once, regardless of number of selected sensors in a procedure.
-A CalibrationProcedure maintains its own internal CalibrationData data structure, only saving this to the SensorManager upon completion.
-A CalibrationProcedure has a unique session id, ensuring

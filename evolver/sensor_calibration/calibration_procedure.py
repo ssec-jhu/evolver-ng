@@ -9,6 +9,7 @@ class CalibrationProcedure:
         self.sensors = sensors  # List of Sensor objects
         self.session_id = session_id  # Unique session ID
         self.steps = []  # List to hold the sequence of calibration steps
+        # TODO current step index needs work to account for SensorStep steps, a SensorStep = 1 step for each sensor in self.sensors
         self.current_step_index = 0  # Track the current step index
         self.context = {
             "sensors": sensors,
