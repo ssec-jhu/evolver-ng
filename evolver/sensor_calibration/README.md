@@ -40,7 +40,7 @@ a `CalibrationStep`'s behavior is first  distinguished by the Class it inherits 
 
 `SensorCalibrationStep` will loop over selected sensors, executing that step once for each selected sensor.
 
-`CalibrationProcedure` is used to coordinate and organize the steps into a cohesive procedure that is complete when all constituent steps are complete. It provides shared state as necessary between steps, manages procedure state like the overall procedure progress and provides async features to enable non-blocking procedures. The CalibrationProcedure can be enhanced to support resumable/recoverable calibration procedures, especially with the procedure session concept introduced in this proposal.
+`CalibrationProcedure` is used to coordinate and organize the steps into a cohesive procedure that is complete when all constituent steps are complete. It provides shared state as necessary between steps, manages procedure state like the overall procedure progress and provides async features to enable non-blocking procedures. The CalibrationProcedure can be enhanced to support resumable/recoverable calibration procedures, especially with the named and persisted procedure concept introduced in this proposal.
 
 Upon completion a `CalibrationProcedure` should save the `CalibrationData` it has been collating to the respective `Sensors` in the `SensorManager`
 

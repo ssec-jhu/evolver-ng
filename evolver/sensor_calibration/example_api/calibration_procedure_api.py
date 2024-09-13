@@ -9,9 +9,9 @@ app = FastAPI()
 # TODO: Current step index isn't perfect, it doesn't account for SensorStep steps, a SensorStep = 1 step for each sensor in self.sensors
 
 
-# Store calibration procedures by session ID
+# Store calibration procedures by calibration name
 # TODO: Explore persistent storage options, so calibration procedures can be resumed after server restarts
-calibration_sessions: Dict[str, "CalibrationProcedure"] = {}
+calibration_procedures: Dict[str, "CalibrationProcedure"] = {}
 
 # Assume sensor_manager is already initialized and populated with sensors
 sensor_manager = SensorManager()
@@ -20,20 +20,20 @@ sensor_manager = SensorManager()
 class StartCalibrationRequest(BaseModel):
     sensor_ids: List[str]
 
-@app.get("/calibration/{session_id}/current-step", response_model=CurrentStepResponse)
-async def get_current_step(session_id: str):
-    procedure = calibration_sessions.get(session_id)
+@app.get("/calibration/{calibration_name}/current-step", response_model=CurrentStepResponse)
+async def get_current_step(calibration_name: str):
+    procedure = calibration_procedures.get(calibration_name)
     if not procedure:
-        raise HTTPException(status_code=404, detail="Calibration session not found.")
+        raise HTTPException(status_code=404, detail="Calibration with that name was not found.")
     
     current_step = procedure.steps[procedure.current_step_index]
     
     # Determine the acknowledge URL by calling the method on the step
     if isinstance(current_step, InstructionSensorStep):
         # Example: Provide a specific sensor ID, possibly the first sensor for now (adjust as needed)
-        acknowledge_url = current_step.acknowledge_url(session_id, procedure.sensors[0].id)
+        acknowledge_url = current_step.acknowledge_url(calibration_name, procedure.sensors[0].id)
     else:
-        acknowledge_url = current_step.acknowledge_url(session_id)
+        acknowledge_url = current_step.acknowledge_url(calibration_name)
     
     return {
         "step_name": current_step.name,
@@ -43,13 +43,13 @@ async def get_current_step(session_id: str):
     }
 
 
-@app.post("/calibration/{session_id}/start")
-async def start_calibration(session_id: str, request: StartCalibrationRequest):
+@app.post("/calibration/{calibration_name}/start")
+async def start_calibration(calibration_name: str, request: StartCalibrationRequest):
     # Initialize sensors
     sensors = sensor_manager.select_sensors_for_calibration(request.sensor_ids)
 
-    # Create calibration procedure with session ID
-    procedure = CalibrationProcedure( sensors=sensors, session_id=session_id)
+    # Create calibration procedure with a name
+    procedure = CalibrationProcedure(sensors=sensors, calibration_name=calibration_name)
 
     # Example of a calibration procedure for temperature sensors
     # Add global instructions
@@ -78,16 +78,16 @@ async def start_calibration(session_id: str, request: StartCalibrationRequest):
     procedure.add_step(CalculateFitGlobalStep())
 
     # Store the procedure
-    calibration_sessions[session_id] = procedure
+    calibration_procedures[calibration_name] = procedure
 
     # Start the procedure
     await procedure.run()
     return {"status": "Calibration started."}
 
 
-@app.post("/calibration/{session_id}/acknowledge-global-instruction")
-async def acknowledge_global_instruction(session_id: str):
-    procedure = calibration_sessions.get(session_id)
+@app.post("/calibration/{calibration_name}/acknowledge-global-instruction")
+async def acknowledge_global_instruction(calibration_name: str):
+    procedure = calibration_procedures.get(calibration_name)
     if procedure:
         current_step = procedure.steps[procedure.current_step_index]
         if isinstance(current_step, InstructionGlobalStep):
@@ -97,12 +97,12 @@ async def acknowledge_global_instruction(session_id: str):
         else:
             raise HTTPException(status_code=400, detail="Current step is not a global instruction step.")
     else:
-        raise HTTPException(status_code=404, detail="Calibration session not found.")
+        raise HTTPException(status_code=404, detail="Calibration procedure with that name was not found.")
 
 
-@app.post("/calibration/{session_id}/sensor/{sensor_id}/acknowledge-instruction")
-async def acknowledge_sensor_instruction(session_id: str, sensor_id: str):
-    procedure = calibration_sessions.get(session_id)
+@app.post("/calibration/{calibration_name}/sensor/{sensor_id}/acknowledge-instruction")
+async def acknowledge_sensor_instruction(calibration_name: str, sensor_id: str):
+    procedure = calibration_procedures.get(calibration_name)
     if procedure:
         sensor = sensor_manager.get_sensor(sensor_id)
         if not sensor:
@@ -116,16 +116,16 @@ async def acknowledge_sensor_instruction(session_id: str, sensor_id: str):
         else:
             raise HTTPException(status_code=400, detail="Current step is not a sensor instruction step.")
     else:
-        raise HTTPException(status_code=404, detail="Calibration session not found.")
+        raise HTTPException(status_code=404, detail="Calibration with that name was not found.")
 
 
 class ReferenceValueRequest(BaseModel):
     value: float
 
 
-@app.post("/calibration/{session_id}/sensor/{sensor_id}/input-reference")
-async def input_reference_value(session_id: str, sensor_id: str, request: ReferenceValueRequest):
-    procedure = calibration_sessions.get(session_id)
+@app.post("/calibration/{calibration_name}/sensor/{sensor_id}/input-reference")
+async def input_reference_value(calibration_name: str, sensor_id: str, request: ReferenceValueRequest):
+    procedure = calibration_procedures.get(calibration_name)
     if procedure:
         sensor = sensor_manager.get_sensor(sensor_id)
         if not sensor:
@@ -139,4 +139,4 @@ async def input_reference_value(session_id: str, sensor_id: str, request: Refere
         else:
             raise HTTPException(status_code=400, detail="Current step is not expecting input.")
     else:
-        raise HTTPException(status_code=404, detail="Calibration session not found."}
+        raise HTTPException(status_code=404, detail="Calibration with that name was not found."}

@@ -38,7 +38,7 @@ class CalibrationStep:
         """
         raise NotImplementedError("Subclasses must implement this method.")
 
-    def acknowledge_url(self, session_id: str, sensor_id: str = None) -> str:
+    def acknowledge_url(self, calibration_name: str, sensor_id: str = None) -> str:
         """ Return the URL to acknowledge this step. Override in subclasses as needed. """
         raise NotImplementedError("This method should be overridden by subclasses.")
 
@@ -159,8 +159,8 @@ class InstructionGlobalStep(GlobalCalibrationStep):
         """
         self.mark_complete()
 
-    def acknowledge_url(self, session_id: str, sensor_id: str = None) -> str:
-        return f"/calibration/{session_id}/acknowledge-global-instruction"
+    def acknowledge_url(self, calibration_name: str, sensor_id: str = None) -> str:
+        return f"/calibration/{calibration_name}/acknowledge-global-instruction"
 
 
 # SensorInstructionStep provides dynamic, sensor-specific instructions
@@ -198,8 +198,8 @@ class InstructionSensorStep(SensorCalibrationStep):
         """
         self.mark_complete(sensor_id)
 
-    def acknowledge_url(self, session_id: str, sensor_id: str) -> str:
-        return f"/calibration/{session_id}/sensor/{sensor_id}/acknowledge-instruction"
+    def acknowledge_url(self, calibration_name: str, sensor_id: str) -> str:
+        return f"/calibration/{calibration_name}/sensor/{sensor_id}/acknowledge-instruction"
 
 
 # Example of a SensorCalibrationStep subclass
@@ -221,7 +221,7 @@ class ReadSensorDataStep(SensorCalibrationStep):
         sensor_data = await sensor.read()
         # Access the procedure's calibration data
         procedure = context['procedure']
-        calibration_data = procedure.session_calibration_data[sensor.id]
+        calibration_data = procedure.procedure_calibration_data[sensor.id]
         # Store the data in the procedure's calibration data
         calibration_data.add_calibration_point(
             reference_data=None,  # Reference data will be added in a separate step
@@ -267,7 +267,7 @@ class InputReferenceValueStep(SensorCalibrationStep):
         if not isinstance(value, (int, float)):
             raise ValueError("Reference value must be a number.")
         # Access the procedure's calibration data
-        calibration_data = self.context['procedure'].session_calibration_data[sensor_id]
+        calibration_data = self.context['procedure'].procedure_calibration_data[sensor_id]
         # Update the calibration data within the procedure
         for point in calibration_data.calibration_points:
             if point["reference_data"] is None:
@@ -276,15 +276,15 @@ class InputReferenceValueStep(SensorCalibrationStep):
         # Mark this step as complete for the sensor
         self.mark_complete(sensor_id)
 
-    def acknowledge_url(self, session_id: str, sensor_id: str) -> str:
-        return f"/calibration/{session_id}/sensor/{sensor_id}/input-reference"
+    def acknowledge_url(self, calibration_name: str, sensor_id: str) -> str:
+        return f"/calibration/{calibration_name}/sensor/{sensor_id}/input-reference"
 
 
 
 
 # Example of a GlobalCalibrationStep subclass for calculating the fit model
 # TODO: the CalibrationProcedure should have a method to store the calibration data for each sensor once the procedure reaches the end.
-# Right now this step saves the procedure session calibration data to the SensorManager.
+# Right now this step saves the calibration procedure CalibrationData to the SensorManager.
 class CalculateFitGlobalStep(GlobalCalibrationStep):
     def __init__(self):
         """
@@ -302,7 +302,7 @@ class CalculateFitGlobalStep(GlobalCalibrationStep):
         sensors = context.get("sensors", [])
         for sensor in sensors:
             # Access the procedure's calibration data
-            calibration_data = procedure.session_calibration_data[sensor.id]
+            calibration_data = procedure.procedure_calibration_data[sensor.id]
             # Extract raw voltages and reference values
             raw_voltages = [
                 point["system_data"]["voltage"]
