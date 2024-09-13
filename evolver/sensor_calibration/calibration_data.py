@@ -53,33 +53,3 @@ class CalibrationData:
 
     def set_fit_model(self, model):
         self.fit_model = model
-
-
-"""
-Example.
-{
-  "sensor_id": "complex_sensor_1",
-  "calibration_points": [
-    {
-      "reference_data": {
-        "temperature": 25.0,
-        "air_pressure": 1013.25,
-        "altitude": 100
-      },
-      "system_data": {
-        "raw_voltage": 0.75,
-        "system_voltage": 5.0,
-        "current_time": "2024-09-11T10:15:30"
-      }
-    }
-  ],
-  "fit_model": {
-    "type": "linear",
-    "slope": 50.0,
-    "intercept": -12.5,
-    "name": "Temperature Sensor Fit",
-    "date_calibrated": "2024-09-11T10:15:30"
-  }
-}
-
-"""
