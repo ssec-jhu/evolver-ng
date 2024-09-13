@@ -6,8 +6,7 @@ app = FastAPI()
 
 # Notes:
 # TODO: If ui needs more info on valid inputs for current step, expand Step class a la acknowledge_url. I can imagine for example including  min/max values for input, number of inputs etc...
-# TODO: Current step index isn't perfect, it doesn't account for SensorStep steps, a SensorStep = 1 step for each sensor in self.sensors
-
+# TODO: Current step index isn't perfect, it doesn't account for SensorStep steps, a SensorStep = 1 step for each sensor in self.sensors. To fix, add current_sensor context to CalibrationProcedure. Then if current_step is instance of a SensorStep, we know which sensor's turn it is and can step into
 
 # Store calibration procedures by calibration name
 # TODO: Explore persistent storage options, so calibration procedures can be resumed after server restarts
@@ -27,11 +26,12 @@ async def get_current_step(calibration_name: str):
         raise HTTPException(status_code=404, detail="Calibration with that name was not found.")
     
     current_step = procedure.steps[procedure.current_step_index]
+    # TODO: make SensorStep steps, action method, context param required to ensure they update current_sensor on the containing procedure.
+    current_sensor = procedure.current_sensor
     
     # Determine the acknowledge URL by calling the method on the step
     if isinstance(current_step, InstructionSensorStep):
-        # Example: Provide a specific sensor ID, possibly the first sensor for now (adjust as needed)
-        acknowledge_url = current_step.acknowledge_url(calibration_name, procedure.sensors[0].id)
+        acknowledge_url = current_step.acknowledge_url(calibration_name, procedure.current_sensor.id)
     else:
         acknowledge_url = current_step.acknowledge_url(calibration_name)
     
@@ -61,7 +61,6 @@ async def start_calibration(calibration_name: str, request: StartCalibrationRequ
         # Add sensor instruction step
         set_temp = (i+1)*10+10  # Example: 20, 30, 40
         # Note: GlobalStep only runs once
-        # TODO: a step with a "done condition" that evaluates every second. In this case it could read the voltage from all sensors and wait until they are stabilized.
         procedure.add_step(InstructionGlobalStep(
             instructions_template=f"Set Evolver temp control to {set_temp} setting and wait for equilibrium (consistent onboard readings), and click 'Next'."
         ))

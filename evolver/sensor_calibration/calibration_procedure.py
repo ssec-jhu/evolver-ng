@@ -11,6 +11,7 @@ class CalibrationProcedure:
         self.steps = []  # List to hold the sequence of calibration steps
         # TODO current step index needs work to account for SensorStep steps, a SensorStep = 1 step for each sensor in self.sensors
         self.current_step_index = 0  # Track the current step index
+        self.current_sensor # Track the current sensor being calibrated
         self.context = {
             "sensors": sensors,
             "procedure": self,  # Add self to context for access in steps

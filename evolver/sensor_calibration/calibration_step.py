@@ -174,13 +174,14 @@ class InstructionSensorStep(SensorCalibrationStep):
         super().__init__(name="Sensor Instruction", instructions="", input_required=True)
         self.instructions_template = instructions_template
 
-    async def action(self, sensor, context=None):
+    async def action(self, sensor, context):
         """
         Display sensor-specific instructions to the user. The user will acknowledge and mark the step as complete for each sensor.
 
         :param sensor: The sensor object that this step is operating on.
-        :param context: Optional context dictionary.
+        :param context: Procedure context dictionary.
         """
+        context.current_sensor = sensor
         # Format the instructions using sensor-specific information
         self.instructions = self.instructions_template.format(
             sensor_id=sensor.id,
@@ -210,13 +211,14 @@ class ReadSensorDataStep(SensorCalibrationStep):
         """
         super().__init__(name="Read Sensor Data", instructions="Reading data from sensor...", input_required=False)
 
-    async def action(self, sensor, context=None):
+    async def action(self, sensor, context):
         """
         Read data from the sensor and store it in the procedure's calibration data.
 
         :param sensor: The sensor object.
         :param context: Context dictionary containing the procedure and other info.
         """
+        context.current_sensor = sensor
         # Simulate reading data from the sensor
         sensor_data = await sensor.read()
         # Access the procedure's calibration data
@@ -244,13 +246,14 @@ class InputReferenceValueStep(SensorCalibrationStep):
         self.reference_type = reference_type
         self.reference_values = {}  # Dictionary to store reference values per sensor ID
 
-    async def action(self, sensor, context=None):
+    async def action(self, sensor, context):
         """
         Request the reference value from the user for a specific sensor.
 
         :param sensor: The sensor object.
         :param context: Optional context dictionary.
         """
+        context.current_sensor = sensor
         self.instructions = f"Please input the {self.reference_type} for sensor {sensor.id}."
         # Send the instructions to the UI or logging system
         print(self.instructions)
