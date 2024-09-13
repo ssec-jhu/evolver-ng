@@ -20,13 +20,13 @@ A `SensorManager` maps `CalibrationData`  to an individual `Sensor` for example 
 Towards this end a `CalibrationStep` will typically do one of 3 things.
 
 - set a reference data point in calibration data (e.g. real world temp reading taken using a thermometer by the user)
-https://github.com/ssec-jhu/evolver-ng/blob/iainland/calibration-system/evolver/sensor_calibration/calibration_step.py#L229
+https://github.com/ssec-jhu/evolver-ng/blob/iainland/calibration-system/evolver/sensor_calibration/calibration_step.py#L238
 
 - sets the raw value data point in calibration data (e.g. raw voltage reading from the sensor)
-https://github.com/ssec-jhu/evolver-ng/blob/iainland/calibration-system/evolver/sensor_calibration/calibration_step.py#L199
+https://github.com/ssec-jhu/evolver-ng/blob/iainland/calibration-system/evolver/sensor_calibration/calibration_step.py#L207
 
 - instruct the user to take some action
-https://github.com/ssec-jhu/evolver-ng/blob/iainland/calibration-system/evolver/sensor_calibration/calibration_step.py#L161
+https://github.com/ssec-jhu/evolver-ng/blob/iainland/calibration-system/evolver/sensor_calibration/calibration_step.py#L167
 
 a `CalibrationStep`'s behavior is first  distinguished by the Class it inherits from.
 
@@ -42,10 +42,10 @@ At that point the `SensorManager` is able to provide the broader framework with 
 
 ### Caveats:
  
-None of this has been run or tested. I wanted to make sure all the requirements of the existing calibration procedures could be covered with this system with enhancements like a simple API and resumable procedures. I think all requirements can be accomodated. If everyone approves of this approach I can spend the time to stand up a running demo.
+None of this has been run or tested. I wanted to make sure all the requirements of the existing calibration procedures could be covered with this system with enhancements like a simple API and resumable procedures. I think all requirements and more can be accomodated. If everyone approves of this approach I can spend the time to stand up a running demo.
 
-As you read through this, there are areas that are not consistent or don't fully work.
-For example I haven't written the logic to unwrap steps that iterate over sensors, to give a complete count of steps in a procedure. The CalibrationData structure doesn't enforce 1:1 mapping of reference to raw values.
+As you read through this, there are areas that don't work, i've noted these with TODOs as much as possible.
+For example I haven't written the logic to unwrap steps that iterate over sensors, to give a complete count of steps in a procedure. The CalibrationData structure doesn't enforce 1:1 mapping of reference to raw values.There are inconsistencies between CalibrationData in the SensorManager and the CalibrationData a procedure collates internally.
 
 Ignore that level of detail if you can.
 
