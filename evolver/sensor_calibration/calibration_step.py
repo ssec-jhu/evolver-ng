@@ -82,7 +82,6 @@ class GlobalCalibrationStep(CalibrationStep):
         self.completed = False
 
 # SensorCalibrationStep applies to individual sensors and tracks per-sensor completion
-# SensorCalibrationStep applies to individual sensors and tracks per-sensor completion
 class SensorCalibrationStep(CalibrationStep):
     def __init__(self, name: str, instructions: str = "", input_required: bool = False):
         """
@@ -319,70 +318,3 @@ class CalculateFitGlobalStep(GlobalCalibrationStep):
         self.mark_complete()
 
 
-class LoopStep(CalibrationStep):
-    def __init__(self, name: str, steps: list, exit_condition: callable):
-        """
-        Initialize the LoopStep to execute a series of steps until an exit condition is met.
-
-        :param name: The name of the loop step.
-        :param steps: A list of CalibrationStep objects to execute inside the loop.
-        :param exit_condition: A function that returns True when the loop should exit.
-        """
-        super().__init__(name=name, instructions="Looping through steps")
-        self.steps = steps
-        self.exit_condition = exit_condition
-
-    def action(self, sensor, context=None):
-        """
-        Execute the loop steps for each sensor and check the exit condition.
-
-        :param sensor: The sensor object.
-        :param context: Optional context for shared values.
-        """
-        print("Starting a loop iteration")
-
-        # Execute the steps in the loop for each sensor
-        for step in self.steps:
-            step.action(sensor, context)
-
-        # Check the exit condition
-        if self.exit_condition(sensor, context):
-            self.mark_complete()
-            return "exit"
-
-        return "repeat"
-
-
-class WaitStep(CalibrationStep):
-    def __init__(self, instructions: str, max_wait_time: float, exit_condition: callable):
-        """
-        Initialize the WaitStep with instructions, a maximum wait time, and an exit condition function.
-
-        :param instructions: Instructions to be displayed to the user.
-        :param max_wait_time: Maximum time to wait (in seconds).
-        :param exit_condition: A function that, when it evaluates to True, will exit the wait early.
-        """
-        super().__init__(name="Wait", instructions=instructions, input_required=False)
-        self.max_wait_time = max_wait_time  # Max wait time in seconds
-        self.exit_condition = exit_condition  # Callable function to evaluate exit condition
-
-    def action(self, sensor, context=None):
-        """
-        Execute the wait step, waiting either for the max wait time or until the exit condition is met.
-
-        :param sensor: The sensor object that this step is operating on.
-        :param context: Optional context for shared values.
-        """
-        start_time = time.time()
-
-        # Wait until the exit condition is met or the max wait time is exceeded
-        while not self.exit_condition(sensor, context) and (time.time() - start_time) < self.max_wait_time:
-            print(f"Waiting... {self.instructions}")
-            time.sleep(1)
-
-        if self.exit_condition(sensor, context):
-            print("Exit condition met, proceeding to the next step.")
-        else:
-            print(f"Max wait time of {self.max_wait_time} seconds reached, proceeding to the next step.")
-
-        self.mark_complete()

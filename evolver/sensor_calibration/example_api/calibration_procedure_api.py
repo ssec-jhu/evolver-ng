@@ -6,6 +6,8 @@ app = FastAPI()
 
 # Store calibration procedures by session ID
 # TODO: Explore persistent storage options, so calibration procedures can be resumed after server restarts
+# TODO: procedure resumption.
+
 calibration_sessions: Dict[str, "CalibrationProcedure"] = {}
 
 # Assume sensor_manager is already initialized and populated with sensors
@@ -19,19 +21,40 @@ class StartCalibrationRequest(BaseModel):
 @app.post("/calibration/{session_id}/start")
 async def start_calibration(session_id: str, request: StartCalibrationRequest):
     # Initialize sensors
-    sensors = [sensor_manager.get_sensor(sensor_id) for sensor_id in request.sensor_ids]
+    sensors = sensor_manager.select_sensors_for_calibration(request.sensor_ids)
+
     # Create calibration procedure with session ID
     procedure = CalibrationProcedure(sensor_type="temperature", sensors=sensors, session_id=session_id)
-    # Add steps
+
+    # Example of a calibration procedure for temperature sensors
+    # Add global instructions
     procedure.add_step(InstructionGlobalStep("Ensure all sensors are connected and click 'Next'."))
-    procedure.add_step(
-        InstructionSensorStep(instructions_template="Place sensor {sensor_id} into the calibration environment.")
-    )
-    procedure.add_step(ReadSensorDataStep())
-    procedure.add_step(InputReferenceValueStep(reference_type="temperature"))
+    procedure.add_step(InstructionGlobalStep("Fill sensors with 15ml water each and click 'Next'."))
+
+    # Add sensor-specific calibration steps (e.g., collect 3 calibration points)
+    for i in range(3):  # Adjust the range for the desired number of calibration points
+        # Add sensor instruction step
+        set_temp = (i+1)*10+10  # Example: 20, 30, 40
+        # Note: GlobalStep only runs once
+        # TODO: a step with a "done condition" that evaluates every second. In this case it could read the voltage from all sensors and wait until they are stabilized.
+        procedure.add_step(InstructionGlobalStep(
+            instructions_template=f"Set Evolver temp control to {set_temp} setting and wait for equilibrium (consistent onboard readings), and click 'Next'."
+        ))
+        # Note: A SensorStep will run once for each selected sensor.
+        procedure.add_step(InstructionSensorStep(
+            instructions_template=f"Calibration Point for {set_temp}: Place thermometer into {{sensor_id}}, and click 'Next'."
+        ))
+        # Add step to input reference value
+        procedure.add_step(InputReferenceValueStep(reference_type="temperature"))
+        # Add step to read sensor data
+        procedure.add_step(ReadSensorDataStep())
+
+    # Final global step to calculate the fit model after collecting all calibration points
     procedure.add_step(CalculateFitGlobalStep())
+
     # Store the procedure
     calibration_sessions[session_id] = procedure
+
     # Start the procedure
     await procedure.run()
     return {"status": "Calibration started."}
@@ -91,4 +114,4 @@ async def input_reference_value(session_id: str, sensor_id: str, request: Refere
         else:
             raise HTTPException(status_code=400, detail="Current step is not expecting input.")
     else:
-        raise HTTPException(status_code=404, detail="Calibration session not found.")
+        raise HTTPException(status_code=404, detail="Calibration session not found."}
