@@ -1,144 +1,304 @@
 import time
+import calculate_linear_fit from evolver.sensor_calibration.linear_fit
 
-
+# Base class for all calibration steps
 class CalibrationStep:
-    def __init__(self, name: str, instructions: str = "", input_required: bool = False, global_step: bool = False):
+    def __init__(self, name: str, instructions: str = "", input_required: bool = False):
         """
-        Initialize the CalibrationStep with a name, instructions, and flags indicating whether input is required and whether the step is global.
+        Initialize the CalibrationStep with a name, instructions, and a flag indicating if user input is required.
 
-        :param name: The name of the step (e.g., "Read Sensor Data").
-        :param instructions: Instructions to be shown to the user, if any.
+        :param name: The name of the step.
+        :param instructions: Instructions to be shown to the user.
         :param input_required: Whether user input is required to complete this step.
-        :param global_step: Whether the step is global, e.g. "Fill all the vials with 15ml of water" 
         """
         self.name = name
         self.instructions = instructions
         self.input_required = input_required
-        self.completed = False  # Track if the step has been completed
-        self.global_step = global_step  # Whether this step applies to all sensors or specific ones
 
-    def action(self, sensor=None, context=None):
+    def action(self, context=None):
         """
-        Perform the action for the step. Should be implemented by specific subclasses.
+        Perform the action for the step. Must be implemented by subclasses.
 
-        :param sensor: The sensor object that this step is operating on. None if it's a global step.
         :param context: Optional context dictionary to store shared information between steps.
         """
-        raise NotImplementedError()
-
-    def mark_complete(self):
-        """
-        Mark the step as complete, indicating that it has finished executing.
-        """
-        self.completed = True
+        raise NotImplementedError("Subclasses must implement this method.")
 
     def is_complete(self) -> bool:
         """
-        Check if the step has been marked as complete.
+        Check if the step has been completed. Must be implemented by subclasses.
+
+        :return: True if the step is complete, otherwise False.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    def reset(self):
+        """
+        Reset the step's completion status. Must be implemented by subclasses.
+        """
+        raise NotImplementedError("Subclasses must implement this method.")
+
+
+# GlobalCalibrationStep applies to all sensors collectively
+class GlobalCalibrationStep(CalibrationStep):
+    def __init__(self, name: str, instructions: str = "", input_required: bool = False):
+        """
+        Initialize the GlobalCalibrationStep.
+
+        :param name: The name of the step.
+        :param instructions: Instructions to be shown to the user.
+        :param input_required: Whether user input is required to complete this step.
+        """
+        super().__init__(name, instructions, input_required)
+        self.completed = False  # Tracks if the step is completed
+
+    def action(self, context=None):
+        """
+        Perform the global action. To be implemented by subclasses if needed.
+
+        :param context: Optional context dictionary to store shared information between steps.
+        """
+        pass  # Implement the action logic in subclasses if needed
+
+    def is_complete(self) -> bool:
+        """
+        Check if the global step has been completed.
 
         :return: True if the step is complete, otherwise False.
         """
         return self.completed
 
-
-class InstructionStep(CalibrationStep):
-    def __init__(self, instructions: str):
+    def mark_complete(self):
         """
-        Initialize the InstructionStep with the given instructions.
-
-        :param instructions: The instructions to be shown to the user.
+        Mark the global step as complete.
         """
-        super().__init__(name="Instruction", instructions=instructions, input_required=True)
+        self.completed = True
+
+    def reset(self):
+        """
+        Reset the completion status of the global step.
+        """
+        self.completed = False
+
+
+# SensorCalibrationStep applies to individual sensors and tracks per-sensor completion
+class SensorCalibrationStep(CalibrationStep):
+    def __init__(self, name: str, instructions: str = "", input_required: bool = False):
+        """
+        Initialize the SensorCalibrationStep.
+
+        :param name: The name of the step.
+        :param instructions: Instructions to be shown to the user.
+        :param input_required: Whether user input is required to complete this step.
+        """
+        super().__init__(name, instructions, input_required)
+        self.completed_sensors = set()  # Set to track sensors that have completed the step
 
     def action(self, sensor, context=None):
         """
-        The instruction will be reported to the UI via the API.
-        The user will mark this step as complete via the UI or API.
+        Perform the action for a specific sensor. Must be implemented by subclasses.
 
-        :param sensor: Ignored in this step but kept for interface consistency.
-        :param context: Ignored in this step but kept for interface consistency.
+        :param sensor: The sensor object that this step is operating on.
+        :param context: Optional context dictionary to store shared information between steps.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement this method.")
+
+    def mark_complete(self, sensor_id):
+        """
+        Mark the step as complete for a specific sensor.
+
+        :param sensor_id: The ID of the sensor that has completed the step.
+        """
+        self.completed_sensors.add(sensor_id)
+
+    def is_complete(self, sensor_id=None) -> bool:
+        """
+        Check if the step has been completed for a specific sensor.
+
+        :param sensor_id: The ID of the sensor to check.
+        :return: True if the step is complete for the sensor, otherwise False.
+        """
+        if sensor_id:
+            return sensor_id in self.completed_sensors
+        else:
+            return False  # If sensor_id is not provided, return False
+
+    def reset(self):
+        """
+        Reset the completion status for all sensors.
+        """
+        self.completed_sensors.clear()
+
+
+# Example of a GlobalCalibrationStep subclass
+class InstructionGlobalStep(GlobalCalibrationStep):
+    def __init__(self, instructions: str):
+        """
+        Initialize the InstructionGlobalStep with given instructions.
+
+        :param instructions: Instructions to be shown to the user.
+        """
+        super().__init__(name="Global Instruction", instructions=instructions, input_required=True)
+
+    def action(self, context=None):
+        """
+        Display instructions to the user. The user will acknowledge and mark the step as complete.
+
+        :param context: Optional context dictionary.
+        """
+        print(self.instructions)
+        # In a real application, you would send this instruction to the UI
+        # and wait for the user to acknowledge it via the UI or API.
 
     def mark_instruction_complete(self):
         """
-        Manually mark this instruction step as complete, typically triggered by user input via the UI or API.
+        Mark the instruction as complete, typically called when the user acknowledges the instruction.
         """
         self.mark_complete()
 
+# SensorInstructionStep provides dynamic, sensor-specific instructions
+class InstructionSensorStep(SensorCalibrationStep):
+    def __init__(self, instructions_template: str):
+        """
+        Initialize the InstructionSensorStep with an instructions template.
 
-class ReadSensorDataStep(CalibrationStep):
+        :param instructions_template: A template string for the instructions, which can include placeholders for sensor attributes.
+        """
+        super().__init__(name="Sensor Instruction", instructions="", input_required=True)
+        self.instructions_template = instructions_template
+
+    def action(self, sensor, context=None):
+        """
+        Display sensor-specific instructions to the user. The user will acknowledge and mark the step as complete for each sensor.
+
+        :param sensor: The sensor object that this step is operating on.
+        :param context: Optional context dictionary.
+        """
+        # Format the instructions using sensor-specific information
+        self.instructions = self.instructions_template.format(
+            sensor_id=sensor.id,
+            sensor_type=sensor.calibration_data.sensor_type
+        )
+        print(f"Instructions for sensor {sensor.id}: {self.instructions}")
+        # In a real application, you would send this instruction to the UI
+        # and wait for the user to acknowledge it via the UI or API.
+
+    def mark_instruction_complete(self, sensor_id):
+        """
+        Mark the instruction as complete for a specific sensor, typically called when the user acknowledges the instruction.
+
+        :param sensor_id: The ID of the sensor that has completed the instruction.
+        """
+        self.mark_complete(sensor_id)
+
+
+# Example of a SensorCalibrationStep subclass
+class ReadSensorDataStep(SensorCalibrationStep):
     def __init__(self):
         """
-        Initialize the ReadSensorDataStep for reading sensor data.
+        Initialize the ReadSensorDataStep.
         """
         super().__init__(name="Read Sensor Data", instructions="Reading data from sensor...", input_required=False)
 
     def action(self, sensor, context=None):
         """
-        Read data from the sensor by calling the sensor's read() method.
+        Read data from the sensor and store it in the calibration data.
 
-        :param sensor: The sensor object that will have its data read.
-        :param context: Optional context to store or retrieve additional information.
+        :param sensor: The sensor object.
+        :param context: Optional context dictionary.
         """
+        # Simulate reading data from the sensor
         sensor_data = sensor.read()
-        sensor.calibration_data.add_calibration_point(sensor_data, {"sensor_data": sensor_data})
+        # For the purpose of calibration, we may need to store raw voltage or other specific data
+        sensor.calibration_data.add_calibration_point(
+            reference_data=None,  # Reference data will be added in a separate step
+            system_data=sensor_data["data"]
+        )
         print(f"Sensor data for {sensor.id}: {sensor_data}")
-        self.mark_complete()
+        # Mark this step as complete for the sensor
+        self.mark_complete(sensor.id)
 
-
-class InputReferenceStep(CalibrationStep):
+# Another example of a SensorCalibrationStep subclass
+class InputReferenceValueStep(SensorCalibrationStep):
     def __init__(self, reference_type: str):
         """
-        Initialize the InputReferenceStep with the type of reference value expected.
+        Initialize the InputReferenceValueStep.
 
-        :param reference_type: The type of reference value required (e.g., "temperature", "optical_density").
+        :param reference_type: The type of reference value expected (e.g., "temperature").
         """
-        super().__init__(name=f"Input {reference_type} Reference", input_required=True)
-        self.reference_value = None  # Store the reference value input by the user
+        super().__init__(name=f"Input {reference_type} Reference Value", input_required=True)
         self.reference_type = reference_type
+        self.reference_values = {}  # Dictionary to store reference values per sensor ID
 
     def action(self, sensor, context=None):
         """
-        Update instructions to include the sensor's ID dynamically when the step is executed.
+        Request the reference value from the user for a specific sensor.
 
-        :param sensor: The sensor object that this step is operating on.
-        :param context: Optional context for shared values (not used in this step).
+        :param sensor: The sensor object.
+        :param context: Optional context dictionary.
         """
         self.instructions = f"Please input the {self.reference_type} for sensor {sensor.id}."
         print(self.instructions)
+        # In a real application, this instruction would be sent to the UI
+        # and the user would input the reference value via the UI or API.
 
-    def set_reference_value(self, value):
+    def set_reference_value(self, sensor_id, value):
         """
-        Set the reference value, typically triggered by user input via the UI or API.
+        Set the reference value for a specific sensor, called when the user provides the input.
 
-        :param value: The reference value input by the user.
+        :param sensor_id: The ID of the sensor.
+        :param value: The reference value provided by the user.
         """
         if not isinstance(value, (int, float)):
             raise ValueError("Reference value must be a number.")
+        self.reference_values[sensor_id] = value
+        # Update the calibration data with the reference value
+        for point in sensor_manager.get_sensor(sensor_id).calibration_data.calibration_points:
+            if point["reference_data"] is None:
+                point["reference_data"] = value
+                break  # Assume we update the first point without reference data
+        # Mark this step as complete for the sensor
+        self.mark_complete(sensor_id)
 
-        self.reference_value = value
-        self.mark_complete()  # Mark the step as complete once the reference value is set
 
 
-class CalculateFitStep(CalibrationStep):
+# Example of a GlobalCalibrationStep subclass for calculating the fit model
+class CalculateFitGlobalStep(GlobalCalibrationStep):
     def __init__(self):
-        super().__init__(name="Calculate Fit", instructions="Calculate the fit model for the sensor")
+        """
+        Initialize the CalculateFitGlobalStep.
+        """
+        super().__init__(name="Calculate Fit", instructions="Calculating fit model...", input_required=False)
 
-    def action(self, sensor, context=None):
-        raw_voltages = [
-            point["system_data"]["raw_voltage"]
-            for point in sensor.calibration_data.calibration_points
-            if "raw_voltage" in point["system_data"]
-        ]
-        reference_values = [
-            point["reference_data"] for point in sensor.calibration_data.calibration_points if point["reference_data"]
-        ]
+    def action(self, context=None):
+        """
+        Calculate the fit model for each sensor based on their calibration data.
 
-        # Assuming calculate_linear_fit is already implemented
-        fit_model = calculate_linear_fit(raw_voltages, reference_values)
-        sensor.calibration_data.set_fit_model(fit_model)
-        print(f"Fit model for {sensor.id}: {fit_model}")
+        :param context: Optional context dictionary.
+        """
+        sensors = context.get("sensors", [])
+        for sensor in sensors:
+            calibration_data = sensor.calibration_data
+            # Extract raw voltages and reference values
+            raw_voltages = [
+                point["system_data"]["voltage"]
+                for point in calibration_data.calibration_points
+                if "voltage" in point["system_data"]
+            ]
+            reference_values = [
+                point["reference_data"]
+                for point in calibration_data.calibration_points
+                if point["reference_data"] is not None
+            ]
+            # Check if we have enough data points
+            if len(raw_voltages) >= 2 and len(reference_values) >= 2:
+                # Perform linear fit (this function needs to be implemented)
+                fit_model = calculate_linear_fit(raw_voltages, reference_values)
+                calibration_data.set_fit_model(fit_model)
+                print(f"Fit model for sensor {sensor.id}: {fit_model}")
+            else:
+                print(f"Not enough data to calculate fit for sensor {sensor.id}")
+        # Mark the step as complete
+        self.mark_complete()
 
 
 class LoopStep(CalibrationStep):

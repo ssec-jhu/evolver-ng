@@ -1,20 +1,16 @@
-# TODO consider Calibration pre-flight checks. For example by default we should check sensor manager for selected sensors.
-# by extension the SensorManager should have a method to check if all selected sensors are ready for calibration or similar.
-# I feel like Hardware class likely already manages this stuff.
-
-
 class CalibrationProcedure:
     def __init__(self, sensor_type: str, sensors):
         """
-        Initialize the CalibrationProcedure with a sensor type, an empty list of steps, and selected sensors.
+        Initialize the CalibrationProcedure with a sensor type and selected sensors.
 
-        :param sensor_type: The type of sensor being calibrated (e.g., "temperature", "optical_density").
+        :param sensor_type: The type of sensor being calibrated.
         :param sensors: List of sensors involved in the calibration procedure.
         """
         self.sensor_type = sensor_type
-        self.sensors = sensors  # TODO: Refactor or add validation to make sure all sensors are of the same type, then consider deriving self.sensor_type from sensors
+        self.sensors = sensors  # List of Sensor objects
         self.steps = []  # List to hold the sequence of calibration steps
-        self.current_step = 0  # Track the current step in the procedure
+        self.current_step_index = 0  # Track the current step index
+        self.context = {"sensors": sensors}  # Context to share data between steps
 
     def add_step(self, step: CalibrationStep):
         """
@@ -27,34 +23,45 @@ class CalibrationProcedure:
     def execute_step(self):
         """
         Execute the current calibration step, handling global and sensor-specific steps.
-
-        :param sensors: List of selected sensor objects (used for sensor-specific steps).
         """
-        if self.current_step < len(self.steps):
-            step = self.steps[self.current_step]
+        if self.current_step_index < len(self.steps):
+            step = self.steps[self.current_step_index]
+            print(f"Executing step: {step.name}")
 
-            if step.global_step:
-                # Execute global step (only once, without any sensor-specific logic)
-                step.action()
-                self.current_step += 1
-            else:
-                # Execute sensor-specific step for each selected sensor
+            if isinstance(step, GlobalCalibrationStep):
+                # Execute global step
+                step.action(context=self.context)
+                if step.is_complete():
+                    self.current_step_index += 1
+            elif isinstance(step, SensorCalibrationStep):
+                # Execute sensor-specific step
                 for sensor in self.sensors:
-                    step.action(sensor)
-
-                # Move to next step only when all sensors have completed the step
-                if all(step.is_complete() for sensor in self.sensors):
-                    self.current_step += 1
-            print(f"Completed step {self.current_step}")
+                    if not step.is_complete(sensor.id):
+                        step.action(sensor, context=self.context)
+                # Move to next step if all sensors have completed the step
+                if all(step.is_complete(sensor.id) for sensor in self.sensors):
+                    self.current_step_index += 1
+            else:
+                # Handle other types of steps if any
+                pass
         else:
             print("All steps completed.")
 
-    def is_complete(self):
-        return self.current_step >= len(self.steps)
+    def is_complete(self) -> bool:
+        """
+        Check if all steps in the procedure have been completed.
+
+        :return: True if all steps are completed, otherwise False.
+        """
+        return self.current_step_index >= len(self.steps)
 
     def run(self):
         """
-        Run all the calibration steps in sequence, handling global and sensor-specific steps.
+        Run all the calibration steps in sequence.
         """
         while not self.is_complete():
             self.execute_step()
+            # In a real application, you might wait for user input or other events here
+            # For this example, we'll just proceed to the next step
+            # Remove the following line in a real application
+            input("Press Enter to proceed to the next step...")
