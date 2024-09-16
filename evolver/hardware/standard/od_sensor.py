@@ -1,4 +1,5 @@
 from pydantic import Field
+from pydantic.fields import FieldInfo
 
 from evolver.base import ConfigDescriptor
 from evolver.calibration.interface import Calibrator
@@ -41,17 +42,31 @@ class ODSensor(SensorDriver):
 
 class OD90(ODSensor):
     class Config(ODSensor.Config):
-        name: str = ODSensor.Config.model_fields["name"].from_field(default="od_90")
-        addr: str = ODSensor.Config.model_fields["addr"].from_field(default="od_90")
-        calibrator: ConfigDescriptor | Calibrator | None = ODSensor.Config.model_fields["calibrator"].from_field(
+        name: str = FieldInfo.merge_field_infos(
+            ODSensor.Config.model_fields["name"],
+            default="od_90",
+        )
+        addr: str = FieldInfo.merge_field_infos(
+            ODSensor.Config.model_fields["addr"],
+            default="od_90",
+        )
+        calibrator: ConfigDescriptor | Calibrator | None = FieldInfo.merge_field_infos(
+            ODSensor.Config.model_fields["calibrator"],
             default_factory=lambda: ConfigDescriptor.load(settings.DEFAULT_OD90_CALIBRATION_CONFIG_FILE),
         )
 
 
 class OD135(ODSensor):
     class Config(ODSensor.Config):
-        name: str = ODSensor.Config.model_fields["name"].from_field(default="od_135")
-        addr: str = ODSensor.Config.model_fields["addr"].from_field(default="od_135")
-        calibrator: ConfigDescriptor | Calibrator | None = ODSensor.Config.model_fields["calibrator"].from_field(
+        name: str = FieldInfo.merge_field_infos(
+            ODSensor.Config.model_fields["name"],
+            default="od_135",
+        )
+        addr: str = FieldInfo.merge_field_infos(
+            ODSensor.Config.model_fields["addr"],
+            default="od_135",
+        )
+        calibrator: ConfigDescriptor | Calibrator | None = FieldInfo.merge_field_infos(
+            ODSensor.Config.model_fields["calibrator"],
             default_factory=lambda: ConfigDescriptor.load(settings.DEFAULT_OD135_CALIBRATION_CONFIG_FILE),
         )
