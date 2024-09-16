@@ -1,5 +1,5 @@
 import datetime
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
@@ -139,3 +139,14 @@ class Calibrator(BaseInterface):
         #  intended to be called from the application layer to run interactive calibration procedures. See #45.
         # TODO: Consider transactional state if this procedure is interrupted mid way. E.g., for ``is_calibrated``.
         ...
+
+
+class IndependentVialBasedCalibrator(Calibrator, ABC):
+    class Config(Calibrator.Config):
+        """Specify transformers for each vial independently. Whilst they may all use the same transformer class, each
+        vial will mostly likely have different transformer config parameters and thus require their own transformer
+        instance.
+        """
+
+        input_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
+        output_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
