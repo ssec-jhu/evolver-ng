@@ -119,11 +119,11 @@ class TestApp:
                 assert status.ok
 
     def test_calibrate(self, app_client, tmp_calibration_dir):  # noqa: F811
-        coefficients = [1, 2]
+        parameters = [1, 2]
         # Creat calibrator from transformer with stale (expired) config.
         calibrator = LinearCalibrator(
             input_transformer=LinearTransformer(
-                coefficients=coefficients, created=datetime.now() - timedelta(minutes=60), expire=timedelta(minutes=50)
+                parameters=parameters, created=datetime.now() - timedelta(minutes=60), expire=timedelta(minutes=50)
             )
         )
         app.state.evolver = Evolver(hardware={"test_hardware": NoOpSensorDriver(calibrator=calibrator)})
@@ -133,18 +133,18 @@ class TestApp:
         assert not Status.model_validate(json.loads(response.content)["input_transformer"]).ok
 
         # Mock new data to calibrate against.
-        new_coefficients = [2, 3]
-        assert new_coefficients != coefficients
+        new_parameters = [2, 3]
+        assert new_parameters != parameters
         x = np.linspace(0, 100, 100)
-        y = new_coefficients[0] + x * new_coefficients[1]
+        y = new_parameters[0] + x * new_parameters[1]
 
         # Recalibrate.
         response = app_client.post("/calibrate/test_hardware", json=dict(input_transformer=[x.tolist(), y.tolist()]))
         assert response.status_code == 200
 
-        # Assert transformer has new coefficients and has been recalibrated.
-        assert app.state.evolver.hardware["test_hardware"].calibrator.input_transformer.coefficients == pytest.approx(
-            new_coefficients
+        # Assert transformer has new parameters and has been recalibrated.
+        assert app.state.evolver.hardware["test_hardware"].calibrator.input_transformer.parameters == pytest.approx(
+            new_parameters
         )
 
         # Assert that new config is no longer stale.
