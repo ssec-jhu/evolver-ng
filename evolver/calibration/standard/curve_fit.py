@@ -8,7 +8,7 @@ from evolver.calibration.interface import IndependentVialBasedCalibrator, Transf
 
 class CurveFitTransformer(Transformer, ABC):
     class Config(Transformer.Config):
-        coefficients: list[float] = Field(description="Transformer parameters")
+        parameters: list[float] = Field(description="Transformer parameters")
 
     @classmethod
     @abstractmethod
@@ -29,14 +29,14 @@ class CurveFitTransformer(Transformer, ABC):
         See https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html
         """
         new_parameters, *_other = curve_fit(cls.func_from, x, y, *args, **kwargs)
-        config = cls.Config.model_validate(dict(coefficients=new_parameters))
+        config = cls.Config.model_validate(dict(parameters=new_parameters))
         return config
 
     def convert_to(self, x):
-        return self.func_to(x, *self.coefficients)
+        return self.func_to(x, *self.parameters)
 
     def convert_from(self, y):
-        return self.func_from(y, *self.coefficients)
+        return self.func_from(y, *self.parameters)
 
 
 class IndependentVialBasedCurveFitCalibrator(IndependentVialBasedCalibrator):

@@ -5,7 +5,7 @@ config:
     '0':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 15.361409079929091
         - -0.0002831883405076742
         - -0.00013797258278699858
@@ -16,7 +16,7 @@ config:
     '1':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 22.63726720724552
         - -0.0004370231824921231
         - -0.00023043798773755397
@@ -27,7 +27,7 @@ config:
     '10':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 11.75891601924426
         - -0.00021633970317384965
         - -7.49164890272995e-05
@@ -38,7 +38,7 @@ config:
     '11':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 4.4936731879203675
         - 2.57706684794889e-05
         - -2.3832773816480295e-05
@@ -49,7 +49,7 @@ config:
     '12':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - -1.7190515043753891
         - 0.00014976769565351922
         - 8.252131951504111e-05
@@ -60,7 +60,7 @@ config:
     '13':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 13.258331969341269
         - -0.00024908079046834025
         - -9.004282976350286e-05
@@ -71,7 +71,7 @@ config:
     '14':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 10.618712830534315
         - -0.00016341885151076769
         - -7.464942340711304e-05
@@ -82,7 +82,7 @@ config:
     '15':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 10.287640032183935
         - -0.000177467381678139
         - -8.46496264716175e-05
@@ -93,7 +93,7 @@ config:
     '2':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 18.34011938793681
         - -0.0003525947843818188
         - -0.00014946331924706687
@@ -104,7 +104,7 @@ config:
     '3':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 16.008353863500833
         - -0.0003391779685038511
         - -0.0001635718556123535
@@ -115,7 +115,7 @@ config:
     '4':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 9.36904544957634
         - -0.00015260830694862042
         - -7.164824223484227e-05
@@ -126,7 +126,7 @@ config:
     '5':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 10.472760151905074
         - -0.00018466851836629138
         - -6.119933929253222e-05
@@ -137,7 +137,7 @@ config:
     '6':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 25.442365651612544
         - -0.0005539681005625055
         - -0.00023227436309533378
@@ -148,7 +148,7 @@ config:
     '7':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 11.925707187386395
         - -0.00019218878643415444
         - -8.523919667988522e-05
@@ -159,7 +159,7 @@ config:
     '8':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - -1.1930439169259741
         - 0.00019291067474260757
         - 6.834569839594361e-05
@@ -170,7 +170,7 @@ config:
     '9':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 9.053869831378954
         - -0.00010539808368912342
         - -5.1325293716096055e-05

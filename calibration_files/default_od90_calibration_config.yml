@@ -5,7 +5,7 @@ config:
     '0':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 29432.135381591164
         - 63297.4871054736
         - 1.7150095143793729
@@ -14,7 +14,7 @@ config:
     '1':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 35445.377906931986
         - 61445.792654394194
         - 1.5473287494441013
@@ -23,7 +23,7 @@ config:
     '10':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 35912.92989079456
         - 60275.18875897503
         - 1.461784408860302
@@ -32,7 +32,7 @@ config:
     '11':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 36522.402150300324
         - 67681.75878077731
         - 1.597366788005353
@@ -41,7 +41,7 @@ config:
     '12':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 37050.49276296644
         - 61215.49532388249
         - 1.5060611794060363
@@ -50,7 +50,7 @@ config:
     '13':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 36468.29761820028
         - 60206.72567203502
         - 1.462103395122217
@@ -59,7 +59,7 @@ config:
     '14':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 36086.07039746199
         - 60455.664048370796
         - 1.523701869786409
@@ -68,7 +68,7 @@ config:
     '15':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 23986.243022581086
         - 62232.0236138627
         - 1.6173003557752983
@@ -77,7 +77,7 @@ config:
     '2':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 24889.062264794884
         - 69310.29168562933
         - 2.014342476164939
@@ -86,7 +86,7 @@ config:
     '3':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 23916.680312808683
         - 58765.9600006942
         - 1.561024584487947
@@ -95,7 +95,7 @@ config:
     '4':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 27844.606781703813
         - 58572.43773197114
         - 1.5436247829476943
@@ -104,7 +104,7 @@ config:
     '5':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 34478.54917482691
         - 58886.86400938548
         - 1.472288432483906
@@ -113,7 +113,7 @@ config:
     '6':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 39277.85273472174
         - 60473.68758496221
         - 1.4345691798956386
@@ -122,7 +122,7 @@ config:
     '7':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 38548.936373099496
         - 58469.81067190847
         - 1.4709390800919195
@@ -131,7 +131,7 @@ config:
     '8':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 41401.650197498064
         - 58709.44304424908
         - 1.511822472565226
@@ -140,7 +140,7 @@ config:
     '9':
       classinfo: evolver.calibration.standard.sigmoid.SigmoidFitTransformer
       config:
-        coefficients:
+        parameters:
         - 38054.82576336855
         - 58525.98048596561
         - 1.5493230357372643
