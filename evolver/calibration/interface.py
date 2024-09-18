@@ -110,6 +110,10 @@ class Calibrator(BaseInterface):
         input_transformer: ConfigDescriptor | Transformer | None = None
         output_transformer: ConfigDescriptor | Transformer | None = None
 
+    class State(_BaseConfig):
+        current: int = Field(0, )
+        next: int = Field(0, description="The next action to exec")
+
     class Status(_BaseConfig):
         input_transformer: Status | None = None
         output_transformer: Status | None = None
@@ -125,6 +129,11 @@ class Calibrator(BaseInterface):
                 elif self.output_transformer:
                     self.ok = self.output_transformer.ok
 
+    def __init__(self, *args, evolver=None, **kwargs):
+        self.evolver = evolver
+        self.state = dict()
+        super().__init__(*args, **kwargs)
+
     @property
     def status(self) -> Status:
         return self.Status(
@@ -133,12 +142,24 @@ class Calibrator(BaseInterface):
         )
 
     @abstractmethod
-    def run_calibration_procedure(self, *args, **kwargs):
+    def run_calibration_procedure(self, hardware_names: list, *args, **kwargs):
         """This executes the calibration procedure."""
         # TODO: This needs more work, however, since it isn't used in the base SDK layer this can be punted. This is
         #  intended to be called from the application layer to run interactive calibration procedures. See #45.
         # TODO: Consider transactional state if this procedure is interrupted mid way. E.g., for ``is_calibrated``.
-        ...
+
+
+        ui.action("ask_for_input")
+        ui.action("wait")
+        ui.action("")
+
+
+
+
+
+        hardware_a = self.evolver.hardware[hardware_names[0]]
+        temp_sensor_1 = self.sensor["temp_1"]
+        temp_sensor_2 = self.sensor["temp_2"]
 
 
 class IndependentVialBasedCalibrator(Calibrator, ABC):
