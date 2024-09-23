@@ -14,6 +14,15 @@ from evolver.base import (
     TimeStamp,
     _BaseConfig,
 )
+from evolver.calibration.procedure import (
+    CalibrationProcedure,
+)
+from evolver.calibration.steps import (
+    DisplayInstructionStep,
+    VialTempCalculateFitStep,
+    VialTempRawVoltageStep,
+    VialTempReferenceValueStep,
+)
 from evolver.settings import settings
 
 
@@ -125,6 +134,12 @@ class Calibrator(BaseInterface):
                 elif self.output_transformer:
                     self.ok = self.output_transformer.ok
 
+    def __init__(self, *args, evolver=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.evolver = evolver
+        self.calibration_procedure = None
+        self.state = {}
+
     @property
     def status(self) -> Status:
         return self.Status(
@@ -133,12 +148,16 @@ class Calibrator(BaseInterface):
         )
 
     @abstractmethod
-    def run_calibration_procedure(self, *args, **kwargs):
-        """This executes the calibration procedure."""
-        # TODO: This needs more work, however, since it isn't used in the base SDK layer this can be punted. This is
-        #  intended to be called from the application layer to run interactive calibration procedures. See #45.
-        # TODO: Consider transactional state if this procedure is interrupted mid way. E.g., for ``is_calibrated``.
+    def initialize_calibration_procedure(self, *args, **kwargs):
+        """This initializes the calibration procedure. Subclasses should implement this method to initialize the calibration"""
         ...
+
+    def dispatch(self, action):
+        # Delegate to the calibration procedure
+        if self.calibration_procedure is None:
+            raise ValueError("Calibration procedure is not initialized.")
+        self.state = self.calibration_procedure.dispatch(action)
+        return self.state
 
 
 class IndependentVialBasedCalibrator(Calibrator, ABC):
@@ -150,3 +169,57 @@ class IndependentVialBasedCalibrator(Calibrator, ABC):
 
         input_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
         output_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
+
+    def initialize_calibration_procedure(self, *args, **kwargs): ...
+
+
+class TemperatureCalibrator(Calibrator):
+    class State(Calibrator.State):
+        # If your procedure has external dependencies, i.e. external to the Evolver Config object - you must define it
+        # in the State class of the calibrator.
+        # The HTTP api @hardware_router.post("/{hardware_name}/calibrator/init") will require this to be defined.
+        selected_vials: list[int] = Field(
+            default_factory=list, description="List of selected vials for temp sensor calibration"
+        )
+
+    def __init__(self, selected_vials, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # consider bootstrapping the state here from file... defer persistence of calibration procedure for now
+        self.state = self.State()
+        self.state.selected_vials = selected_vials
+        # This should really be a reset or similar, as __init__ is handled by the framework.
+        self.initialize_calibration_procedure()
+
+    def initialize_calibration_procedure(self, *args, **kwargs):
+        if not self.evolver or not self.evolver.hardware:
+            raise ValueError("Evolver and hardware must be initialized")
+
+        calibration_procedure = CalibrationProcedure("Temperature Calibration")
+        calibration_procedure.add_step(DisplayInstructionStep("Fill each vial with 15ml water"))
+        for vial in self.state.selected_vials:
+            calibration_procedure.add_step(
+                VialTempReferenceValueStep(
+                    # TODO: confirm this is the best way to get the hardware this calibrator is associated with.
+                    hardware=self.evolver.get_hardware(name="temp"),
+                    vial_idx=vial,
+                    description=f"Use a thermometer to measure the real temperature in the vial {vial}",
+                )
+            )
+            calibration_procedure.add_step(
+                VialTempRawVoltageStep(
+                    hardware=self.evolver.hardware,
+                    vial_idx=vial,
+                    description=f"The hardware will now read the raw voltage from the temperature sensor, vial {vial}",
+                )
+            )
+
+        # Add a final step to calculate the fit.
+        for vial in self.state.selected_vials:
+            calibration_procedure.add_step(
+                VialTempCalculateFitStep(
+                    hardware=self.evolver.get_hardware(name="temp"),
+                    vial_idx=vial,
+                    description="Use the real and raw values that have been collected to calculate the fit for the temperature sensor",
+                )
+            )
+        self.calibration_procedure = calibration_procedure

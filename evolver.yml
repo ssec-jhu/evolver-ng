@@ -1,0 +1,39 @@
+controllers: []
+enable_commit: true
+enable_control: true
+experiment: unspecified
+hardware: {}
+history:
+  classinfo: evolver.history.standard.HistoryServer
+  config:
+    default_n_max: 5000
+    default_window: 3600
+    experiment: null
+    name: HistoryServer
+    partition_seconds: 3600
+interval: 20
+name: Evolver
+serial:
+  classinfo: evolver.serial.EvolverSerialUART
+  config:
+    baudrate: 9600
+    name: EvolverSerialUART
+    port: /dev/ttyAMA0
+    timeout: 1.0
+vials:
+- 0
+- 1
+- 2
+- 3
+- 4
+- 5
+- 6
+- 7
+- 8
+- 9
+- 10
+- 11
+- 12
+- 13
+- 14
+- 15
