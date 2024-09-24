@@ -49,12 +49,10 @@ def get_calibrator_state(hardware_name: str, request: Request):
         raise HTTPException(status_code=404, detail=f"Hardware '{hardware_name}' not found")
 
     calibrator = hardware_instance.calibrator
-    print("CALIBRATOR: ", calibrator)
     if not calibrator:
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
 
     idk = calibrator.state
-    print("state OF THE CALIBRATOR: ", idk)
     return idk
 
 
