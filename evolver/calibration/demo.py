@@ -16,5 +16,10 @@ class NoOpCalibrator(Calibrator):
         input_transformer: ConfigDescriptor | Transformer | None = Field(default_factory=NoOpTransformer)
         output_transformer: ConfigDescriptor | Transformer | None = Field(default_factory=NoOpTransformer)
 
+    def __init__(self, *args, state=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set the initial state if provided, otherwise default to an empty dict
+        self.state = state if state is not None else {}
+
     def run_calibration_procedure(self, *args, **kwargs): ...
     def initialize_calibration_procedure(self, *args, **kwargs): ...

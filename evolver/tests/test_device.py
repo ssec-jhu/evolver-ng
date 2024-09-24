@@ -109,7 +109,9 @@ class TestEvolver:
         getattr(demo_evolver, method)()
         state = demo_evolver.state
         for vial in demo_evolver.vials:
-            assert state["testsensor"][vial] == NoOpSensorDriver.Output(vial=vial, raw=1, value=2)
+            assert state["testsensor"][vial] == NoOpSensorDriver.Output(
+                vial=vial, raw=1, value=2, name="NoOpSensorDriver"
+            )
 
     @pytest.mark.parametrize("enable_control", [True, False])
     def test_controller_control_in_loop_if_configured(self, demo_evolver, enable_control):

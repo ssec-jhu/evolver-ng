@@ -18,7 +18,6 @@ def get_all_hardware(request: Request):
     evolver = request.app.state.evolver
     if not evolver:
         raise HTTPException(status_code=500, detail="Evolver not initialized")
-
     # Get hardware outputs
     hardware_outputs = {name: driver.get() for name, driver in evolver.hardware.items()}
 
@@ -27,20 +26,21 @@ def get_all_hardware(request: Request):
 
 # having selected a hardware by name user can now select vials to calibrate
 @router.get("/{hardware_name}")
-def get_hardware(hardware_name: str):
-    evolver = router.state.evolver
+def get_hardware(hardware_name: str, request: Request):
+    evolver = request.app.state.evolver
     if not evolver:
         raise HTTPException(status_code=500, detail="Evolver not initialized")
     hardware_instance = evolver.get_hardware(hardware_name)
     if not hardware_instance:
         raise HTTPException(status_code=404, detail=f"Hardware '{hardware_name}' not found")
-    return hardware_instance
+    hardware_outputs = hardware_instance.get()
+    return hardware_outputs
 
 
 # get the state of the calibrator for a hardware.
 @router.get("/{hardware_name}/calibrator/state")
-def get_calibration_status(hardware_name: str):
-    evolver = router.state.evolver
+def get_calibrator_state(hardware_name: str, request: Request):
+    evolver = request.app.state.evolver
     if not evolver:
         raise HTTPException(status_code=500, detail="Evolver not initialized")
 
@@ -49,10 +49,13 @@ def get_calibration_status(hardware_name: str):
         raise HTTPException(status_code=404, detail=f"Hardware '{hardware_name}' not found")
 
     calibrator = hardware_instance.calibrator
+    print("CALIBRATOR: ", calibrator)
     if not calibrator:
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
 
-    return calibrator.state
+    idk = calibrator.state
+    print("state OF THE CALIBRATOR: ", idk)
+    return idk
 
 
 class StartCalibrationProcedureRequest(BaseModel):
