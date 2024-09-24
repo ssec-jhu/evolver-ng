@@ -6,7 +6,6 @@ from fastapi import FastAPI
 import evolver.util
 from evolver import __project__, __version__
 from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError
-from evolver.app.hardware import hardware_router
 from evolver.app.html_routes import html_app
 from evolver.app.models import SchemaResponse
 from evolver.base import require_all_fields
@@ -14,6 +13,8 @@ from evolver.device import Evolver
 from evolver.history.interface import HistoryResult
 from evolver.settings import app_settings
 from evolver.types import ImportString
+
+from .routers import hardware
 
 # Setup logging.
 evolver.util.setup_logging()
@@ -28,8 +29,6 @@ async def lifespan(app: FastAPI):
         app.state.evolver = Evolver.create()
     asyncio.create_task(evolver_async_loop())
 
-    # pass evolver to the calibration app, see hardware.py
-    hardware_router.state.evolver = app.state.evolver
     yield
     # Shutdown:
     ...
@@ -41,6 +40,9 @@ app.state.evolver = None
 
 @require_all_fields
 class EvolverConfigWithoutDefaults(Evolver.Config): ...
+
+
+app.include_router(hardware.router)
 
 
 @app.get("/", operation_id="describe")
@@ -124,7 +126,6 @@ async def calibrate(name: str, data: dict = None):
 
 
 app.mount("/html", html_app)
-app.mount("/hardware", hardware_router)
 
 
 def start():

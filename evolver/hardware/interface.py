@@ -52,7 +52,7 @@ class SensorDriver(VialHardwareDriver):
         super().__init__(*args, **kwargs)
         self.outputs: dict[int, self.Output] = {}
 
-    def get(self) -> list[Output]:
+    def get(self) -> dict[int, Output]:
         return self.outputs
 
     @abstractmethod

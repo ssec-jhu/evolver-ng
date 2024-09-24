@@ -1,10 +1,10 @@
 from typing import Any, Dict
 
-from fastapi import Body, HTTPException, Path, FastAPI
+from fastapi import Body, HTTPException, Path, Request, APIRouter
 
 from pydantic import BaseModel
 
-hardware_router = FastAPI()
+router = APIRouter(prefix="/hardware", tags=["hardware"], responses={404: {"description": "Not found"}})
 
 
 class Action(BaseModel):
@@ -13,19 +13,22 @@ class Action(BaseModel):
 
 
 # endpoint used by the UI to present the user with a list of hardware to select from for calibration
-@hardware_router.get("/")
-def get_all_hardware():
-    # see lifespan method on the main app, this is how we get the evolver instance in the calibration app
-    evolver = hardware_router.state.evolver
+@router.get("/")
+def get_all_hardware(request: Request):
+    evolver = request.app.state.evolver
     if not evolver:
         raise HTTPException(status_code=500, detail="Evolver not initialized")
-    return evolver.hardware
+
+    # Get hardware outputs
+    hardware_outputs = {name: driver.get() for name, driver in evolver.hardware.items()}
+
+    return hardware_outputs
 
 
 # having selected a hardware by name user can now select vials to calibrate
-@hardware_router.get("/{hardware_name}")
+@router.get("/{hardware_name}")
 def get_hardware(hardware_name: str):
-    evolver = hardware_router.state.evolver
+    evolver = router.state.evolver
     if not evolver:
         raise HTTPException(status_code=500, detail="Evolver not initialized")
     hardware_instance = evolver.get_hardware(hardware_name)
@@ -35,9 +38,9 @@ def get_hardware(hardware_name: str):
 
 
 # get the state of the calibrator for a hardware.
-@hardware_router.get("/{hardware_name}/calibrator/state")
+@router.get("/{hardware_name}/calibrator/state")
 def get_calibration_status(hardware_name: str):
-    evolver = hardware_router.state.evolver
+    evolver = router.state.evolver
     if not evolver:
         raise HTTPException(status_code=500, detail="Evolver not initialized")
 
@@ -56,9 +59,9 @@ class StartCalibrationProcedureRequest(BaseModel):
     selected_vials: None | list[int] = None
 
 
-@hardware_router.post("/{hardware_name}/calibrator/init")
+@router.post("/{hardware_name}/calibrator/init")
 def start_calibration_procedure(hardware_name: str, request: StartCalibrationProcedureRequest):
-    evolver = hardware_router.state.evolver
+    evolver = router.state.evolver
     if not evolver:
         raise HTTPException(status_code=500, detail="Evolver not initialized")
 
@@ -87,9 +90,9 @@ def start_calibration_procedure(hardware_name: str, request: StartCalibrationPro
     return {"message": f"Calibration procedure initialized for '{hardware_name}' and vials {request.selected_vials}"}
 
 
-@hardware_router.post("/{hardware_name}/calibrator/dispatch")
+@router.post("/{hardware_name}/calibrator/dispatch")
 def calibrate(hardware_name: str = Path(...), action: Action = Body(...)):
-    evolver = hardware_router.state.evolver
+    evolver = router.state.evolver
     if not evolver:
         raise HTTPException(status_code=500, detail="Evolver not initialized")
 
