@@ -59,6 +59,9 @@ class StartCalibrationProcedureRequest(BaseModel):
     selected_vials: None | list[int] = None
 
 
+# having selected vials to calibrate the user can now start the calibration procedure for that hardware.
+# if they want to calibrate a different set of vials, they can call this endpoint again with the new set of vials.
+# This setup nudges us towards global (all vials) calibration.
 @router.post("/{hardware_name}/calibrator/start")
 def start_calibration_procedure(
     hardware_name: str, request: Request, calibration_request: StartCalibrationProcedureRequest
@@ -80,6 +83,8 @@ def start_calibration_procedure(
     return calibrator.state
 
 
+# Having initialized a calibration procedure, the user can now get a list of actions available for them to perform.
+# The UI has responsibility for how these actions are presented to the user.
 @router.post("/{hardware_name}/calibrator/actions")
 def get_calibrator_actions(hardware_name: str, request: Request):
     evolver = request.app.state.evolver
@@ -104,6 +109,7 @@ def get_calibrator_actions(hardware_name: str, request: Request):
     return {"actions": actions_list}
 
 
+# The user can dispatch an action to the calibration procedure.
 @router.post("/{hardware_name}/calibrator/dispatch")
 def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...), action: dict = Body(...)):
     evolver = request.app.state.evolver
