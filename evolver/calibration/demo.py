@@ -1,6 +1,6 @@
 from pydantic import Field
 
-from evolver.base import ConfigDescriptor, BaseConfig
+from evolver.base import ConfigDescriptor
 from evolver.calibration.interface import Calibrator, Transformer
 
 
@@ -16,17 +16,10 @@ class NoOpCalibrator(Calibrator):
         input_transformer: ConfigDescriptor | Transformer | None = Field(default_factory=NoOpTransformer)
         output_transformer: ConfigDescriptor | Transformer | None = Field(default_factory=NoOpTransformer)
 
-    class State(BaseConfig):
-        status: str = Field("not calibrated", description="Calibration status")
-
-    @property
-    def State(self):
-        return NoOpCalibrator.State  # Return the specific State class
-
     def __init__(self, *args, state=None, **kwargs):
         super().__init__(*args, **kwargs)
         # If state is provided, use it, otherwise instantiate the default State
-        self.state = state if state else self.State()
+        self.state = state if state else {"status": "not calibrated"}
 
     def run_calibration_procedure(self, *args, **kwargs):
         # No-op calibration procedure
