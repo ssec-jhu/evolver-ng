@@ -60,9 +60,11 @@ class StartCalibrationProcedureRequest(BaseModel):
     selected_vials: None | list[int] = None
 
 
-@router.post("/{hardware_name}/calibrator/init")
-def start_calibration_procedure(hardware_name: str, request: StartCalibrationProcedureRequest):
-    evolver = router.state.evolver
+@router.post("/{hardware_name}/calibrator/start")
+def start_calibration_procedure(
+    hardware_name: str, request: Request, calibration_request: StartCalibrationProcedureRequest
+):
+    evolver = request.app.state.evolver
     if not evolver:
         raise HTTPException(status_code=500, detail="Evolver not initialized")
 
@@ -74,21 +76,16 @@ def start_calibration_procedure(hardware_name: str, request: StartCalibrationPro
     if not calibrator:
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
 
-    # Reset the calibrator state
-    calibrator.state = calibrator.State()
-
-    # Validate that all fields in the state are present in the request
-    for field_name, field_info in calibrator.State.__fields__.items():
-        if field_info.required and getattr(request, field_name, None) is None:
-            raise HTTPException(
-                status_code=400, detail=f"This calibration procedure requires '{field_name}' to be specified"
-            )
-
     # Initialize the calibration procedure
     # Beware - this is technically a re-init as the calibration procedure on the calibrator is already initialized when
     # the class is init'ed by the framework, e.g. user made post request of a valid config object  to the '/' endpoint.
-    calibrator.initialize_calibration_procedure()
-    return {"message": f"Calibration procedure initialized for '{hardware_name}' and vials {request.selected_vials}"}
+    # This is necessary because the user may want to run a calibration procedure with a subset of the vials on a hardware
+
+    # call initialize_calibration_procedure on the calibrator with the request data e.g. selected_vials
+    # This constitutes the start of a new calibration procedure, where the calibration_request values are the initial state.
+    calibrator.initialize_calibration_procedure(**calibration_request.model_dump())
+    # Return the current state of the calibrator's calibration procedure
+    return calibrator.state
 
 
 @router.post("/{hardware_name}/calibrator/dispatch")

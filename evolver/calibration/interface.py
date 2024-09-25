@@ -138,7 +138,6 @@ class Calibrator(BaseInterface):
         super().__init__(*args, **kwargs)
         self.evolver = evolver
         self.calibration_procedure = None
-        self.state = {}
 
     @property
     def status(self) -> Status:
@@ -174,29 +173,26 @@ class IndependentVialBasedCalibrator(Calibrator, ABC):
 
 
 class TemperatureCalibrator(Calibrator):
-    class State(Calibrator.State):
-        # If your procedure has external dependencies, i.e. external to the Evolver Config object - you must define it
-        # in the State class of the calibrator.
-        # The HTTP api @hardware_router.post("/{hardware_name}/calibrator/init") will require this to be defined.
-        selected_vials: list[int] = Field(
-            default_factory=list, description="List of selected vials for temp sensor calibration"
-        )
-
-    def __init__(self, selected_vials, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # consider bootstrapping the state here from file... defer persistence of calibration procedure for now
-        self.state = self.State()
-        self.state.selected_vials = selected_vials
-        # This should really be a reset or similar, as __init__ is handled by the framework.
-        self.initialize_calibration_procedure()
+        self.state = {"selected_vials": []}
 
-    def initialize_calibration_procedure(self, *args, **kwargs):
-        if not self.evolver or not self.evolver.hardware:
-            raise ValueError("Evolver and hardware must be initialized")
+    def initialize_calibration_procedure(self, selected_vials: list[int], *args, **kwargs):
+        self.state["selected_vials"] = selected_vials
+
+        """
+        Safeguard to ensure that the calibration procedure is only initiated when the evolver instance and its hardware are properly set up.
+        This is important because the calibration procedure relies on the evolver object and its hardware to perform actions
+        such as reading sensor data, applying transformations, or interacting with the hardware drivers.
+        """
+        if not self.evolver:
+            raise ValueError("Evolver must be initialized")
+        if not self.evolver.hardware:
+            raise ValueError("Evolver.hardware must be initialized")
 
         calibration_procedure = CalibrationProcedure("Temperature Calibration")
         calibration_procedure.add_step(DisplayInstructionStep("Fill each vial with 15ml water"))
-        for vial in self.state.selected_vials:
+        for vial in self.state["selected_vials"]:
             calibration_procedure.add_step(
                 VialTempReferenceValueStep(
                     # TODO: confirm this is the best way to get the hardware this calibrator is associated with.
@@ -214,7 +210,7 @@ class TemperatureCalibrator(Calibrator):
             )
 
         # Add a final step to calculate the fit.
-        for vial in self.state.selected_vials:
+        for vial in self.state["selected_vials"]:
             calibration_procedure.add_step(
                 VialTempCalculateFitStep(
                     hardware=self.evolver.get_hardware(name="temp"),

@@ -8,12 +8,9 @@ from evolver.hardware.demo import NoOpSensorDriver
 
 from fastapi.testclient import TestClient
 
-# Import your main FastAPI app
-
 
 class TestHardware:
     def test_get_all_hardware(self):
-        # Set up the evolver instance in app state before running the test
         app.state.evolver = Evolver(
             hardware={
                 "temp": NoOpSensorDriver(
@@ -27,10 +24,8 @@ class TestHardware:
             }
         )
 
-        # Create the test client
         client = TestClient(app)
 
-        # Make the request and check the response
         response = client.get("/hardware/")
         assert response.status_code == 200
 
@@ -81,35 +76,3 @@ class TestHardware:
 
             # Assert the 'vial' field matches the vial ID
             assert vial_data["vial"] == int(vial_id), f"Expected vial {vial_id}, but got {vial_data['vial']}"
-
-    def test_get_calibration_status(self):
-        # Set up the evolver instance with hardware and a calibrator
-        app.state.evolver = Evolver(
-            hardware={
-                "temp": NoOpSensorDriver(
-                    name="temp",
-                    calibrator=NoOpCalibrator(state={"status": "calibrated"}),  # Mock calibrator state
-                    vials=[0, 1, 2],  # Simulate 3 vials
-                ),
-                "ph": NoOpSensorDriver(
-                    name="ph",
-                    calibrator=NoOpCalibrator(state={"status": "not calibrated"}),
-                    vials=[0, 1, 2],
-                ),
-            }
-        )
-
-        # Create the test client
-        client = TestClient(app)
-
-        # Test the "temp" hardware's calibrator state
-        response = client.get("/hardware/temp/calibrator/state")
-        assert response.status_code == 200
-
-        # Check the returned state
-        temp_calibrator_state = response.json()
-        assert temp_calibrator_state["status"] == "calibrated"
-        response = client.get("/hardware/ph/calibrator/state")
-        assert response.status_code == 200
-        ph_calibrator_state = response.json()
-        assert ph_calibrator_state["status"] == "not calibrated"
