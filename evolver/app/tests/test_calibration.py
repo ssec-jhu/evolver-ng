@@ -75,3 +75,11 @@ class TestCalibration:
         # Check the returned state
         temp_calibrator_state = response.json()
         assert request_payload["selected_vials"] == temp_calibrator_state["selected_vials"]
+
+        # Check the state persists on the hardware.
+        # get the "temp" hardware's calibrator state after it has been started.
+        state_response = client.get("/hardware/temp/calibrator/state")
+        assert state_response.status_code == 200
+        # Check the returned state
+        temp_calibrator_state_2 = state_response.json()
+        assert request_payload["selected_vials"] == temp_calibrator_state_2["selected_vials"]

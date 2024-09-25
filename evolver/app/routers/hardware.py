@@ -52,8 +52,7 @@ def get_calibrator_state(hardware_name: str, request: Request):
     if not calibrator:
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
 
-    idk = calibrator.state
-    return idk
+    return calibrator.state
 
 
 class StartCalibrationProcedureRequest(BaseModel):
@@ -76,13 +75,6 @@ def start_calibration_procedure(
     if not calibrator:
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
 
-    # Initialize the calibration procedure
-    # Beware - this is technically a re-init as the calibration procedure on the calibrator is already initialized when
-    # the class is init'ed by the framework, e.g. user made post request of a valid config object  to the '/' endpoint.
-    # This is necessary because the user may want to run a calibration procedure with a subset of the vials on a hardware
-
-    # call initialize_calibration_procedure on the calibrator with the request data e.g. selected_vials
-    # This constitutes the start of a new calibration procedure, where the calibration_request values are the initial state.
     calibrator.initialize_calibration_procedure(**calibration_request.model_dump())
     # Return the current state of the calibrator's calibration procedure
     return calibrator.state
