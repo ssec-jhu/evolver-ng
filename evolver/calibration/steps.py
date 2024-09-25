@@ -1,14 +1,15 @@
-class DisplayInstructionStep:
-    def __init__(self, description):
+class DisplayInstructionAction:
+    def __init__(self, description, name):
         self.description = description
+        self.name = name
 
     def execute(self, state, action):
         new_state = state.copy()
         return new_state
 
 
-class VialTempReferenceValueStep:
-    def __init__(self, hardware, description, vial_idx: int):
+class VialTempReferenceValueAction:
+    def __init__(self, hardware, description: str, vial_idx: int, name: str):
         self.hardware = hardware
         self.description = description
         self.vial_idx = vial_idx
@@ -34,8 +35,9 @@ class VialTempReferenceValueStep:
         return new_state
 
 
-class VialTempRawVoltageStep:
-    def __init__(self, hardware, vial_idx: int, description):
+class VialTempRawVoltageAction:
+    def __init__(self, hardware, vial_idx: int, description, name):
+        self.name = name
         self.hardware = hardware
         self.description = description
         self.vial_idx = vial_idx
@@ -68,7 +70,7 @@ class VialTempRawVoltageStep:
         return new_state
 
 
-class VialTempCalculateFitStep:
+class VialTempCalculateFitAction:
     def __init__(self, hardware, vial_idx: int, description):
         self.hardware = hardware
         self.description = description

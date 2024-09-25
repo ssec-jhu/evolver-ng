@@ -1,26 +1,18 @@
 class CalibrationProcedure:
     def __init__(self, name: str):
         self.name = name
-        self.steps = []
-        self.current_step_index = 0
+        self.actions = []
         self.state = {}  # Holds the current state of calibration
+        # todo store all previous states in a list
 
-    def add_step(self, step):
-        self.steps.append(step)
+    def add_action(self, step):
+        self.actions.append(step)
 
-    def get_current_step(self):
-        if self.current_step_index < len(self.steps):
-            return self.steps[self.current_step_index]
-        return None
+    def get_actions(self):
+        return self.actions
 
+    # Todo, dispatch should accept params...
     def dispatch(self, action):
-        """Executes the current step with the given action."""
-        current_step = self.get_current_step()
-        if current_step is None:
-            print("Calibration procedure is complete.")
-            return self.state
-
-        # Execute the step's action and update the state
-        self.state = current_step.execute(self.state, action)
-        self.current_step_index += 1
+        # Execute the action and update the state
+        self.state = action.execute(self.state, action)
         return self.state

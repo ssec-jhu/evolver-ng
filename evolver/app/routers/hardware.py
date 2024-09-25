@@ -80,6 +80,23 @@ def start_calibration_procedure(
     return calibrator.state
 
 
+@router.post("/{hardware_name}/calibrator/actions")
+def get_calibrator_actions(hardware_name: str, request: Request):
+    evolver = request.app.state.evolver
+    if not evolver:
+        raise HTTPException(status_code=500, detail="Evolver not initialized")
+
+    hardware_instance = evolver.get_hardware(hardware_name)
+    if not hardware_instance:
+        raise HTTPException(status_code=404, detail=f"Hardware '{hardware_name}' not found")
+
+    calibrator = hardware_instance.calibrator
+    if not calibrator:
+        raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
+
+    return calibrator.calibration_procedure.get_actions()
+
+
 @router.post("/{hardware_name}/calibrator/dispatch")
 def calibrate(hardware_name: str = Path(...), action: Action = Body(...)):
     evolver = router.state.evolver

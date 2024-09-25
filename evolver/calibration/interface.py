@@ -18,10 +18,10 @@ from evolver.calibration.procedure import (
     CalibrationProcedure,
 )
 from evolver.calibration.steps import (
-    DisplayInstructionStep,
-    VialTempCalculateFitStep,
-    VialTempRawVoltageStep,
-    VialTempReferenceValueStep,
+    DisplayInstructionAction,
+    VialTempCalculateFitAction,
+    VialTempRawVoltageAction,
+    VialTempReferenceValueAction,
 )
 from evolver.settings import settings
 
@@ -191,18 +191,18 @@ class TemperatureCalibrator(Calibrator):
             raise ValueError("Evolver.hardware must be initialized")
 
         calibration_procedure = CalibrationProcedure("Temperature Calibration")
-        calibration_procedure.add_step(DisplayInstructionStep("Fill each vial with 15ml water"))
+        calibration_procedure.add_action(DisplayInstructionAction("Fill each vial with 15ml water"))
         for vial in self.state["selected_vials"]:
-            calibration_procedure.add_step(
-                VialTempReferenceValueStep(
+            calibration_procedure.add_action(
+                VialTempReferenceValueAction(
                     # TODO: confirm this is the best way to get the hardware this calibrator is associated with.
                     hardware=self.evolver.get_hardware(name="temp"),
                     vial_idx=vial,
                     description=f"Use a thermometer to measure the real temperature in the vial {vial}",
                 )
             )
-            calibration_procedure.add_step(
-                VialTempRawVoltageStep(
+            calibration_procedure.add_action(
+                VialTempRawVoltageAction(
                     hardware=self.evolver.hardware,
                     vial_idx=vial,
                     description=f"The hardware will now read the raw voltage from the temperature sensor, vial {vial}",
@@ -211,8 +211,8 @@ class TemperatureCalibrator(Calibrator):
 
         # Add a final step to calculate the fit.
         for vial in self.state["selected_vials"]:
-            calibration_procedure.add_step(
-                VialTempCalculateFitStep(
+            calibration_procedure.add_action(
+                VialTempCalculateFitAction(
                     hardware=self.evolver.get_hardware(name="temp"),
                     vial_idx=vial,
                     description="Use the real and raw values that have been collected to calculate the fit for the temperature sensor",
