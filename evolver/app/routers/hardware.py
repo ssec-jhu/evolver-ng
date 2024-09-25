@@ -105,7 +105,9 @@ def get_calibrator_actions(hardware_name: str, request: Request):
 
 
 @router.post("/{hardware_name}/calibrator/dispatch")
-def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...), action: Action = Body(...)):
+@router.post("/{hardware_name}/calibrator/dispatch")
+@router.post("/{hardware_name}/calibrator/dispatch")
+def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...), action: dict = Body(...)):
     evolver = request.app.state.evolver
     if not evolver:
         raise HTTPException(status_code=500, detail="Evolver not initialized")
@@ -118,9 +120,21 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
     if not calibrator:
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
 
+    # Get the calibration procedure
+    calibration_procedure = calibrator.calibration_procedure
+
+    # Find the action by name in the calibration procedure
+    action_to_dispatch = next((a for a in calibration_procedure.get_actions() if a.name == action["action_name"]), None)
+
+    if not action_to_dispatch:
+        raise HTTPException(status_code=404, detail=f"Action '{action['action_name']}' not found")
+
     try:
-        # Dispatch the action to the calibration procedure
-        new_state = calibrator.calibration_procedure.dispatch(action.payload)
+        # Dispatch the action to the calibration procedure with the given payload
+        new_state = calibration_procedure.dispatch(action_to_dispatch, action["payload"])
+
+        # Return the updated state of the calibration procedure
         return {"state": new_state}
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

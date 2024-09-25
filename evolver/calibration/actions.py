@@ -3,7 +3,7 @@ class DisplayInstructionAction:
         self.description = description
         self.name = name
 
-    def execute(self, state, action):
+    def execute(self, state):
         new_state = state.copy()
         return new_state
 
@@ -15,12 +15,12 @@ class VialTempReferenceValueAction:
         self.vial_idx = vial_idx
         self.name = name
 
-    def execute(self, state, action):
+    def execute(self, state, payload):
         # Validate action
-        if "reference_value" not in action:
+        if "reference_value" not in payload:
             raise ValueError("Action must include 'reference_value'")
 
-        reference_value = action["reference_value"]
+        reference_value = payload["reference_value"]
 
         # Update state immutably
         new_state = state.copy()
@@ -43,7 +43,7 @@ class VialTempRawVoltageAction:
         self.description = description
         self.vial_idx = vial_idx
 
-    def execute(self, state, action):
+    def execute(self, state, payload):
         # This step doesn't require any action input
         # Read sensor value from hardware
         # TODO: Find out how to read vial sensor value from hardware
@@ -78,7 +78,7 @@ class VialTempCalculateFitAction:
         self.name = name
         self.vial_idx = vial_idx
 
-    def execute(self, state, action):
+    def execute(self, state, payload):
         hardware_name = self.hardware.name
         vial_key = f"vial_{self.vial_idx}"
 

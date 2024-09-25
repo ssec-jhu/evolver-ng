@@ -166,3 +166,39 @@ def test_temperature_calibration_procedure_actions():
     # Verify that each expected action is present
     for expected_action in expected_actions["actions"]:
         assert expected_action in actual_actions
+
+
+def test_dispatch_temperature_calibration_action():
+    # Set up the evolver instance with hardware and a Temperature Calibrator
+    temp_calibrator = TemperatureCalibrator()  # Ensure this is properly initialized
+
+    # Create NoOpSensorDriver and assign the temp calibrator to it
+    evolver_instance = Evolver(
+        hardware={"temp": NoOpSensorDriver(name="temp", calibrator=temp_calibrator, vials=[0, 1, 2])}
+    )
+
+    # Ensure the temp calibrator has access to the evolver
+    temp_calibrator.evolver = evolver_instance
+
+    # Set the evolver state in the app before testing
+    app.state.evolver = evolver_instance
+
+    # Create the test client
+    client = TestClient(app)
+
+    # Prepare the request payload to initialize the calibration procedure
+    request_payload = {
+        "selected_vials": [0, 1, 2]  # Simulate the user selecting vials for calibration
+    }
+
+    # Test the "temp" hardware's calibrator initialization
+    response = client.post("/hardware/temp/calibrator/start", json=request_payload)
+    assert response.status_code == 200
+
+    # Now we will dispatch an action to the calibrator
+    action_payload = {"action_name": "Vial_0_Temp_Reference_Value_Action", "payload": {"reference_value": 25.0}}
+
+    # Dispatch the action
+    dispatch_response = client.post("/hardware/temp/calibrator/dispatch", json=action_payload)
+    assert dispatch_response.status_code == 200
+    assert dispatch_response.json() == {"state": {"temp": {"vial_0": {"reference": [25.0], "raw": []}}}}

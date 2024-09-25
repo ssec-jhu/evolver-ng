@@ -8,7 +8,6 @@ class CalibrationProcedure:
         # The procedure state is updated immutably, so that the state of the procedure is always consistent.
         self.actions = []
         self.state = {}  # Holds the current state of calibration, when the procedure is done this is copied to the Calibrator state.
-        # todo implement prev_states and redo_stack for undo/redo functionality
 
     def add_action(self, step):
         self.actions.append(step)
@@ -16,7 +15,7 @@ class CalibrationProcedure:
     def get_actions(self):
         return self.actions
 
-    def dispatch(self, action):
+    def dispatch(self, action, payload):
         # Execute the action and update the state
-        self.state = action.execute(self.state, action)
+        self.state = action.execute(self.state, payload)
         return self.state
