@@ -17,7 +17,7 @@ from evolver.base import (
 from evolver.calibration.procedure import (
     CalibrationProcedure,
 )
-from evolver.calibration.steps import (
+from evolver.calibration.actions import (
     DisplayInstructionAction,
     VialTempCalculateFitAction,
     VialTempRawVoltageAction,
@@ -191,7 +191,9 @@ class TemperatureCalibrator(Calibrator):
             raise ValueError("Evolver.hardware must be initialized")
 
         calibration_procedure = CalibrationProcedure("Temperature Calibration")
-        calibration_procedure.add_action(DisplayInstructionAction("Fill each vial with 15ml water"))
+        calibration_procedure.add_action(
+            DisplayInstructionAction(description="Fill each vial with 15ml water", name="Fill_Vials_With_Water")
+        )
         for vial in self.state["selected_vials"]:
             calibration_procedure.add_action(
                 VialTempReferenceValueAction(
@@ -199,6 +201,7 @@ class TemperatureCalibrator(Calibrator):
                     hardware=self.evolver.get_hardware(name="temp"),
                     vial_idx=vial,
                     description=f"Use a thermometer to measure the real temperature in the vial {vial}",
+                    name=f"Vial_{vial}_Temp_Reference_Value_Action",
                 )
             )
             calibration_procedure.add_action(
@@ -206,6 +209,7 @@ class TemperatureCalibrator(Calibrator):
                     hardware=self.evolver.hardware,
                     vial_idx=vial,
                     description=f"The hardware will now read the raw voltage from the temperature sensor, vial {vial}",
+                    name=f"Vial_{vial}_Temp_Raw_Voltage_Action",
                 )
             )
 
@@ -216,6 +220,7 @@ class TemperatureCalibrator(Calibrator):
                     hardware=self.evolver.get_hardware(name="temp"),
                     vial_idx=vial,
                     description="Use the real and raw values that have been collected to calculate the fit for the temperature sensor",
+                    name=f"Vial_{vial}_Temp_Calculate_Fit_Action",
                 )
             )
         self.calibration_procedure = calibration_procedure

@@ -13,6 +13,7 @@ class VialTempReferenceValueAction:
         self.hardware = hardware
         self.description = description
         self.vial_idx = vial_idx
+        self.name = name
 
     def execute(self, state, action):
         # Validate action
@@ -71,9 +72,10 @@ class VialTempRawVoltageAction:
 
 
 class VialTempCalculateFitAction:
-    def __init__(self, hardware, vial_idx: int, description):
+    def __init__(self, hardware, vial_idx: int, description: str, name: str):
         self.hardware = hardware
         self.description = description
+        self.name = name
         self.vial_idx = vial_idx
 
     def execute(self, state, action):
