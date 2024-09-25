@@ -105,8 +105,6 @@ def get_calibrator_actions(hardware_name: str, request: Request):
 
 
 @router.post("/{hardware_name}/calibrator/dispatch")
-@router.post("/{hardware_name}/calibrator/dispatch")
-@router.post("/{hardware_name}/calibrator/dispatch")
 def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...), action: dict = Body(...)):
     evolver = request.app.state.evolver
     if not evolver:
