@@ -1,11 +1,14 @@
+from typing import Dict, Any
+from copy import deepcopy
+
+
 class DisplayInstructionAction:
-    def __init__(self, description, name):
+    def __init__(self, description: str, name: str):
         self.description = description
         self.name = name
 
-    def execute(self, state):
-        new_state = state.copy()
-        return new_state
+    def execute(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        return state.copy()
 
 
 class VialTempReferenceValueAction:
@@ -15,25 +18,34 @@ class VialTempReferenceValueAction:
         self.vial_idx = vial_idx
         self.name = name
 
-    def execute(self, state, payload):
-        # Validate action
-        if "reference_value" not in payload:
-            raise ValueError("Action must include 'reference_value'")
+    def execute(self, state: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
+        # Validate payload
+        reference_value = payload.get("reference_value")
+        if reference_value is None:
+            raise ValueError("Payload must include 'reference_value'")
 
-        reference_value = payload["reference_value"]
-
-        # Update state immutably
-        new_state = state.copy()
+        new_state = deepcopy(state)
         vial_key = f"vial_{self.vial_idx}"
 
-        if self.hardware.name not in new_state:
-            new_state[self.hardware.name] = {}
+        # Initialize nested dicts if they don't exist, otherwise leave them intact
+        vial_data = new_state.setdefault(self.hardware.name, {}).setdefault(vial_key, {"reference": [], "raw": []})
 
-        if vial_key not in new_state[self.hardware.name]:
-            new_state[self.hardware.name][vial_key] = {"reference": [], "raw": []}
-
-        new_state[self.hardware.name][vial_key]["reference"].append(reference_value)
+        # Append new reference value without touching the existing raw data
+        vial_data["reference"].append(reference_value)
         return new_state
+
+
+class VialTempRawVoltageAction:
+    def __init__(self, hardware, vial_idx: int, description: str, name: str):
+        self.name = name
+        self.hardware = hardware
+        self.description = description
+        self.vial_idx = vial_idx
+
+    def execute(self, state: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
+        # Read the sensor value (assume hardware.read() returns a dict or list)
+        # TODO: understand latency associated with serial read and consider mitigation strategies.
+        sensor_value = self.hardware.read()[self.vial_idx]
 
 
 class VialTempRawVoltageAction:
@@ -48,26 +60,20 @@ class VialTempRawVoltageAction:
         # Read sensor value from hardware
         # TODO: Find out how to read vial sensor value from hardware
 
-        # beware the serial read has latency associated with it, e.g. 1.5s... and the best way is to do read once  (goes to buffer) and get on that.
+        # beware the serial read has latency associated with it, e.g. 1.5s... and the best way is to do read once
+        # (goes to buffer) and get on that.
         # so think about hoisting all reads to the procedure state, periodically update it.
         sensor_value = self.hardware.read()[self.vial_idx]
 
-        # sensor_value = 0.666
-
         # Update state immutably
-        new_state = state.copy()
-        hardware_name = self.hardware.name
+        new_state = deepcopy(state)
         vial_key = f"vial_{self.vial_idx}"
 
-        # Initialize hardware section in state if necessary
-        if hardware_name not in new_state:
-            new_state[hardware_name] = {}
+        # Initialize nested dicts if they don't exist, otherwise leave them intact
+        vial_data = new_state.setdefault(self.hardware.name, {}).setdefault(vial_key, {"reference": [], "raw": []})
 
-        # Initialize vial data in state if necessary
-        if vial_key not in new_state[hardware_name]:
-            new_state[hardware_name][vial_key] = {"reference": [], "raw": []}
-
-        new_state[hardware_name][vial_key]["raw"].append(sensor_value)
+        # Append new raw voltage reading without touching the existing reference data
+        vial_data["raw"].append(sensor_value)
         return new_state
 
 
@@ -78,28 +84,28 @@ class VialTempCalculateFitAction:
         self.name = name
         self.vial_idx = vial_idx
 
-    def execute(self, state, payload):
-        hardware_name = self.hardware.name
+    def execute(self, state: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
         vial_key = f"vial_{self.vial_idx}"
+        hardware_name = self.hardware.name
 
-        # Ensure that the necessary data is available in the state
-        if hardware_name not in state or vial_key not in state[hardware_name]:
+        # Check for necessary data
+        vial_data = state.get(hardware_name, {}).get(vial_key)
+        if not vial_data:
             raise ValueError(f"No data available for {hardware_name} {vial_key}")
 
-        vial_data = state[hardware_name][vial_key]
         reference_values = vial_data.get("reference", [])
         raw_values = vial_data.get("raw", [])
-
         if not reference_values or not raw_values:
             raise ValueError(f"Insufficient data to calculate fit for {hardware_name} {vial_key}")
 
+        # Perform the fit calculation (to be implemented based on actual calibration logic)
         # Perform the fit calculation
-        # TODO: Findout how to call the fit calculation method from the hardware
+        # TODO: Find out how to call the fit calculation method from the hardware
         # fit_parameters = self.hardware.calibrate_transformer.calculate_fit(reference_values, raw_values)
+        # TODO: Persist the fit parameters to the Calibrator CalibrationData (see Arik's work) data structure.
         fit_parameters = [0.5, 0.5]
 
         # Update state immutably with fit parameters
-        new_state = state.copy()
+        new_state = deepcopy(state)
         new_state[hardware_name][vial_key]["fit_parameters"] = fit_parameters
-
         return new_state
