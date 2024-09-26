@@ -26,10 +26,8 @@ class VialTempReferenceValueAction:
 
         new_state = deepcopy(state)
         vial_key = f"vial_{self.vial_idx}"
-
         # Initialize nested dicts if they don't exist, otherwise leave them intact
         vial_data = new_state.setdefault(self.hardware.name, {}).setdefault(vial_key, {"reference": [], "raw": []})
-
         # Append new reference value without touching the existing raw data
         vial_data["reference"].append(reference_value)
         return new_state
@@ -45,21 +43,13 @@ class VialTempRawVoltageAction:
     def execute(self, state, payload):
         # This step doesn't require any action input
         # Read sensor value from hardware
-        # TODO: Find out how to read vial sensor value from hardware
-
-        # beware the serial read has latency associated with it, e.g. 1.5s... and the best way is to do read once
+        # Beware the serial read has latency associated with it, e.g. 1.5s... and the best way is to do read once
         # (goes to buffer) and get on that.
         # so think about hoisting all reads to the procedure state, periodically update it.
         sensor_value = self.hardware.read()[self.vial_idx]
-
-        # Update state immutably
         new_state = deepcopy(state)
         vial_key = f"vial_{self.vial_idx}"
-
-        # Initialize nested dicts if they don't exist, otherwise leave them intact
         vial_data = new_state.setdefault(self.hardware.name, {}).setdefault(vial_key, {"reference": [], "raw": []})
-
-        # Append new raw voltage reading without touching the existing reference data
         vial_data["raw"].append(sensor_value)
         return new_state
 

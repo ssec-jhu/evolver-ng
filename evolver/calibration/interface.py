@@ -172,19 +172,16 @@ class IndependentVialBasedCalibrator(Calibrator, ABC):
     def initialize_calibration_procedure(self, *args, **kwargs): ...
 
 
+# Example calibrator implementation to match existing temperature calibration flow.
 class TemperatureCalibrator(Calibrator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.state = {"selected_vials": []}
 
     def initialize_calibration_procedure(self, selected_vials: list[int], *args, **kwargs):
+        # TODO: integrate self.state with self.CalibrationData, see Arik for context.
         self.state["selected_vials"] = selected_vials
 
-        """
-        Safeguard to ensure that the calibration procedure is only initiated when the evolver instance and its hardware are properly set up.
-        This is important because the calibration procedure relies on the evolver object and its hardware to perform actions
-        such as reading sensor data, applying transformations, or interacting with the hardware drivers.
-        """
         if not self.evolver:
             raise ValueError("Evolver must be initialized")
         if not self.evolver.hardware:
@@ -198,6 +195,7 @@ class TemperatureCalibrator(Calibrator):
             calibration_procedure.add_action(
                 VialTempReferenceValueAction(
                     # TODO: confirm this is the best way to get the hardware this calibrator is associated with.
+                    # Risk is you cross wires and get the wrong hardware.
                     hardware=self.evolver.get_hardware(name="temp"),
                     vial_idx=vial,
                     description=f"Use a thermometer to measure the real temperature in the vial {vial}",
@@ -206,7 +204,7 @@ class TemperatureCalibrator(Calibrator):
             )
             calibration_procedure.add_action(
                 VialTempRawVoltageAction(
-                    hardware=self.evolver.hardware,
+                    hardware=self.evolver.get_hardware(name="temp"),
                     vial_idx=vial,
                     description=f"The hardware will now read the raw voltage from the temperature sensor, vial {vial}",
                     name=f"Vial_{vial}_Temp_Raw_Voltage_Action",
