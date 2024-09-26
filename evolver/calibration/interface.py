@@ -155,6 +155,7 @@ class Calibrator(BaseInterface):
         # Delegate to the calibration procedure
         if self.calibration_procedure is None:
             raise ValueError("Calibration procedure is not initialized.")
+        # TODO: this is probably the best place for bumpoing calibration_procedure state up into CalibrationData state. (see Arik for details)
         self.state = self.calibration_procedure.dispatch(action)
         return self.state
 
