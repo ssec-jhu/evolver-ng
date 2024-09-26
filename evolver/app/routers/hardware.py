@@ -1,144 +1,108 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
-from fastapi import Body, HTTPException, Path, Request, APIRouter
-
+from fastapi import APIRouter, Body, HTTPException, Path, Request
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/hardware", tags=["hardware"], responses={404: {"description": "Not found"}})
 
 
 class Action(BaseModel):
-    type: str  # Optional, depending on your needs
+    type: str
     payload: Dict[str, Any]
 
 
-# endpoint used by the UI to present the user with a list of hardware to select from for calibration
+class StartCalibrationProcedureRequest(BaseModel):
+    selected_vials: None | List[int] = None
+
+
+# Utility function to fetch the evolver and hardware instance
+def get_hardware_instance(request: Request, hardware_name: str):
+    evolver = request.app.state.evolver
+    if not evolver:
+        raise HTTPException(status_code=500, detail="Evolver not initialized")
+
+    hardware_instance = evolver.get_hardware(hardware_name)
+    if not hardware_instance:
+        raise HTTPException(status_code=404, detail=f"Hardware '{hardware_name}' not found")
+
+    return hardware_instance
+
+
+# Endpoint used by the UI to present the user with a list of hardware to select from for calibration
 @router.get("/")
 def get_all_hardware(request: Request):
     evolver = request.app.state.evolver
     if not evolver:
         raise HTTPException(status_code=500, detail="Evolver not initialized")
-    # Get hardware outputs
-    hardware_outputs = {name: driver.get() for name, driver in evolver.hardware.items()}
 
+    hardware_outputs = {name: driver.get() for name, driver in evolver.hardware.items()}
     return hardware_outputs
 
 
-# having selected a hardware by name user can now select vials to calibrate
+# Having selected a hardware by name, the user can now select vials to calibrate
 @router.get("/{hardware_name}")
 def get_hardware(hardware_name: str, request: Request):
-    evolver = request.app.state.evolver
-    if not evolver:
-        raise HTTPException(status_code=500, detail="Evolver not initialized")
-    hardware_instance = evolver.get_hardware(hardware_name)
-    if not hardware_instance:
-        raise HTTPException(status_code=404, detail=f"Hardware '{hardware_name}' not found")
-    hardware_outputs = hardware_instance.get()
-    return hardware_outputs
+    hardware_instance = get_hardware_instance(request, hardware_name)
+    return hardware_instance.get()
 
 
-# get the state of the calibrator for a hardware.
-@router.get("/{hardware_name}/calibrator/state")
-def get_calibrator_state(hardware_name: str, request: Request):
-    evolver = request.app.state.evolver
-    if not evolver:
-        raise HTTPException(status_code=500, detail="Evolver not initialized")
-
-    hardware_instance = evolver.get_hardware(hardware_name)
-    if not hardware_instance:
-        raise HTTPException(status_code=404, detail=f"Hardware '{hardware_name}' not found")
-
-    calibrator = hardware_instance.calibrator
-    if not calibrator:
-        raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
-
-    return calibrator.state
-
-
-class StartCalibrationProcedureRequest(BaseModel):
-    selected_vials: None | list[int] = None
-
-
-# having selected vials to calibrate the user can now start the calibration procedure for that hardware.
-# if they want to calibrate a different set of vials, they can call this endpoint again with the new set of vials.
-# This setup nudges us towards global (all vials) calibration.
+# Start the calibration procedure for the selected hardware and vials
 @router.post("/{hardware_name}/calibrator/start")
 def start_calibration_procedure(
     hardware_name: str, request: Request, calibration_request: StartCalibrationProcedureRequest
 ):
-    evolver = request.app.state.evolver
-    if not evolver:
-        raise HTTPException(status_code=500, detail="Evolver not initialized")
-
-    hardware_instance = evolver.get_hardware(hardware_name)
-    if not hardware_instance:
-        raise HTTPException(status_code=404, detail=f"Hardware '{hardware_name}' not found")
-
+    hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
 
     calibrator.initialize_calibration_procedure(**calibration_request.model_dump())
-    # Return the current state of the calibrator's calibration procedure
     return calibrator.state
 
 
-# Having initialized a calibration procedure, the user can now get a list of actions available for them to perform.
-# The UI has responsibility for how these actions are presented to the user.
+# Get available actions for the calibration procedure
 @router.post("/{hardware_name}/calibrator/actions")
 def get_calibrator_actions(hardware_name: str, request: Request):
-    evolver = request.app.state.evolver
-    if not evolver:
-        raise HTTPException(status_code=500, detail="Evolver not initialized")
-
-    hardware_instance = evolver.get_hardware(hardware_name)
-    if not hardware_instance:
-        raise HTTPException(status_code=404, detail=f"Hardware '{hardware_name}' not found")
-
+    hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
 
-    # Get the calibration procedure and list all actions
     calibration_procedure = calibrator.calibration_procedure
-    actions = calibration_procedure.get_actions()
+    actions = [
+        {"name": action.name, "description": action.description} for action in calibration_procedure.get_actions()
+    ]
 
-    # Extract action names and descriptions to return to the frontend
-    actions_list = [{"name": action.name, "description": action.description} for action in actions]
-
-    return {"actions": actions_list}
+    return {"actions": actions}
 
 
-# The user can dispatch an action to the calibration procedure.
+# Dispatch an action to the calibration procedure
 @router.post("/{hardware_name}/calibrator/dispatch")
 def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...), action: dict = Body(...)):
-    evolver = request.app.state.evolver
-    if not evolver:
-        raise HTTPException(status_code=500, detail="Evolver not initialized")
-
-    hardware_instance = evolver.get_hardware(hardware_name)
-    if not hardware_instance:
-        raise HTTPException(status_code=404, detail=f"Hardware '{hardware_name}' not found")
-
+    hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
 
-    # Get the calibration procedure
     calibration_procedure = calibrator.calibration_procedure
-
-    # Find the action by name in the calibration procedure
     action_to_dispatch = next((a for a in calibration_procedure.get_actions() if a.name == action["action_name"]), None)
 
     if not action_to_dispatch:
         raise HTTPException(status_code=404, detail=f"Action '{action['action_name']}' not found")
 
     try:
-        # Dispatch the action to the calibration procedure with the given payload
         new_state = calibration_procedure.dispatch(action_to_dispatch, action["payload"])
-
-        # Return the updated state of the calibration procedure
         return {"state": new_state}
-
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# Get the current state of the calibrator for a hardware
+@router.get("/{hardware_name}/calibrator/state")
+def get_calibrator_state(hardware_name: str, request: Request):
+    hardware_instance = get_hardware_instance(request, hardware_name)
+    calibrator = hardware_instance.calibrator
+    if not calibrator:
+        raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
+
+    return calibrator.state

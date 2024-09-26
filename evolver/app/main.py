@@ -14,6 +14,7 @@ from evolver.history.interface import HistoryResult
 from evolver.settings import app_settings
 from evolver.types import ImportString
 
+# Import routers
 from .routers import hardware
 
 # Setup logging.
@@ -28,7 +29,6 @@ async def lifespan(app: FastAPI):
     else:
         app.state.evolver = Evolver.create()
     asyncio.create_task(evolver_async_loop())
-
     yield
     # Shutdown:
     ...
