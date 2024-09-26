@@ -134,7 +134,7 @@ class TestStir(SerialVialEffectorHardwareTestSuite):
         (
             {"addr": "pump", "slots": 2},
             [[VialIEPump.Input(vial=0, flow_rate_influx=1, flow_rate_efflux=2)]],
-            [b"pumpr,1.0|1,--,2.0|2,--,--,--,_!"],
+            [b"pumpr,10.0|1,--,10.0|2,--,--,--,_!"],
         ),
         (
             {"addr": "pump", "slots": 2},
@@ -144,7 +144,7 @@ class TestStir(SerialVialEffectorHardwareTestSuite):
                     VialIEPump.Input(vial=1, flow_rate_influx=8, flow_rate_efflux=9),
                 ]
             ],
-            [b"pumpr,1.0|1,8.0|8,1.0|1,9.0|9,--,--,_!"],
+            [b"pumpr,10.0|1,10.0|8,10.0|1,10.0|9,--,--,_!"],
         ),
         (
             {"addr": "pump", "ipp_pumps": [0, 1], "slots": 2, "influx_map": {0: 0}, "efflux_map": {0: 1}},

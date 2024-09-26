@@ -126,6 +126,8 @@ class Calibrator(BaseInterface):
         input_transformer: ConfigDescriptor | Transformer | None = None
         output_transformer: ConfigDescriptor | Transformer | None = None
 
+    class CalibrationData(Transformer.Config): ...
+
     class Status(_BaseConfig):
         input_transformer: Status | None = None
         output_transformer: Status | None = None

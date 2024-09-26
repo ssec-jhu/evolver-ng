@@ -3,10 +3,51 @@ from typing import Any
 
 from pydantic import Field
 
-from evolver.base import BaseConfig
+from evolver.base import BaseConfig, ConfigDescriptor
+from evolver.calibration.interface import Calibrator, IndependentVialBasedCalibrator, Transformer
+from evolver.calibration.standard.polyfit import LinearTransformer
 from evolver.hardware.interface import EffectorDriver
 from evolver.hardware.standard.base import SerialDeviceConfigBase
 from evolver.serial import SerialData
+
+
+class GenericPumpCalibrator(IndependentVialBasedCalibrator):
+    class Config(IndependentVialBasedCalibrator.Config):
+        time_to_pump_fast: float = 10.0
+        time_to_pump_slow: float = 100.0
+        calibration_file: str = None
+        use_cached_fit: bool = True
+
+    class CalibrationData(Transformer.Config):
+        time_to_pump: float
+        measured: dict[int, tuple[list[float], list[float]]] = {}
+        fit: dict[int, ConfigDescriptor] = {}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.time_to_pump = self.time_to_pump_fast
+        self.input_transformer = self.input_transformer or {}
+        if self.calibration_file is not None:
+            self.load_calibration()
+
+    def load_calibration(self, calibration_data: CalibrationData | None = None):
+        if calibration_data is not None:
+            self.cal_data = calibration_data
+        elif self.calibration_file is not None:
+            self.cal_data = self.CalibrationData.load(self.dir / self.calibration_file)
+        else:
+            raise ValueError("no calibration file or data provided")
+
+        self.time_to_pump = self.cal_data.time_to_pump
+        if self.use_cached_fit and self.cal_data.fit:
+            for vial, fit in self.cal_data.fit.items():
+                self.input_transformer[vial] = fit.create()
+        else:
+            for vial, (raw, measured) in self.cal_data.measured.items():
+                self.input_transformer[vial] = LinearTransformer.create(LinearTransformer.fit(raw, measured))
+
+    def run_calibration_procedure(self, *args, **kwargs):
+        pass
 
 
 class GenericPump(EffectorDriver):
@@ -24,6 +65,7 @@ class GenericPump(EffectorDriver):
 
     class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         ipp_pumps: bool | list[int] = Field(False, description="False (no IPP), True (all IPP), or list of IPP ids")
+        calibrator: ConfigDescriptor | Calibrator = GenericPumpCalibrator()
 
     class Input(BaseConfig):  # This intentionally doesn't inherit from EffectorDriver.Input.
         pump_id: int
@@ -58,14 +100,22 @@ class GenericPump(EffectorDriver):
             elif any(pump - i < 3 for i in self.ipp_pumps):
                 raise ValueError(f"pump slot {pump} reserved for IPP pump, cannot address as standard")
             else:
-                # TODO: calibration transform here. The time_to_pump is the target variable
-                # where pump_interval would presumably be what the pump_interval was set to
-                # during calibration and is fixed post-calibration.
-                time_to_pump, pump_interval = (input.flow_rate, int(input.flow_rate))
+                # The calibration is done at a particular speed, represented by
+                # time_to_pump and should only be valid for that speed.
+                time_to_pump = self.calibrator.time_to_pump
+                pump_interval = int(self._transform("input_transformer", "convert_from", input.flow_rate, pump))
                 cmd[pump] = f"{time_to_pump}|{pump_interval}".encode()
         with self.serial as comm:
             comm.communicate(SerialData(addr=self.addr, data=cmd))
         self.committed = inputs
+
+
+class VialIEPumpCalibrator(GenericPumpCalibrator):
+    def run_calibration_procedure(self, *args, **kwargs):
+        # This may or may not even be required, though we probably do need a way
+        # to go from vials to pump ids in the procedure start. The generic pump
+        # one will work on IDs
+        pass
 
 
 class VialIEPump(EffectorDriver):
@@ -84,6 +134,7 @@ class VialIEPump(EffectorDriver):
     class Config(GenericPump.Config):
         influx_map: dict[int, int] | None = Field(None, description="map of vial to influx pump ID")
         efflux_map: dict[int, int] | None = Field(None, description="map of vial to efflux pump ID")
+        calibrator: ConfigDescriptor | Calibrator = VialIEPumpCalibrator()
 
         def model_post_init(self, *args, **kwargs) -> None:
             super().model_post_init(*args, **kwargs)
@@ -112,6 +163,7 @@ class VialIEPump(EffectorDriver):
             serial=self.serial_conn,
             ipp_pumps=self.ipp_pumps,
             evolver=kwargs.get("evolver"),
+            calibrator=self.calibrator,
         )
 
     def commit(self):
