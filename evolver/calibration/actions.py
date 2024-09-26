@@ -36,19 +36,6 @@ class VialTempReferenceValueAction:
 
 
 class VialTempRawVoltageAction:
-    def __init__(self, hardware, vial_idx: int, description: str, name: str):
-        self.name = name
-        self.hardware = hardware
-        self.description = description
-        self.vial_idx = vial_idx
-
-    def execute(self, state: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
-        # Read the sensor value (assume hardware.read() returns a dict or list)
-        # TODO: understand latency associated with serial read and consider mitigation strategies.
-        sensor_value = self.hardware.read()[self.vial_idx]
-
-
-class VialTempRawVoltageAction:
     def __init__(self, hardware, vial_idx: int, description, name):
         self.name = name
         self.hardware = hardware
