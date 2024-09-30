@@ -16,7 +16,9 @@ class Chemostat(Controller):
         window: int = Field(7, description="number of OD measurements to collect prior to start")
         min_od: float = Field(0, description="OD at which to start chemostat dilutions")
         start_delay: int = Field(0, description="Time (in hours) after which to start dilutions")
-        flow_rate: float = Field(0, description="Flow rate for dilutions")
+        dilution_rate: float = Field(0, description="In vial_volume per hour")
+        bolus_volume: float = Field(1, description="Volume of bolus in mL")
+        vial_volume: float = Field(1, description="Volume of vial in mL")
         stir_rate: float = Field(8, description="Stir rate")
 
     def __init__(
@@ -78,7 +80,14 @@ class Chemostat(Controller):
                 continue
 
             # Inputs assume the relevant device has its calibration and takes
-            # the target real value. These may be missing spec, for example does
-            # pump need bolus value also?
-            self.pump.set(self.pump.Input(vial=vial, flow_rate=self.flow_rate))
+            # the target real value.
+            self.pump.set(
+                self.pump.Input(
+                    vial=vial,
+                    influx_volume=self.bolus_volume,
+                    influx_rate=self.dilution_rate * self.vial_volume / self.bolus_volume,  # rate relative to vial vol
+                    efflux_volume=self.bolus_volume,
+                    efflux_rate=self.dilution_rate * self.vial_volume / self.bolus_volume,
+                )
+            )
             self.stirrer.set(self.stirrer.Input(vial=vial, stir_rate=self.stir_rate))

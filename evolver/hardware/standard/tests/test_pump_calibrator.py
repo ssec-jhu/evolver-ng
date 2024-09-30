@@ -12,7 +12,7 @@ def temp_cal_dir(tmp_path):
 @pytest.fixture
 def cal_data():
     return GenericPumpCalibrator.CalibrationData(
-        time_to_pump=10.0, measured={0: ([1, 2, 3], [1, 2, 3]), 1: ([4, 5, 6], [7, 8, 9])}
+        measured={0: (10, 1), 1: (10, 5)},
     )
 
 
@@ -20,9 +20,8 @@ def test_pump_calibrator(cal_data):
     calibrator = GenericPumpCalibrator()
     # fake a set of measurements
     calibrator.load_calibration(cal_data)
-    assert calibrator.input_transformer[0].convert_from(2) == pytest.approx(2)
-    assert calibrator.input_transformer[1].convert_from(8) == pytest.approx(5)
-    assert calibrator.time_to_pump == cal_data.time_to_pump
+    assert calibrator.input_transformer[0].convert_from(1) == pytest.approx(10)
+    assert calibrator.input_transformer[1].convert_from(1) == pytest.approx(2)
 
 
 def test_pump_calibrator_read_from_file(cal_data):

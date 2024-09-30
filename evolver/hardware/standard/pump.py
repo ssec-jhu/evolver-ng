@@ -1,14 +1,23 @@
 from copy import copy
-from typing import Any
 
 from pydantic import Field
 
 from evolver.base import BaseConfig, ConfigDescriptor
 from evolver.calibration.interface import Calibrator, IndependentVialBasedCalibrator, Transformer
-from evolver.calibration.standard.polyfit import LinearTransformer
 from evolver.hardware.interface import EffectorDriver
 from evolver.hardware.standard.base import SerialDeviceConfigBase
 from evolver.serial import SerialData
+
+
+class RateTransformer(Transformer):
+    class Config(Transformer.Config):
+        rate: float
+
+    def convert_to(self, time):
+        return self.rate * time
+
+    def convert_from(self, volume):
+        return volume / self.rate
 
 
 class GenericPumpCalibrator(IndependentVialBasedCalibrator):
@@ -19,13 +28,11 @@ class GenericPumpCalibrator(IndependentVialBasedCalibrator):
         use_cached_fit: bool = True
 
     class CalibrationData(Transformer.Config):
-        time_to_pump: float
-        measured: dict[int, tuple[list[float], list[float]]] = {}
+        measured: dict[int, tuple[float, float]] = {}  # (pump time, pumped volume)
         fit: dict[int, ConfigDescriptor] = {}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.time_to_pump = self.time_to_pump_fast
         self.input_transformer = self.input_transformer or {}
         if self.calibration_file is not None:
             self.load_calibration()
@@ -38,13 +45,12 @@ class GenericPumpCalibrator(IndependentVialBasedCalibrator):
         else:
             raise ValueError("no calibration file or data provided")
 
-        self.time_to_pump = self.cal_data.time_to_pump
         if self.use_cached_fit and self.cal_data.fit:
             for vial, fit in self.cal_data.fit.items():
                 self.input_transformer[vial] = fit.create()
         else:
-            for vial, (raw, measured) in self.cal_data.measured.items():
-                self.input_transformer[vial] = LinearTransformer.create(LinearTransformer.fit(raw, measured))
+            for vial, (time, volume) in self.cal_data.measured.items():
+                self.input_transformer[vial] = RateTransformer(rate=volume / time)
 
     def run_calibration_procedure(self, *args, **kwargs):
         pass
@@ -69,7 +75,8 @@ class GenericPump(EffectorDriver):
 
     class Input(BaseConfig):  # This intentionally doesn't inherit from EffectorDriver.Input.
         pump_id: int
-        flow_rate: float
+        volume: float = Field(description="Volume to pump in mL per event")
+        rate: float = Field(0, description="Rate of pumping in volumes per hour")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -93,17 +100,15 @@ class GenericPump(EffectorDriver):
             if pump in self.ipp_pumps:
                 # TODO: calibation transform here. The IPP pumps should return array of
                 # hz values per solenoid number - containing 3 of them.
-                hz_a = [input.flow_rate] * 3
+                hz_a = [float(input.volume)] * 3
                 for solenoid, hz in enumerate(hz_a):
                     # solenoid is 1-indexed on hardware
                     cmd[pump * 3 + solenoid] = f"{hz}|{pump}|{solenoid+1}"
             elif any(pump - i < 3 for i in self.ipp_pumps):
                 raise ValueError(f"pump slot {pump} reserved for IPP pump, cannot address as standard")
             else:
-                # The calibration is done at a particular speed, represented by
-                # time_to_pump and should only be valid for that speed.
-                time_to_pump = self.calibrator.time_to_pump
-                pump_interval = int(self._transform("input_transformer", "convert_from", input.flow_rate, pump))
+                time_to_pump = self._transform("input_transformer", "convert_from", input.volume, pump)
+                pump_interval = int(3600 / input.rate) if input.rate else 0
                 cmd[pump] = f"{time_to_pump}|{pump_interval}".encode()
         with self.serial as comm:
             comm.communicate(SerialData(addr=self.addr, data=cmd))
@@ -142,18 +147,10 @@ class VialIEPump(EffectorDriver):
             self.efflux_map = self.efflux_map or {i: i + self.slots for i in range(0, self.slots * 3)}
 
     class Input(EffectorDriver.Input):
-        flow_rate: float = Field(None, description="influx/efflux flow rate in ml/s")
-        flow_rate_influx: float = Field(None, description="influx flow rate in ml/s")
-        flow_rate_efflux: float = Field(None, description="efflux flow rate in ml/s")
-
-        def model_post_init(self, __context: Any) -> None:
-            super().model_post_init(__context)
-            if self.flow_rate is not None:
-                if self.flow_rate_influx is not None or self.flow_rate_efflux is not None:
-                    raise ValueError("cannot specify both flow_rate and flow_rate_influx/efflux")
-                self.flow_rate_influx = self.flow_rate_efflux = self.flow_rate
-            elif self.flow_rate_influx is None or self.flow_rate_efflux is None:
-                raise ValueError("must specify either flow_rate or both flow_rate_influx/efflux")
+        efflux_volume: float = Field(description="Volume to pump out in mL per event")
+        influx_volume: float = Field(description="Volume to pump in in mL per event")
+        efflux_rate: float = Field(0, description="Rate of efflux in volumes per hour")
+        influx_rate: float = Field(0, description="Rate of influx in volumes per hour")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -169,7 +166,11 @@ class VialIEPump(EffectorDriver):
     def commit(self):
         for p in self.proposal.values():
             if p.vial in self.vials:
-                self._generic_pump.set(GenericPump.Input(pump_id=self.influx_map[p.vial], flow_rate=p.flow_rate_influx))
-                self._generic_pump.set(GenericPump.Input(pump_id=self.efflux_map[p.vial], flow_rate=p.flow_rate_efflux))
+                self._generic_pump.set(
+                    GenericPump.Input(pump_id=self.influx_map[p.vial], volume=p.influx_volume, rate=p.influx_rate)
+                )
+                self._generic_pump.set(
+                    GenericPump.Input(pump_id=self.efflux_map[p.vial], volume=p.efflux_volume, rate=p.efflux_rate)
+                )
         self._generic_pump.commit()
         self.committed = copy(self.proposal)
