@@ -125,6 +125,7 @@ class Calibrator(BaseInterface):
     class Config(Transformer.Config):
         input_transformer: ConfigDescriptor | Transformer | None = None
         output_transformer: ConfigDescriptor | Transformer | None = None
+        calibration_file: str | None = None
 
     class CalibrationData(Transformer.Config): ...
 
@@ -143,10 +144,11 @@ class Calibrator(BaseInterface):
                 elif self.output_transformer:
                     self.ok = self.output_transformer.ok
 
-    def __init__(self, *args, evolver=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.evolver = evolver
+    def __init__(self, *args, calibration_file=None, **kwargs):
+        super().__init__(*args, calibration_file=calibration_file, **kwargs)
         self.calibration_procedure = None
+        if self.calibration_file:
+            self.load_calibration_file(self.calibration_file)
 
     @property
     def status(self) -> Status:
@@ -154,6 +156,22 @@ class Calibrator(BaseInterface):
             input_transformer=self.input_transformer.status if self.input_transformer else None,
             output_transformer=self.output_transformer.status if self.output_transformer else None,
         )
+
+    def load_calibration_file(self, calibration_file: str | None = None):
+        if not Path(calibration_file).is_absolute():
+            calibration_file = self.dir / calibration_file
+        if calibration_file is not None:
+            self.load_calibration(self.CalibrationData.load(calibration_file))
+        else:
+            raise ValueError("no calibration file provided")
+
+    def load_calibration(self, calibration_data: CalibrationData):
+        self.calibration_data = calibration_data
+        self.init_transformers(calibration_data)
+
+    def init_transformers(self, calibration_data: CalibrationData):
+        """Initialize transformers from calibration data."""
+        ...
 
     @abstractmethod
     def initialize_calibration_procedure(self, *args, **kwargs):

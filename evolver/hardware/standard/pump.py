@@ -13,10 +13,10 @@ class RateTransformer(Transformer):
     class Config(Transformer.Config):
         rate: float
 
-    def convert_to(self, time):
+    def convert_to(self, time):  # convert to volume from time
         return self.rate * time
 
-    def convert_from(self, volume):
+    def convert_from(self, volume):  # convert to time from volume
         return volume / self.rate
 
 
@@ -24,33 +24,14 @@ class GenericPumpCalibrator(IndependentVialBasedCalibrator):
     class Config(IndependentVialBasedCalibrator.Config):
         time_to_pump_fast: float = 10.0
         time_to_pump_slow: float = 100.0
-        calibration_file: str = None
-        use_cached_fit: bool = True
 
     class CalibrationData(Transformer.Config):
         measured: dict[int, tuple[float, float]] = {}  # (pump time, pumped volume)
-        fit: dict[int, ConfigDescriptor] = {}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.input_transformer = self.input_transformer or {}
-        if self.calibration_file is not None:
-            self.load_calibration()
-
-    def load_calibration(self, calibration_data: CalibrationData | None = None):
-        if calibration_data is not None:
-            self.cal_data = calibration_data
-        elif self.calibration_file is not None:
-            self.cal_data = self.CalibrationData.load(self.dir / self.calibration_file)
-        else:
-            raise ValueError("no calibration file or data provided")
-
-        if self.use_cached_fit and self.cal_data.fit:
-            for vial, fit in self.cal_data.fit.items():
-                self.input_transformer[vial] = fit.create()
-        else:
-            for vial, (time, volume) in self.cal_data.measured.items():
-                self.input_transformer[vial] = RateTransformer(rate=volume / time)
+    def init_transformers(self, calibration_data: Calibrator.CalibrationData):
+        self.input_transformer = {}
+        for vial, (time, volume) in calibration_data.measured.items():
+            self.input_transformer[vial] = RateTransformer(rate=volume / time)
 
     def run_calibration_procedure(self, *args, **kwargs):
         pass
@@ -71,7 +52,7 @@ class GenericPump(EffectorDriver):
 
     class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         ipp_pumps: bool | list[int] = Field(False, description="False (no IPP), True (all IPP), or list of IPP ids")
-        calibrator: ConfigDescriptor | Calibrator = GenericPumpCalibrator()
+        calibrator: ConfigDescriptor | Calibrator = ConfigDescriptor(classinfo=GenericPumpCalibrator)
 
     class Input(BaseConfig):  # This intentionally doesn't inherit from EffectorDriver.Input.
         pump_id: int
@@ -139,7 +120,7 @@ class VialIEPump(EffectorDriver):
     class Config(GenericPump.Config):
         influx_map: dict[int, int] | None = Field(None, description="map of vial to influx pump ID")
         efflux_map: dict[int, int] | None = Field(None, description="map of vial to efflux pump ID")
-        calibrator: ConfigDescriptor | Calibrator = VialIEPumpCalibrator()
+        calibrator: ConfigDescriptor | Calibrator = ConfigDescriptor(classinfo=VialIEPumpCalibrator)
 
         def model_post_init(self, *args, **kwargs) -> None:
             super().model_post_init(*args, **kwargs)
