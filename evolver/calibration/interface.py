@@ -115,6 +115,10 @@ class Calibrator(BaseInterface):
     A modular layer for encapsulating the calibration procedure and data transformations.
     """
 
+    # Calibration state, this is where the calibration data is stored - TODO refactor to use CalibrationData instead.
+    class state(_BaseConfig):
+        status: str | None = "not calibrated"
+
     class Config(Transformer.Config):
         input_transformer: ConfigDescriptor | Transformer | None = None
         output_transformer: ConfigDescriptor | Transformer | None = None

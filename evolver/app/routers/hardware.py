@@ -3,6 +3,8 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Body, HTTPException, Path, Request
 from pydantic import BaseModel
 
+from evolver.app.exceptions import HardwareNotFoundError, CalibratorNotFoundError
+
 router = APIRouter(prefix="/hardware", tags=["hardware"], responses={404: {"description": "Not found"}})
 
 
@@ -17,14 +19,8 @@ class StartCalibrationProcedureRequest(BaseModel):
 
 # Utility function to fetch the evolver and hardware instance
 def get_hardware_instance(request: Request, hardware_name: str):
-    evolver = request.app.state.evolver
-    if not evolver:
-        raise HTTPException(status_code=500, detail="Evolver not initialized")
-
-    hardware_instance = evolver.get_hardware(hardware_name)
-    if not hardware_instance:
-        raise HTTPException(status_code=404, detail=f"Hardware '{hardware_name}' not found")
-
+    if not (hardware_instance := request.app.state.evolver.hardware.get(hardware_name)):
+        raise HardwareNotFoundError
     return hardware_instance
 
 
@@ -90,11 +86,8 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
     if not action_to_dispatch:
         raise HTTPException(status_code=404, detail=f"Action '{action['action_name']}' not found")
 
-    try:
-        new_state = calibration_procedure.dispatch(action_to_dispatch, action["payload"])
-        return {"state": new_state}
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    new_state = calibration_procedure.dispatch(action_to_dispatch, action["payload"])
+    return {"state": new_state}
 
 
 # Get the current state of the calibrator for a hardware
@@ -103,6 +96,6 @@ def get_calibrator_state(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
-        raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
+        raise CalibratorNotFoundError
 
     return calibrator.state
