@@ -1,7 +1,7 @@
 import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from pydantic import Field, PastDatetime
 
@@ -14,7 +14,19 @@ from evolver.base import (
     TimeStamp,
     _BaseConfig,
 )
+from evolver.calibration.procedure import (
+    CalibrationProcedure,
+)
+from evolver.calibration.actions import (
+    DisplayInstructionAction,
+    VialTempCalculateFitAction,
+    VialTempRawVoltageAction,
+    VialTempReferenceValueAction,
+)
 from evolver.settings import settings
+
+if TYPE_CHECKING:
+    from evolver.hardware.interface import HardwareDriver
 
 
 class Status(TimeStamp):
@@ -106,6 +118,10 @@ class Calibrator(BaseInterface):
     A modular layer for encapsulating the calibration procedure and data transformations.
     """
 
+    # Calibration state, this is where the calibration data is stored - TODO refactor to use CalibrationData instead.
+    class state(_BaseConfig):
+        status: str | None = "not calibrated"
+
     class Config(Transformer.Config):
         input_transformer: ConfigDescriptor | Transformer | None = None
         output_transformer: ConfigDescriptor | Transformer | None = None
@@ -125,6 +141,11 @@ class Calibrator(BaseInterface):
                 elif self.output_transformer:
                     self.ok = self.output_transformer.ok
 
+    def __init__(self, *args, evolver=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.evolver = evolver
+        self.calibration_procedure = None
+
     @property
     def status(self) -> Status:
         return self.Status(
@@ -133,12 +154,17 @@ class Calibrator(BaseInterface):
         )
 
     @abstractmethod
-    def run_calibration_procedure(self, *args, **kwargs):
-        """This executes the calibration procedure."""
-        # TODO: This needs more work, however, since it isn't used in the base SDK layer this can be punted. This is
-        #  intended to be called from the application layer to run interactive calibration procedures. See #45.
-        # TODO: Consider transactional state if this procedure is interrupted mid way. E.g., for ``is_calibrated``.
+    def initialize_calibration_procedure(self, *args, **kwargs):
+        """This initializes the calibration procedure. Subclasses should implement this method to initialize the calibration"""
         ...
+
+    def dispatch(self, action):
+        # Delegate to the calibration procedure
+        if self.calibration_procedure is None:
+            raise ValueError("Calibration procedure is not initialized.")
+        # TODO: this is probably the best place for bumpoing calibration_procedure state up into CalibrationData state. (see Arik for details)
+        self.state = self.calibration_procedure.dispatch(action)
+        return self.state
 
 
 class IndependentVialBasedCalibrator(Calibrator, ABC):
@@ -150,3 +176,57 @@ class IndependentVialBasedCalibrator(Calibrator, ABC):
 
         input_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
         output_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
+
+    def initialize_calibration_procedure(self, *args, **kwargs): ...
+
+
+# Example calibrator implementation to match existing temperature calibration flow.
+class TemperatureCalibrator(Calibrator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.state = {"selected_vials": []}
+
+    def initialize_calibration_procedure(
+        self,
+        selected_hardware: "HardwareDriver",
+        selected_vials: list[int],
+        evolver=None,
+        *args,
+        **kwargs,
+    ):
+        # TODO: integrate self.state with self.CalibrationData, see Arik & Iain for context.
+        self.state["selected_vials"] = selected_vials
+
+        calibration_procedure = CalibrationProcedure("Temperature Calibration")
+        calibration_procedure.add_action(
+            DisplayInstructionAction(description="Fill each vial with 15ml water", name="Fill_Vials_With_Water")
+        )
+        for vial in self.state["selected_vials"]:
+            calibration_procedure.add_action(
+                VialTempReferenceValueAction(
+                    hardware=selected_hardware,
+                    vial_idx=vial,
+                    description=f"Use a thermometer to measure the real temperature in the vial {vial}",
+                    name=f"Vial_{vial}_Temp_Reference_Value_Action",
+                )
+            )
+            calibration_procedure.add_action(
+                VialTempRawVoltageAction(
+                    hardware=selected_hardware,
+                    vial_idx=vial,
+                    description=f"The hardware will now read the raw voltage from the temperature sensor, vial {vial}",
+                    name=f"Vial_{vial}_Temp_Raw_Voltage_Action",
+                )
+            )
+
+        # Add a final step to calculate the fit.
+        for vial in self.state["selected_vials"]:
+            calibration_procedure.add_action(
+                VialTempCalculateFitAction(
+                    hardware=selected_hardware,
+                    vial_idx=vial,
+                    description="Use the real and raw values that have been collected to calculate the fit for the temperature sensor",
+                    name=f"Vial_{vial}_Temp_Calculate_Fit_Action",
+                )
+            )
+        self.calibration_procedure = calibration_procedure
