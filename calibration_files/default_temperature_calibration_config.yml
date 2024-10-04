@@ -4,112 +4,112 @@ config:
     '0':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 82.81905722355664
         - -0.028115295477514426
         created: '2019-02-01T00:00:00'
     '1':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 85.124125786813
         - -0.02928665515959123
         created: '2019-02-01T00:00:00'
     '10':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 83.1242161406514
         - -0.0285208197069001
         created: '2019-02-01T00:00:00'
     '11':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 84.0801874593112
         - -0.0288807561658323
         created: '2019-02-01T00:00:00'
     '12':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 84.43090022635461
         - -0.0288818454124514
         created: '2019-02-01T00:00:00'
     '13':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 81.78219292896019
         - -0.027770396100254592
         created: '2019-02-01T00:00:00'
     '14':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 84.88996813953604
         - -0.029212064588407444
         created: '2019-02-01T00:00:00'
     '15':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 84.92407412643684
         - -0.0291848685550686
         created: '2019-02-01T00:00:00'
     '2':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 84.2472187106695
         - -0.028920934578440128
         created: '2019-02-01T00:00:00'
     '3':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 85.18980458798858
         - -0.029227840711423782
         created: '2019-02-01T00:00:00'
     '4':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 84.22198012669016
         - -0.02875141292593247
         created: '2019-02-01T00:00:00'
     '5':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 85.49655675887921
         - -0.02953115180372555
         created: '2019-02-01T00:00:00'
     '6':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 83.97313381240193
         - -0.028731553968809102
         created: '2019-02-01T00:00:00'
     '7':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 81.64346835743908
         - -0.027620071465360534
         created: '2019-02-01T00:00:00'
     '8':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 83.82843934811194
         - -0.028809619926954234
         created: '2019-02-01T00:00:00'
     '9':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 86.43200167220084
         - -0.03001347682908921
         created: '2019-02-01T00:00:00'
@@ -117,112 +117,112 @@ config:
     '0':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 82.81905722355664
         - -0.028115295477514426
         created: '2019-02-01T00:00:00'
     '1':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 85.124125786813
         - -0.02928665515959123
         created: '2019-02-01T00:00:00'
     '10':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 83.1242161406514
         - -0.0285208197069001
         created: '2019-02-01T00:00:00'
     '11':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 84.0801874593112
         - -0.0288807561658323
         created: '2019-02-01T00:00:00'
     '12':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 84.43090022635461
         - -0.0288818454124514
         created: '2019-02-01T00:00:00'
     '13':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 81.78219292896019
         - -0.027770396100254592
         created: '2019-02-01T00:00:00'
     '14':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 84.88996813953604
         - -0.029212064588407444
         created: '2019-02-01T00:00:00'
     '15':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 84.92407412643684
         - -0.0291848685550686
         created: '2019-02-01T00:00:00'
     '2':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 84.2472187106695
         - -0.028920934578440128
         created: '2019-02-01T00:00:00'
     '3':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 85.18980458798858
         - -0.029227840711423782
         created: '2019-02-01T00:00:00'
     '4':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 84.22198012669016
         - -0.02875141292593247
         created: '2019-02-01T00:00:00'
     '5':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 85.49655675887921
         - -0.02953115180372555
         created: '2019-02-01T00:00:00'
     '6':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 83.97313381240193
         - -0.028731553968809102
         created: '2019-02-01T00:00:00'
     '7':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 81.64346835743908
         - -0.027620071465360534
         created: '2019-02-01T00:00:00'
     '8':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 83.82843934811194
         - -0.028809619926954234
         created: '2019-02-01T00:00:00'
     '9':
       classinfo: evolver.calibration.standard.polyfit.LinearTransformer
       config:
-        coefficients:
+        parameters:
         - 86.43200167220084
         - -0.03001347682908921
         created: '2019-02-01T00:00:00'

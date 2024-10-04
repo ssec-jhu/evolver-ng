@@ -14,6 +14,9 @@ from evolver.history.interface import HistoryResult
 from evolver.settings import app_settings
 from evolver.types import ImportString
 
+# Import routers
+from .routers import hardware
+
 # Setup logging.
 evolver.util.setup_logging()
 
@@ -37,6 +40,9 @@ app.state.evolver = None
 
 @require_all_fields
 class EvolverConfigWithoutDefaults(Evolver.Config): ...
+
+
+app.include_router(hardware.router)
 
 
 @app.get("/", operation_id="describe")

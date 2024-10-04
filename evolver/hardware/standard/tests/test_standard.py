@@ -2,7 +2,7 @@ import pytest
 
 from evolver.calibration.interface import Calibrator, Transformer
 from evolver.hardware.standard.led import LED
-from evolver.hardware.standard.od_sensor import ODSensor
+from evolver.hardware.standard.od_sensor import OD90, ODSensor
 from evolver.hardware.standard.pump import VialIEPump
 from evolver.hardware.standard.stir import Stir
 from evolver.hardware.standard.temperature import Temperature
@@ -14,21 +14,27 @@ from evolver.settings import settings
     "response_map",
     [
         {
-            b"od_90r,500,_!": b"od_90a,123,456,end",
-            b"od_90r,100,_!": b"od_90a,101,102,end",
+            b"od_90r,500,_!": b"od_90a,54321,45678,end",
+            b"od_90r,100,_!": b"od_90a,41234,42345,end",
         }
     ],
 )
 @pytest.mark.parametrize(
     "config_params, expected",
     [
-        ({"addr": "od_90"}, {0: ODSensor.Output(vial=0, raw=123), 1: ODSensor.Output(vial=1, raw=456)}),
-        ({"addr": "od_90", "vials": [0]}, {0: ODSensor.Output(vial=0, raw=123)}),
-        ({"addr": "od_90", "vials": [1], "integrations": 100}, {1: ODSensor.Output(vial=1, raw=102)}),
+        (
+            {"addr": "od_90"},
+            {
+                0: ODSensor.Output(vial=0, raw=54321, density=1.0189),
+                1: ODSensor.Output(vial=1, raw=45678, density=1.788),
+            },
+        ),
+        ({"addr": "od_90", "vials": [0]}, {0: ODSensor.Output(vial=0, raw=54321, density=1.0189)}),
+        ({"addr": "od_90", "vials": [1], "integrations": 100}, {1: ODSensor.Output(vial=1, raw=42345, density=2.115)}),
     ],
 )
 class TestOD(SerialVialSensorHardwareTestSuite):
-    driver = ODSensor
+    driver = OD90
 
 
 @pytest.mark.parametrize("response_map", [{b"tempr,4095,4095,_!": b"tempa,2020,2500,end"}])
@@ -127,35 +133,25 @@ class TestStir(SerialVialEffectorHardwareTestSuite):
     [
         (
             {"addr": "pump", "slots": 2},
-            [[VialIEPump.Input(vial=0, flow_rate_influx=1, flow_rate_efflux=2)]],
-            [b"pumpr,1.0|1,--,2.0|2,--,--,--,_!"],
+            [[VialIEPump.Input(vial=0, influx_volume=1, efflux_volume=2)]],
+            [b"pumpr,1.0|0,--,2.0|0,--,--,--,_!"],
         ),
         (
             {"addr": "pump", "slots": 2},
             [
                 [
-                    VialIEPump.Input(vial=0, flow_rate_influx=1, flow_rate_efflux=1),
-                    VialIEPump.Input(vial=1, flow_rate_influx=8, flow_rate_efflux=9),
+                    VialIEPump.Input(vial=0, influx_volume=1, influx_rate=2, efflux_volume=3, efflux_rate=4),
+                    VialIEPump.Input(vial=1, influx_volume=1, influx_rate=2, efflux_volume=3, efflux_rate=4),
                 ]
             ],
-            [b"pumpr,1.0|1,8.0|8,1.0|1,9.0|9,--,--,_!"],
+            [b"pumpr,1.0|1800,1.0|1800,3.0|900,3.0|900,--,--,_!"],
         ),
         (
             {"addr": "pump", "ipp_pumps": [0, 1], "slots": 2, "influx_map": {0: 0}, "efflux_map": {0: 1}},
-            [[VialIEPump.Input(vial=0, flow_rate_influx=1, flow_rate_efflux=2)]],
+            [[VialIEPump.Input(vial=0, influx_volume=1, efflux_volume=2)]],
             [b"pumpr,1.0|0|1,1.0|0|2,1.0|0|3,2.0|1|1,2.0|1|2,2.0|1|3,_!"],
         ),
     ],
 )
 class TestPump(SerialVialEffectorHardwareTestSuite):
     driver = VialIEPump
-
-
-def test_vialiepump_input_validation():
-    VialIEPump.Input(vial=0, flow_rate_influx=1, flow_rate_efflux=2)
-    with pytest.raises(ValueError, match="cannot specify both flow_rate and flow_rate_influx/efflux"):
-        VialIEPump.Input(vial=0, flow_rate=1, flow_rate_influx=1)
-    with pytest.raises(ValueError, match="must specify either flow_rate or both flow_rate_influx/efflux"):
-        VialIEPump.Input(vial=0, flow_rate_influx=1)
-    input = VialIEPump.Input(vial=0, flow_rate=1)
-    assert input.flow_rate_influx == input.flow_rate_efflux == 1

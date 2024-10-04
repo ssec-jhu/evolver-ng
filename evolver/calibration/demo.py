@@ -16,4 +16,15 @@ class NoOpCalibrator(Calibrator):
         input_transformer: ConfigDescriptor | Transformer | None = Field(default_factory=NoOpTransformer)
         output_transformer: ConfigDescriptor | Transformer | None = Field(default_factory=NoOpTransformer)
 
-    def run_calibration_procedure(self, *args, **kwargs): ...
+    def __init__(self, *args, state=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        # If state is provided, use it, otherwise instantiate the default State
+        self.state = state if state else self.state()
+
+    def run_calibration_procedure(self, *args, **kwargs):
+        # No-op calibration procedure
+        pass
+
+    def initialize_calibration_procedure(self, *args, **kwargs):
+        # No-op calibration procedure
+        pass

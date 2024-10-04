@@ -1,7 +1,12 @@
+import os
+
+import pytest
+
 from evolver import __version__
 
 
 class TestHtmlApp:
+    @pytest.mark.skipif(not os.environ.get("CI"), reason="May not work for local testing.")
     def test_html_network(self, app_client):
         response = app_client.get("/html/network")
         assert response.status_code == 200
