@@ -4,6 +4,7 @@ from fastapi import APIRouter, Body, HTTPException, Path, Request
 from pydantic import BaseModel
 
 from evolver.app.exceptions import HardwareNotFoundError, CalibratorNotFoundError
+from evolver.hardware.interface import HardwareDriver
 
 router = APIRouter(prefix="/hardware", tags=["hardware"], responses={404: {"description": "Not found"}})
 
@@ -18,7 +19,7 @@ class StartCalibrationProcedureRequest(BaseModel):
 
 
 # Utility function to fetch the evolver and hardware instance
-def get_hardware_instance(request: Request, hardware_name: str):
+def get_hardware_instance(request: Request, hardware_name: str) -> HardwareDriver:
     if not (hardware_instance := request.app.state.evolver.hardware.get(hardware_name)):
         raise HardwareNotFoundError
     return hardware_instance
@@ -52,7 +53,12 @@ def start_calibration_procedure(
     if not calibrator:
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
 
-    calibrator.initialize_calibration_procedure(**calibration_request.model_dump())
+    calibrator.initialize_calibration_procedure(
+        selected_hardware=hardware_instance,
+        selected_vials=calibration_request.selected_vials,
+        evolver=request.app.state.evolver,
+    )
+
     return calibrator.state
 
 

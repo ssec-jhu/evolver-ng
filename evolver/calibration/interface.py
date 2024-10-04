@@ -183,14 +183,16 @@ class TemperatureCalibrator(Calibrator):
         super().__init__(*args, **kwargs)
         self.state = {"selected_vials": []}
 
-    def initialize_calibration_procedure(self, selected_vials: list[int], *args, **kwargs):
-        # TODO: integrate self.state with self.CalibrationData, see Arik for context.
+    def initialize_calibration_procedure(
+        self,
+        selected_hardware: "HardwareDriver",
+        selected_vials: list[int],
+        evolver=None,
+        *args,
+        **kwargs,
+    ):
+        # TODO: integrate self.state with self.CalibrationData, see Arik & Iain for context.
         self.state["selected_vials"] = selected_vials
-
-        if not self.evolver:
-            raise ValueError("Evolver must be initialized")
-        if not self.evolver.hardware:
-            raise ValueError("Evolver.hardware must be initialized")
 
         calibration_procedure = CalibrationProcedure("Temperature Calibration")
         calibration_procedure.add_action(
@@ -199,9 +201,7 @@ class TemperatureCalibrator(Calibrator):
         for vial in self.state["selected_vials"]:
             calibration_procedure.add_action(
                 VialTempReferenceValueAction(
-                    # TODO: confirm this is the best way to get the hardware this calibrator is associated with.
-                    # Risk is you cross wires and get the wrong hardware.
-                    hardware=self.evolver.get_hardware(name="temp"),
+                    hardware=selected_hardware,
                     vial_idx=vial,
                     description=f"Use a thermometer to measure the real temperature in the vial {vial}",
                     name=f"Vial_{vial}_Temp_Reference_Value_Action",
@@ -209,7 +209,7 @@ class TemperatureCalibrator(Calibrator):
             )
             calibration_procedure.add_action(
                 VialTempRawVoltageAction(
-                    hardware=self.evolver.get_hardware(name="temp"),
+                    hardware=selected_hardware,
                     vial_idx=vial,
                     description=f"The hardware will now read the raw voltage from the temperature sensor, vial {vial}",
                     name=f"Vial_{vial}_Temp_Raw_Voltage_Action",
@@ -220,7 +220,7 @@ class TemperatureCalibrator(Calibrator):
         for vial in self.state["selected_vials"]:
             calibration_procedure.add_action(
                 VialTempCalculateFitAction(
-                    hardware=self.evolver.get_hardware(name="temp"),
+                    hardware=selected_hardware,
                     vial_idx=vial,
                     description="Use the real and raw values that have been collected to calculate the fit for the temperature sensor",
                     name=f"Vial_{vial}_Temp_Calculate_Fit_Action",

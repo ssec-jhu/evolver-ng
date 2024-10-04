@@ -65,7 +65,7 @@ class TestCalibration:
 
         # Prepare the request payload to initialize the calibration procedure
         request_payload = {
-            "selected_vials": [0, 1, 2]  # Simulate the user selecting vials for calibration
+            "selected_vials": [0, 1, 2],  # Simulate the user selecting vials for calibration
         }
 
         # Test the "temp" hardware's calibrator state
