@@ -1,7 +1,7 @@
 import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from pydantic import Field, PastDatetime
 
@@ -24,6 +24,9 @@ from evolver.calibration.actions import (
     VialTempReferenceValueAction,
 )
 from evolver.settings import settings
+
+if TYPE_CHECKING:
+    from evolver.hardware.interface import HardwareDriver
 
 
 class Status(TimeStamp):
