@@ -33,8 +33,8 @@ def mock_hardware():
 
 @pytest.mark.parametrize("window", [4, 7])
 @pytest.mark.parametrize("min_od", [0, 1])
-@pytest.mark.parametrize("stir_rate,flow_rate", [(1, 2), (9.9, 10.1)])
-def test_chemostat_standard_operation(mock_hardware, window, min_od, stir_rate, flow_rate):
+@pytest.mark.parametrize("stir_rate", [8, 9])
+def test_chemostat_standard_operation(mock_hardware, window, min_od, stir_rate):
     config = Chemostat.Config(
         od_sensor="od",
         pump="pump",
@@ -42,7 +42,9 @@ def test_chemostat_standard_operation(mock_hardware, window, min_od, stir_rate, 
         window=window,
         min_od=min_od,
         stir_rate=stir_rate,
-        flow_rate=flow_rate,
+        vial_volume=25,
+        bolus_volume=0.5,
+        dilution_rate=0.5,
         vials=[0, 1],
     )
     c = Chemostat(evolver=mock_hardware, **config.model_dump())
@@ -60,11 +62,16 @@ def test_chemostat_standard_operation(mock_hardware, window, min_od, stir_rate, 
     # After window is complete, we expect to have started dilutions, where we
     # expect commands to have been sent to pump and stir
     if min_od == 0:
-        assert pump.inputs == [VialIEPump.Input(vial=v, flow_rate=flow_rate) for v in [0, 1]]
+        assert pump.inputs == [
+            VialIEPump.Input(vial=v, influx_volume=0.5, influx_rate=25.0, efflux_volume=0.5, efflux_rate=25.0)
+            for v in [0, 1]
+        ]
         assert stir.inputs == [Stir.Input(vial=v, stir_rate=stir_rate) for v in [0, 1]]
     else:
         # only vial 1 meets the mean OD requirements
-        assert pump.inputs == [VialIEPump.Input(vial=1, flow_rate=flow_rate)]
+        assert pump.inputs == [
+            VialIEPump.Input(vial=1, influx_volume=0.5, influx_rate=25.0, efflux_volume=0.5, efflux_rate=25.0)
+        ]
         assert stir.inputs == [Stir.Input(vial=1, stir_rate=stir_rate)]
 
 
