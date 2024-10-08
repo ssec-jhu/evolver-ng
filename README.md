@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/ssec-jhu/evolver-ng/graph/badge.svg?token=mkRet8Fep0)](https://codecov.io/gh/ssec-jhu/evolver-ng)
 [![Security](https://github.com/ssec-jhu/evolver-ng/actions/workflows/security.yml/badge.svg)](https://github.com/ssec-jhu/evolver-ng/actions/workflows/security.yml)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.12532759.svg)](https://doi.org/10.5281/zenodo.12532759)
-<!---[![Documentation Status](https://readthedocs.org/projects/ssec-jhu-evolver-ng/badge/?version=latest)](https://ssec-jhu-evolver-ng.readthedocs.io/en/latest/?badge=latest) --->
+[![Documentation Status](https://readthedocs.org/projects/evolver-ng/badge/?version=latest)](https://evolver-ng.readthedocs.io/en/latest)
 
 ![SSEC-JHU Logo](docs/_static/SSEC_logo_horiz_blue_1152x263.png)
 
@@ -98,7 +98,7 @@ Evolver.Config().save(settings.app_settings.CONFIG_FILE)
 
 ```
 
-- Or, A valid config can be copied from another evolver instance. 
+- Or, A valid config can be copied from another evolver instance.
 
 
 ### Web api
