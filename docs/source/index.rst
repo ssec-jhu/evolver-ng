@@ -15,5 +15,7 @@ Contents
 
 .. toctree::
 
+   concepts
    usage
+   development/index
    api
