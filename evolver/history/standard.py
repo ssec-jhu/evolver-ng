@@ -82,6 +82,8 @@ class HistoryServer(History):
                 read_json('{self.history_dir}/*/history.json',
                     format='newline_delimited',
                     ignore_errors=true,
+                    columns={{timestamp: 'double', name: 'varchar', data: 'varchar'}},
+                    auto_detect=false,
                     hive_partitioning=true)
                 """  # nosec: B608
             )
@@ -108,7 +110,7 @@ class HistoryServer(History):
             try:
                 # json only allows string keys, might want to revisit the assumptions
                 # here, and/or have a more concrete vial-data container
-                row_data = {int(k): v for k, v in row_data.items()}
+                row_data = {int(k): v for k, v in json.loads(row_data).items()}
             except Exception:
                 pass
             try:
