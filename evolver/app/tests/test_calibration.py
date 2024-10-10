@@ -1,13 +1,11 @@
-from evolver.calibration.interface import TemperatureCalibrator
-from evolver.tests.conftest import tmp_calibration_dir  # noqa: F401
+from fastapi.testclient import TestClient
 
 from evolver.app.main import app
-from evolver.device import Evolver
 from evolver.calibration.demo import NoOpCalibrator
+from evolver.calibration.interface import TemperatureCalibrator
+from evolver.device import Evolver
 from evolver.hardware.demo import NoOpSensorDriver
-
-
-from fastapi.testclient import TestClient
+from evolver.tests.conftest import tmp_calibration_dir  # noqa: F401
 
 
 class TestCalibration:
