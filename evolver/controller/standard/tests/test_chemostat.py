@@ -82,7 +82,8 @@ def test_evolver_based_setup():  # test to ensure evolver pluggability via confi
                 "classinfo": "evolver.controller.standard.Chemostat",
                 "config": {"od_sensor": "od", "pump": "pump", "stirrer": "stirrer", "vials": [0, 1]},
             }
-        ]
+        ],
+        "raise_loop_exceptions": True,
     }
     evolver = Evolver.create(config)
     with pytest.raises(AttributeError):

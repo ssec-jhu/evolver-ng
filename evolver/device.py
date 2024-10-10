@@ -25,6 +25,7 @@ class Evolver(BaseInterface):
         history: ConfigDescriptor | History = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
         enable_control: bool = True
         interval: int = settings.DEFAULT_LOOP_INTERVAL
+        raise_loop_exceptions: bool = False
 
     def __init__(self, *args, **kwargs):
         self.last_read = defaultdict(lambda: int(-1))
@@ -70,19 +71,27 @@ class Evolver(BaseInterface):
             "controllers": [{"kind": str(type(a)), "config": a.Config.model_json_schema()} for a in self.controllers],
         }
 
+    def _loop_exception_wrapper(self, callable, message="uknown"):
+        try:
+            callable()
+        except Exception as e:
+            if self.raise_loop_exceptions:
+                raise e
+            self.logger.error(f"Error in loop: {message}: {e}")
+
     def read_state(self):
         for name, device in self.sensors.items():
-            device.read()
+            self._loop_exception_wrapper(device.read, f"reading device {name}")
             self.last_read[name] = time.time()
             self.history.put(name, device.get())
 
     def evaluate_controllers(self):
         for controller in self.controllers:
-            controller.run()
+            self._loop_exception_wrapper(controller.run, f"updating controller {controller}")
 
     def commit_proposals(self):
         for device in self.effectors.values():
-            device.commit()
+            self._loop_exception_wrapper(device.commit, f"committing proposals for {device}")
 
     def loop_once(self):
         self.read_state()

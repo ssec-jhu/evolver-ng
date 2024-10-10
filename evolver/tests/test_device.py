@@ -1,4 +1,5 @@
 import json
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -8,7 +9,7 @@ from evolver.connection.interface import Connection
 from evolver.controller.interface import Controller
 from evolver.device import DEFAULT_HISTORY, DEFAULT_SERIAL, Evolver
 from evolver.hardware.demo import NoOpEffectorDriver, NoOpSensorDriver
-from evolver.hardware.interface import HardwareDriver
+from evolver.hardware.interface import EffectorDriver, HardwareDriver, SensorDriver
 from evolver.history.interface import History
 
 
@@ -119,6 +120,22 @@ class TestEvolver:
         demo_evolver.enable_control = enable_control
         demo_evolver.loop_once()
         assert demo_evolver.controllers[0].ncalls == (1 if enable_control else 0)
+
+    @pytest.mark.parametrize("spec", [SensorDriver, EffectorDriver, Controller])
+    def test_loop_exception_option(self, demo_evolver, spec):
+        demo_evolver.raise_loop_exceptions = True
+        raises_mock_component = MagicMock(spec=spec)
+        if spec == Controller:
+            demo_evolver.controllers = [raises_mock_component]
+            raises_mock_component.run = MagicMock(side_effect=Exception("test control"))
+        else:
+            demo_evolver.hardware["testsensor"] = raises_mock_component
+            raises_mock_component.read = MagicMock(side_effect=Exception("test read"))
+            raises_mock_component.commit = MagicMock(side_effect=Exception("test commit"))
+        with pytest.raises(Exception, match="test .*"):
+            demo_evolver.loop_once()
+        demo_evolver.raise_loop_exceptions = False
+        demo_evolver.loop_once()
 
     def test_remove_driver(self, demo_evolver, conf_with_driver):
         assert "testeffector" in demo_evolver.hardware
