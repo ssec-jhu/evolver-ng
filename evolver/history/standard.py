@@ -23,6 +23,7 @@ class HistoryServer(History):
         name: str = "HistoryServer"
         experiment: str | None = None
         partition_seconds: int = 3600
+        buffer_partitions: int = 3
         default_window: int = 3600
         default_n_max: int = 5000
 
@@ -31,8 +32,33 @@ class HistoryServer(History):
         self.history = defaultdict(list)
         self._experiment = self.experiment or getattr(kwargs.get("evolver", None), "experiment", "unspecified")
         self.history_dir = Path(settings.EXPERIMENT_FILE_STORAGE_PATH) / self._experiment / "history"
+        self.json_hist_reader = f"""
+            read_json('{self.history_dir}/*/history.json',
+            format='newline_delimited',
+            ignore_errors=true,
+            columns={{timestamp: 'double', name: 'varchar', data: 'varchar'}},
+            auto_detect=false,
+            hive_partitioning=true)
+            """
         self.current_partition = None
         self.current_file = None
+        self.db = duckdb.connect(":memory:")
+        self.db.execute("CREATE TABLE history (time_part INT, timestamp DOUBLE, name VARCHAR, data VARCHAR)")
+        self._backfill_buffer()
+
+    def _backfill_buffer(self):
+        if self.buffer_partitions <= 0:
+            return
+        start_part = self._get_part(time.time() - self.partition_seconds * self.buffer_partitions)
+        try:
+            to_backfill = self.db.query(  # noqa: F841 - its used in the duckdb query below
+                f"SELECT * FROM {self.json_hist_reader} WHERE time_part>=?",  # nosec: B608
+                params=(start_part,),
+            )
+        except duckdb.IOException:
+            return
+        self.db.execute("""INSERT INTO history (time_part, timestamp, name, data)
+                        SELECT time_part, timestamp, name, data FROM to_backfill""")
 
     def _get_part(self, timestamp):
         if self.partition_seconds <= 0:
@@ -51,6 +77,11 @@ class HistoryServer(History):
             # to add records to existing partitions without cluttering many small files
             # and we only expect a single writer
             self.current_file = open(part_file, "a")
+            # For expiration, special case is when partition seconds is 0, which
+            # means no partitioning - likewise we don't expire anything.
+            if self.buffer_partitions > 0 and self.partition_seconds > 0:
+                expire_beyond = timestamp - self.partition_seconds * self.buffer_partitions
+                self.db.execute("DELETE FROM history WHERE time_part<?", parameters=(expire_beyond,))
 
     def put(self, name: str, data):
         timestamp = time.time()
@@ -63,6 +94,11 @@ class HistoryServer(History):
         record = {"timestamp": timestamp, "name": name, "data": jsonable_encoder(data)}
         json.dump(record, self.current_file)
         self.current_file.flush()
+        if self.buffer_partitions > 0:
+            self.db.execute(
+                "INSERT INTO history (time_part, timestamp, name, data) VALUES (?, ?, ?, ?)",
+                parameters=(self.current_partition, timestamp, name, json.dumps(jsonable_encoder(data))),
+            )
 
     def get(
         self,
@@ -77,16 +113,12 @@ class HistoryServer(History):
             t_start = (t_stop or time.time()) - self.default_window
 
         try:
-            res = duckdb.sql(
-                f"""SELECT * FROM
-                read_json('{self.history_dir}/*/history.json',
-                    format='newline_delimited',
-                    ignore_errors=true,
-                    columns={{timestamp: 'double', name: 'varchar', data: 'varchar'}},
-                    auto_detect=false,
-                    hive_partitioning=true)
-                """  # nosec: B608
-            )
+            buffer_start_part = self._get_part(time.time() - self.partition_seconds * self.buffer_partitions)
+            if t_start < buffer_start_part or self.buffer_partitions <= 0:
+                query = f"SELECT * FROM {self.json_hist_reader}"  # nosec: B608
+            else:
+                query = "SELECT * FROM history"
+            res = self.db.query(query)
         except duckdb.IOException as exc:
             if "No files found" in str(exc):
                 return HistoryResult(data={})
