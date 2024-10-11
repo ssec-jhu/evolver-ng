@@ -6,6 +6,7 @@ from evolver.calibration.actions import (
 )
 from evolver.calibration.interface import Calibrator
 from evolver.calibration.procedure import CalibrationProcedure
+from evolver.hardware.interface import HardwareDriver
 
 
 class TemperatureCalibrator(Calibrator):
@@ -15,7 +16,7 @@ class TemperatureCalibrator(Calibrator):
 
     def initialize_calibration_procedure(
         self,
-        selected_hardware: "HardwareDriver",
+        selected_hardware: HardwareDriver,
         selected_vials: list[int],
         evolver=None,
         *args,
