@@ -15,16 +15,13 @@ class CalibrationAction(ABC):
 
 class DisplayInstructionAction(CalibrationAction):
     class UserInput(pydantic.BaseModel):
-        confirmation: bool = pydantic.Field(True, description="Confirm that the instruction has been completed")
+        pass
 
     def __init__(self, description: str, name: str):
         self.description = description
         self.name = name
 
     def execute(self, state: Dict[str, Any], payload: UserInput = None) -> Dict[str, Any]:
-        if not payload.confirmation:
-            raise ValueError("Confirmation is required to proceed")
-
         return state.copy()
 
 
