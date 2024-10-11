@@ -79,7 +79,7 @@ class Evolver(BaseInterface):
         except Exception as e:
             self.logger.exception(f"Error in loop: {message}:")
             if self.raise_loop_exceptions:
-                raise e
+                raise
             return True
 
     def read_state(self):
