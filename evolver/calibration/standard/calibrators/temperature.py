@@ -1,8 +1,8 @@
 from evolver.calibration.actions import (
     DisplayInstructionAction,
-    VialTempReferenceValueAction,
-    VialTempRawVoltageAction,
     VialTempCalculateFitAction,
+    VialTempRawVoltageAction,
+    VialTempReferenceValueAction,
 )
 from evolver.calibration.interface import Calibrator
 from evolver.calibration.procedure import CalibrationProcedure
