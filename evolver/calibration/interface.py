@@ -1,7 +1,7 @@
 import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import Field, PastDatetime
 
@@ -14,14 +14,14 @@ from evolver.base import (
     TimeStamp,
     _BaseConfig,
 )
-from evolver.calibration.procedure import (
-    CalibrationProcedure,
-)
 from evolver.calibration.actions import (
     DisplayInstructionAction,
     VialTempCalculateFitAction,
     VialTempRawVoltageAction,
     VialTempReferenceValueAction,
+)
+from evolver.calibration.procedure import (
+    CalibrationProcedure,
 )
 from evolver.settings import settings
 

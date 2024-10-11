@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Body, HTTPException, Path, Request
 from pydantic import BaseModel
 
-from evolver.app.exceptions import HardwareNotFoundError, CalibratorNotFoundError
+from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError
 from evolver.hardware.interface import HardwareDriver
 
 router = APIRouter(prefix="/hardware", tags=["hardware"], responses={404: {"description": "Not found"}})

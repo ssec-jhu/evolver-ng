@@ -1,6 +1,6 @@
-from typing import Dict, Any
-from copy import deepcopy
 from abc import ABC, abstractmethod
+from copy import deepcopy
+from typing import Any, Dict
 
 
 class CalibrationAction(ABC):
