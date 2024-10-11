@@ -2,23 +2,37 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Dict
 
+import pydantic
+
 
 class CalibrationAction(ABC):
+    class UserInput(pydantic.BaseModel): ...
+
     @abstractmethod
     def execute(self, state: Dict[str, Any], payload: Dict[str, Any] = None) -> Dict[str, Any]:
         pass
 
 
 class DisplayInstructionAction(CalibrationAction):
+    class UserInput(pydantic.BaseModel):
+        confirmation: bool = pydantic.Field(..., description="Confirm that the instruction has been completed")
+
     def __init__(self, description: str, name: str):
         self.description = description
         self.name = name
 
     def execute(self, state: Dict[str, Any], payload: Dict[str, Any] = None) -> Dict[str, Any]:
+        user_input = self.UserInput(**payload)
+        if not user_input.confirmation:
+            raise ValueError("Confirmation is required to proceed")
+
         return state.copy()
 
 
 class VialTempReferenceValueAction(CalibrationAction):
+    class UserInput(pydantic.BaseModel):
+        temp: float = pydantic.Field(..., title="Temperature", description="Temperature in degrees Celsius")
+
     def __init__(self, hardware, description: str, vial_idx: int, name: str):
         self.hardware = hardware
         self.description = description

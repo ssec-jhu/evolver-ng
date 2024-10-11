@@ -1,11 +1,10 @@
 from fastapi.testclient import TestClient
-
+from evolver.calibration.standard.calibrators.temperature import TemperatureCalibrator
+from evolver.tests.conftest import tmp_calibration_dir  # noqa: F401
 from evolver.app.main import app
 from evolver.calibration.demo import NoOpCalibrator
-from evolver.calibration.interface import TemperatureCalibrator
 from evolver.device import Evolver
 from evolver.hardware.demo import NoOpSensorDriver
-from evolver.tests.conftest import tmp_calibration_dir  # noqa: F401
 
 
 class TestCalibration:
@@ -111,7 +110,7 @@ def test_temperature_calibration_procedure_actions():
     assert response.status_code == 200
 
     # Verify the available actions in the calibration procedure
-    actions_response = client.post("hardware/temp/calibrator/actions")
+    actions_response = client.get("hardware/temp/calibrator/actions")
     assert actions_response.status_code == 200
     expected_actions = [
         {"name": action.name, "description": action.description}
