@@ -8,7 +8,7 @@ from evolver.hardware.interface import EffectorDriver, HardwareDriver, SensorDri
 from evolver.history.interface import History
 from evolver.history.standard import HistoryServer
 from evolver.serial import EvolverSerialUART
-from evolver.settings import app_settings, settings
+from evolver.settings import settings
 
 DEFAULT_SERIAL = EvolverSerialUART
 DEFAULT_HISTORY = HistoryServer
@@ -97,7 +97,7 @@ class Evolver(BaseInterface):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.config_model.save(app_settings.CONFIG_FILE)
+        self.config_model.save(settings.SNAPSHOT)
 
         # TODO: Add code to stop all running hardware, which could implemented by context managing the hardware.
         ...

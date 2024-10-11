@@ -30,6 +30,7 @@ class Settings(BaseSettings):
         ROOT_CALIBRATOR_FILE_STORAGE_PATH / "default_od135_calibration_config.yml"
     )
     AUTO_SAVE_NEW_CALIBRATIONS: bool = True
+    SNAPSHOT: Path = Path("evolver_snapshot.yml")  # in current directory
 
 
 class AppSettings(BaseSettings):
