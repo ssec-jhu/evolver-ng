@@ -76,7 +76,7 @@ class Evolver(BaseInterface):
         try:
             callable()
             return False
-        except Exception as e:
+        except Exception:
             self.logger.exception(f"Error in loop: {message}:")
             if self.raise_loop_exceptions:
                 raise
