@@ -137,6 +137,17 @@ class TestEvolver:
         demo_evolver.raise_loop_exceptions = False
         demo_evolver.loop_once()
 
+    def test_skip_control_on_read_failure(self, demo_evolver):
+        demo_evolver.skip_control_on_read_failure = True
+        demo_evolver.hardware["testsensor"].read = MagicMock(side_effect=Exception("test read"))
+        mock_controller = MagicMock(spec=Controller)
+        demo_evolver.controllers.append(mock_controller)
+        demo_evolver.loop_once()
+        mock_controller.run.assert_not_called()
+        demo_evolver.skip_control_on_read_failure = False
+        demo_evolver.loop_once()
+        mock_controller.run.assert_called_once()
+
     def test_remove_driver(self, demo_evolver, conf_with_driver):
         assert "testeffector" in demo_evolver.hardware
         del conf_with_driver["hardware"]["testeffector"]

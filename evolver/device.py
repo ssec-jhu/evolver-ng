@@ -26,6 +26,7 @@ class Evolver(BaseInterface):
         enable_control: bool = True
         interval: int = settings.DEFAULT_LOOP_INTERVAL
         raise_loop_exceptions: bool = False
+        skip_control_on_read_failure: bool = True
 
     def __init__(self, *args, **kwargs):
         self.last_read = defaultdict(lambda: int(-1))
@@ -71,19 +72,24 @@ class Evolver(BaseInterface):
             "controllers": [{"kind": str(type(a)), "config": a.Config.model_json_schema()} for a in self.controllers],
         }
 
-    def _loop_exception_wrapper(self, callable, message="uknown"):
+    def _loop_exception_wrapper(self, callable, message="unknown") -> bool:
         try:
             callable()
+            return False
         except Exception as e:
+            self.logger.exception(f"Error in loop: {message}: {e}")
             if self.raise_loop_exceptions:
                 raise e
-            self.logger.error(f"Error in loop: {message}: {e}")
+            return True
 
     def read_state(self):
+        read_error = False
         for name, device in self.sensors.items():
-            self._loop_exception_wrapper(device.read, f"reading device {name}")
+            err = self._loop_exception_wrapper(device.read, f"reading device {name}")
+            read_error = read_error or err
             self.last_read[name] = time.time()
             self.history.put(name, device.get())
+        return read_error
 
     def evaluate_controllers(self):
         for controller in self.controllers:
@@ -94,7 +100,10 @@ class Evolver(BaseInterface):
             self._loop_exception_wrapper(device.commit, f"committing proposals for {device}")
 
     def loop_once(self):
-        self.read_state()
+        read_error = self.read_state()
+        if read_error and self.skip_control_on_read_failure:
+            self.logger.info("Skipping control loop due to read error")
+            return
         # for any hardware awaiting calibration, call calibration update method here
         if self.enable_control:
             self.evaluate_controllers()
