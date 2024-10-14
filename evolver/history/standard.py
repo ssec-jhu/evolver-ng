@@ -55,8 +55,10 @@ class HistoryServer(History):
                 f"SELECT * FROM {self.json_hist_reader} WHERE time_part>=?",  # nosec: B608
                 params=(start_part,),
             )
-        except duckdb.IOException:
-            return
+        except duckdb.IOException as exc:
+            if "No files found" in str(exc):
+                return
+            raise
         self.db.execute("""INSERT INTO history (time_part, timestamp, name, data)
                         SELECT time_part, timestamp, name, data FROM to_backfill""")
 
