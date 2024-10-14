@@ -92,3 +92,12 @@ class Evolver(BaseInterface):
             self.evaluate_controllers()
         if self.enable_commit:
             self.commit_proposals()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.config_model.save(settings.SNAPSHOT)
+
+        # TODO: Add code to stop all running hardware, which could implemented by context managing the hardware.
+        ...

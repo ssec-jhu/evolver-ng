@@ -1,9 +1,10 @@
 from typing import Any, Dict, List
 
+import pydantic
 from fastapi import APIRouter, Body, HTTPException, Path, Request
 from pydantic import BaseModel
 
-from evolver.app.exceptions import HardwareNotFoundError, CalibratorNotFoundError
+from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError
 from evolver.hardware.interface import HardwareDriver
 
 router = APIRouter(prefix="/hardware", tags=["hardware"], responses={404: {"description": "Not found"}})
@@ -63,7 +64,7 @@ def start_calibration_procedure(
 
 
 # Get available actions for the calibration procedure
-@router.post("/{hardware_name}/calibrator/actions")
+@router.get("/{hardware_name}/calibrator/actions")
 def get_calibrator_actions(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
@@ -92,7 +93,12 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
     if not action_to_dispatch:
         raise HTTPException(status_code=404, detail=f"Action '{action['action_name']}' not found")
 
-    new_state = calibration_procedure.dispatch(action_to_dispatch, action["payload"])
+    try:
+        payload = action["payload"]
+        new_state = calibration_procedure.dispatch(action_to_dispatch, payload)
+    except pydantic.ValidationError as e:
+        raise HTTPException(status_code=422, detail=f"Invalid payload: {e.errors()}")
+
     return {"state": new_state}
 
 

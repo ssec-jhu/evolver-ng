@@ -28,8 +28,11 @@ async def lifespan(app: FastAPI):
         app.state.evolver = Evolver.create(Evolver.Config.load(app_settings.CONFIG_FILE))
     else:
         app.state.evolver = Evolver.create()
-    asyncio.create_task(evolver_async_loop())
-    yield
+
+    with app.state.evolver:
+        asyncio.create_task(evolver_async_loop())
+        yield
+
     # Shutdown:
     ...
 
