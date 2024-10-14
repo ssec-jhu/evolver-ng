@@ -114,12 +114,13 @@ class HistoryServer(History):
         if t_start is None:
             t_start = (t_stop or time.time()) - self.default_window
 
+        buffer_start_part = self._get_part(time.time() - self.partition_seconds * self.buffer_partitions)
+        if t_start < buffer_start_part or self.buffer_partitions <= 0:
+            query = f"SELECT * FROM {self.json_hist_reader}"  # nosec: B608
+        else:
+            query = "SELECT * FROM history"
+
         try:
-            buffer_start_part = self._get_part(time.time() - self.partition_seconds * self.buffer_partitions)
-            if t_start < buffer_start_part or self.buffer_partitions <= 0:
-                query = f"SELECT * FROM {self.json_hist_reader}"  # nosec: B608
-            else:
-                query = "SELECT * FROM history"
             res = self._db.query(query)
         except duckdb.IOException as exc:
             if "No files found" in str(exc):
