@@ -13,9 +13,11 @@ def patch_storage(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "EXPERIMENT_FILE_STORAGE_PATH", tmp_path)
 
 
-@pytest.fixture(params=[(1, None), (1, "test"), (2, "test2")])
+@pytest.fixture(params=[(1, None, 3), (1, "test", 1), (2, "test2", 0)])
 def history_server(request):
-    return HistoryServer(partition_seconds=request.param[0], experiment=request.param[1])
+    return HistoryServer(
+        partition_seconds=request.param[0], experiment=request.param[1], buffer_partitions=request.param[2]
+    )
 
 
 @pytest.fixture
