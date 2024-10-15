@@ -138,6 +138,8 @@ class Calibrator(BaseInterface):
     def __init__(self, *args, calibration_file=None, **kwargs):
         super().__init__(*args, calibration_file=calibration_file, **kwargs)
         self.calibration_procedure = None
+        self.input_transformer = None
+        self.output_transformer = None
         if self.calibration_file:
             self.load_calibration_file(self.calibration_file)
 
