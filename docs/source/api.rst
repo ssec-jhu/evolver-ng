@@ -23,3 +23,12 @@ Experiment Control Extension Points
 
    evolver.controller.interface.Controller
    evolver.controller.interface.Controller.control
+
+
+Evolver manager
+---------------
+
+.. autosummary::
+   :toctree: generated
+
+   evolver.device.Evolver
