@@ -4,15 +4,15 @@ from evolver.calibration.actions import (
     VialTempRawVoltageAction,
     VialTempReferenceValueAction,
 )
-from evolver.calibration.interface import Calibrator
 from evolver.calibration.procedure import CalibrationProcedure
+from evolver.calibration.standard.polyfit import LinearCalibrator
 from evolver.hardware.interface import HardwareDriver
 
 
-class TemperatureCalibrator(Calibrator):
+class TemperatureCalibrator(LinearCalibrator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.state = {"selected_vials": []}
+        self.state = {"selected_vials": [], "selected_transformer": self.input_transformer or self.output_transformer}
 
     def initialize_calibration_procedure(
         self,
@@ -22,7 +22,6 @@ class TemperatureCalibrator(Calibrator):
         *args,
         **kwargs,
     ):
-        # TODO: integrate self.state with self.CalibrationData, see Arik & Iain for context.
         self.state["selected_vials"] = selected_vials
 
         calibration_procedure = CalibrationProcedure("Temperature Calibration")
@@ -47,7 +46,7 @@ class TemperatureCalibrator(Calibrator):
                 )
             )
 
-        # Add a final step to calculate the fit.
+        # a final step to calculate the fit.
         for vial in self.state["selected_vials"]:
             calibration_procedure.add_action(
                 VialTempCalculateFitAction(
@@ -57,4 +56,5 @@ class TemperatureCalibrator(Calibrator):
                     name=f"Vial_{vial}_Temp_Calculate_Fit_Action",
                 )
             )
+
         self.calibration_procedure = calibration_procedure
