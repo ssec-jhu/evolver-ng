@@ -1,5 +1,6 @@
 import asyncio
 from contextlib import asynccontextmanager
+from http import HTTPStatus
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
@@ -54,7 +55,7 @@ async def attribute_error_handler(_, exc):
 
 @app.exception_handler(ValidationError)
 async def validation_error_handler(_, exc):
-    return JSONResponse(status_code=422, content=exc.errors())
+    return JSONResponse(status_code=HTTPStatus.UNPROCESSABLE_ENTITY, content=exc.errors())
 
 
 app.include_router(hardware.router)
