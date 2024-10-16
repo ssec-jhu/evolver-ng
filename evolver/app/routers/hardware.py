@@ -44,6 +44,27 @@ def get_hardware(hardware_name: str, request: Request):
     return hardware_instance.get()
 
 
+@router.post("/{hardware_name}/set")
+def hardware_set(hardware_name: str, request: Request, data: dict | list[dict], commit: bool = False):
+    hardware_instance = get_hardware_instance(request, hardware_name)
+    input_model = hardware_instance.Input
+    if isinstance(data, list):
+        inputs = [input_model.model_validate(i) for i in data]
+    else:
+        inputs = [input_model.model_validate(data)]
+
+    for input in inputs:
+        hardware_instance.set(input)
+    if commit:
+        hardware_instance.commit()
+
+
+@router.post("/{hardware_name}/commit")
+def hardware_commit(hardware_name: str, request: Request):
+    hardware_instance = get_hardware_instance(request, hardware_name)
+    hardware_instance.commit()
+
+
 # Start the calibration procedure for the selected hardware and vials
 @router.post("/{hardware_name}/calibrator/start")
 def start_calibration_procedure(
