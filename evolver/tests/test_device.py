@@ -144,3 +144,10 @@ class TestEvolver:
         assert isinstance(status["testsensor"].input_transformer, Status)
         assert isinstance(status["testsensor"].output_transformer, Status)
         assert status["testsensor"].ok
+
+    def test_abort(self, demo_evolver):
+        assert not demo_evolver.hardware["testeffector"].aborted
+        demo_evolver.enable_commit = True
+        demo_evolver.abort()
+        assert not demo_evolver.enable_commit
+        assert demo_evolver.hardware["testeffector"].aborted

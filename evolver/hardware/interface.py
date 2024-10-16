@@ -81,3 +81,7 @@ class EffectorDriver(VialHardwareDriver):
     @abstractmethod
     def commit(self):
         pass
+
+    @abstractmethod
+    def abort(self):
+        pass
