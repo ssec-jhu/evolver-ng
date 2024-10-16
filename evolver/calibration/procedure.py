@@ -1,11 +1,10 @@
 from typing import Any, Dict
 
 from evolver.calibration.actions import CalibrationAction
-from evolver.calibration.interface import Calibrator
 
 
 class CalibrationProcedure:
-    def __init__(self, name: str, calibrator: Calibrator):
+    def __init__(self, name: str):
         """
         Initialize the CalibrationProcedure.
 
@@ -17,7 +16,6 @@ class CalibrationProcedure:
             name (str): The name of the calibration procedure.
             actions (list): The list of actions to be executed in the calibration procedure. The order of actions is the default order of execution, but the frontend can change this if needed.
             state (dict): The current state of the calibration procedure. This state is updated immutably after each action is dispatched. When the procedure is done, this state is copied to the Calibrator state.
-            calibrator (Calibrator): The parent calibrator instance that will execute the calibration procedure.
 
         Notes:
             - Dispatching an action will update the state of the calibration procedure.
@@ -29,7 +27,6 @@ class CalibrationProcedure:
         self.name = name
         self.actions = []
         self.state = {}  # Holds the current state of calibration, when the procedure is done this is copied to the Calibrator state.
-        self.calibrator = calibrator
 
     def add_action(self, action: CalibrationAction):
         self.actions.append(action)
