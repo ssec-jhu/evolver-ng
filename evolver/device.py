@@ -26,6 +26,8 @@ class Evolver(BaseInterface):
         enable_control: bool = True
         enable_commit: bool = True
         interval: int = settings.DEFAULT_LOOP_INTERVAL
+        raise_loop_exceptions: bool = False
+        skip_control_on_read_failure: bool = True
 
     def __init__(self, *args, **kwargs):
         self.last_read = defaultdict(lambda: int(-1))
@@ -71,22 +73,38 @@ class Evolver(BaseInterface):
             "controllers": [{"kind": str(type(a)), "config": a.Config.model_json_schema()} for a in self.controllers],
         }
 
+    def _loop_exception_wrapper(self, callable, message="unknown") -> bool:
+        try:
+            callable()
+            return False
+        except Exception:
+            self.logger.exception(f"Error in loop: {message}:")
+            if self.raise_loop_exceptions:
+                raise
+            return True
+
     def read_state(self):
+        read_error = False
         for name, device in self.sensors.items():
-            device.read()
+            err = self._loop_exception_wrapper(device.read, f"reading device {name}")
+            read_error = read_error or err
             self.last_read[name] = time.time()
             self.history.put(name, device.get())
+        return read_error
 
     def evaluate_controllers(self):
         for controller in self.controllers:
-            controller.run()
+            self._loop_exception_wrapper(controller.run, f"updating controller {controller}")
 
     def commit_proposals(self):
         for device in self.effectors.values():
-            device.commit()
+            self._loop_exception_wrapper(device.commit, f"committing proposals for {device}")
 
     def loop_once(self):
-        self.read_state()
+        read_error = self.read_state()
+        if read_error and self.skip_control_on_read_failure:
+            self.logger.info("Skipping control loop due to read error")
+            return
         # for any hardware awaiting calibration, call calibration update method here
         if self.enable_control:
             self.evaluate_controllers()
