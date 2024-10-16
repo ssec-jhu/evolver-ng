@@ -103,10 +103,10 @@ class VialTempCalculateFitAction(CalibrationAction):
         if not reference_values or not raw_values:
             raise ValueError(f"Insufficient data to calculate fit for {hardware_name} {vial_key}")
 
-        if not self.hardware.output_transformer:
+        if not self.hardware.calibrator.Config.output_transformer:
             raise ValueError(f"No output transformer available for {hardware_name}")
 
-        fit_config = self.hardware.output_transformer.fit(reference_values, raw_values)
+        fit_config = self.hardware.calibrator.Config.output_transformer.fit(reference_values, raw_values)
 
         new_state = deepcopy(state)
         new_state[hardware_name][vial_key]["output_fit_parameters"] = fit_config.dict()  # Save fit parameters as a dict
