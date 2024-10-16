@@ -158,4 +158,4 @@ class TestStir(SerialVialEffectorHardwareTestSuite):
 )
 class TestPump(SerialVialEffectorHardwareTestSuite):
     driver = VialIEPump
-    abort_command = ({"addr": "pump", "slots": 2}, b"pumpr,0,0,0,0,0,0,_!")
+    abort_command = ({"addr": "pump", "slots": 2, "ipp_pumps": [1]}, b"pumpr,0,0,0,0|1|1,0|1|2,0|1|3,_!")
