@@ -6,7 +6,7 @@ import pydantic
 
 
 class CalibrationAction(ABC):
-    def __init__(self, description: str, name: str):
+    def __init__(self, name: str, description: str):
         self.description = description
         self.name = name
 
@@ -106,7 +106,6 @@ class VialTempCalculateFitAction(CalibrationAction):
         if not self.hardware.output_transformer:
             raise ValueError(f"No output transformer available for {hardware_name}")
 
-        # Use the transformer's fit method to calculate the fit
         fit_config = self.hardware.output_transformer.fit(reference_values, raw_values)
 
         new_state = deepcopy(state)
@@ -123,4 +122,5 @@ class SaveCalibrationDataAction(CalibrationAction):
 
     def execute(self, state: Dict[str, Any], payload: UserInput) -> Dict[str, Any]:
         # save the calibration procedure state to the parent calibrator's CalibrationData
+
         return state.copy()

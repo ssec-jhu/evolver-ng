@@ -169,7 +169,7 @@ class Calibrator(BaseInterface):
     @abstractmethod
     def initialize_calibration_procedure(self, *args, **kwargs):
         """This initializes the calibration procedure. Subclasses should implement this method to initialize the calibration"""
-        ...
+        pass
 
     def dispatch(self, action):
         # Delegate to the calibration procedure
@@ -178,6 +178,9 @@ class Calibrator(BaseInterface):
         # TODO: this is probably the best place for bumpoing calibration_procedure state up into CalibrationData state. (see Arik for details)
         self.state = self.calibration_procedure.dispatch(action)
         return self.state
+
+    def save_calibration_data(self):
+        self.calibration_data.save()
 
 
 class IndependentVialBasedCalibrator(Calibrator, ABC):

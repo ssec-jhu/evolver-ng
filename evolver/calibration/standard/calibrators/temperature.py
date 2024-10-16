@@ -12,7 +12,7 @@ from evolver.hardware.interface import HardwareDriver
 class TemperatureCalibrator(LinearCalibrator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.state = {"selected_vials": [], "selected_transformer": self.input_transformer or self.output_transformer}
+        self.state = {"selected_vials": []}
 
     def initialize_calibration_procedure(
         self,
