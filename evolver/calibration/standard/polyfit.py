@@ -11,27 +11,35 @@ from evolver.settings import settings
 class PolyFitTransformer(Transformer):
     class Config(Transformer.Config):
         degree: int = Field(ge=0, description="Polynomial degree.")
-        parameters: list[float] = Field(min_length=1, description="Polynomial coefficients.")
+        parameters: list[float] | None = Field(default=None, min_length=1, description="Polynomial coefficients.")
 
         @model_validator(mode="after")
         def check_parameters_length(self) -> Self:
-            if len(self.parameters) - 1 != self.degree:
+            # Only validate parameters if they are provided.
+            if self.parameters and (len(self.parameters) - 1 != self.degree):
                 raise ValueError(f"Degree={self.degree} but {len(self.parameters)} parameters given.")
             return self
 
     @classmethod
     def fit(cls, x, y, deg, *args, **kwargs):
+        # TODO: should new_parameters update Config.parameters?
         new_parameters = poly.polyfit(x, y, deg, *args, **kwargs)
         config = cls.Config.model_validate(dict(parameters=new_parameters))
         return config
 
     def refit(self, x, y, *args, **kwargs):
+        if self.config.parameters is None:
+            raise ValueError("No fitted parameters to refit.")
         return super().refit(x, y, self.degree, *args, **kwargs)
 
     def convert_to(self, x):
+        if self.config.parameters is None:
+            raise ValueError("Cannot convert without fitted parameters.")
         return poly.polyval(x, self.parameters)
 
     def convert_from(self, y):
+        if self.config.parameters is None:
+            raise ValueError("Cannot convert without fitted parameters.")
         return (poly.Polynomial(self.parameters) - y).roots()
 
 

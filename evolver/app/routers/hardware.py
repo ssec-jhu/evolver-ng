@@ -109,6 +109,10 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
 
     calibration_procedure = calibrator.calibration_procedure
+
+    # print action names
+    print("action names:", [action.name for action in calibration_procedure.get_actions()])
+
     action_to_dispatch = next((a for a in calibration_procedure.get_actions() if a.name == action["action_name"]), None)
 
     if not action_to_dispatch:

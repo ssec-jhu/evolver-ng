@@ -5,14 +5,16 @@ from evolver.calibration.actions import (
     VialTempReferenceValueAction,
 )
 from evolver.calibration.procedure import CalibrationProcedure
-from evolver.calibration.standard.polyfit import LinearCalibrator
+from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
 from evolver.hardware.interface import HardwareDriver
 
 
 class TemperatureCalibrator(LinearCalibrator):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, input_transformer=None, output_transformer=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.state = {"selected_vials": []}
+        self.Config.input_transformer = input_transformer or LinearTransformer()
+        self.Config.output_transformer = output_transformer or LinearTransformer()
 
     def initialize_calibration_procedure(
         self,
