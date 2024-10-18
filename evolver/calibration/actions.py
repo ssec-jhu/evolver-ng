@@ -19,7 +19,7 @@ class CalibrationAction(ABC):
         Execute the calibration action.
 
         This method should be implemented by subclasses to perform specific calibration actions.
-        It takes the current state of the calibration procedure, and an optional a payload, it processes them and
+        It takes the current state of the calibration procedure, and an optional payload, it processes them and
         returns the updated state.
 
         The payload is a pydantic model that is validated in the dispatch method of the CalibrationProcedure.
