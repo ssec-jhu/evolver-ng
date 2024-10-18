@@ -96,6 +96,7 @@ class SerialVialEffectorHardwareTestSuite:
     """
 
     driver: HardwareDriver = None
+    abort_command = None
 
     def _load_and_check(self, hw, values, serial_out):
         expected_committed = {}
@@ -118,3 +119,11 @@ class SerialVialEffectorHardwareTestSuite:
     def test_from_evolver_config(self, config_params, values, serial_out):
         evolver = _from_evolver_conf(self.driver, config_params, {})
         self._load_and_check(evolver.hardware["testhw"], values, serial_out)
+
+    def test_abort(self, config_params, values, serial_out):
+        if self.abort_command == "none_expected":
+            return
+        config, command = self.abort_command
+        hw = _from_config_desc(self.driver, config, {})
+        hw.abort()
+        assert hw.evolver.serial.backend.hits_map[command] == 1

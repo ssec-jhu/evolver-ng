@@ -31,5 +31,12 @@ class NoOpSensorDriver(SensorDriver):
 
 
 class NoOpEffectorDriver(EffectorDriver):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.aborted = False
+
     def commit(self):
         self.comitted = copy(self.proposal)
+
+    def abort(self):
+        self.aborted = True
