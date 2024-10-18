@@ -1,9 +1,9 @@
 from evolver.calibration.actions import (
     DisplayInstructionAction,
+    SaveCalibrationProcedureStateAction,
     VialTempCalculateFitAction,
     VialTempRawVoltageAction,
     VialTempReferenceValueAction,
-    SaveCalibrationProcedureStateAction,
 )
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
