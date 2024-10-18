@@ -1,28 +1,29 @@
 from evolver.calibration.actions import (
     DisplayInstructionAction,
+    SaveCalibrationProcedureStateAction,
     VialTempCalculateFitAction,
     VialTempRawVoltageAction,
     VialTempReferenceValueAction,
 )
-from evolver.calibration.interface import Calibrator
 from evolver.calibration.procedure import CalibrationProcedure
+from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
 from evolver.hardware.interface import HardwareDriver
 
 
-class TemperatureCalibrator(Calibrator):
-    def __init__(self, *args, **kwargs):
+class TemperatureCalibrator(LinearCalibrator):
+    def __init__(self, input_transformer=None, output_transformer=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.state = {"selected_vials": []}
+        self.Config.input_transformer = input_transformer or LinearTransformer()
+        self.Config.output_transformer = output_transformer or LinearTransformer()
 
     def initialize_calibration_procedure(
         self,
         selected_hardware: HardwareDriver,
         selected_vials: list[int],
-        evolver=None,
         *args,
         **kwargs,
     ):
-        # TODO: integrate self.state with self.CalibrationData, see Arik & Iain for context.
         self.state["selected_vials"] = selected_vials
 
         calibration_procedure = CalibrationProcedure("Temperature Calibration")
@@ -47,7 +48,6 @@ class TemperatureCalibrator(Calibrator):
                 )
             )
 
-        # Add a final step to calculate the fit.
         for vial in self.state["selected_vials"]:
             calibration_procedure.add_action(
                 VialTempCalculateFitAction(
@@ -57,4 +57,13 @@ class TemperatureCalibrator(Calibrator):
                     name=f"Vial_{vial}_Temp_Calculate_Fit_Action",
                 )
             )
+
+        calibration_procedure.add_action(
+            SaveCalibrationProcedureStateAction(
+                hardware=selected_hardware,
+                description="Save the calibration procedure state",
+                name="Save_Calibration_Procedure_State_Action",
+            )
+        )
+
         self.calibration_procedure = calibration_procedure
