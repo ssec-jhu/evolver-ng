@@ -78,6 +78,8 @@ class VialTempRawVoltageAction(CalibrationAction):
         vial_key = f"vial_{self.vial_idx}"
         vial_data = new_state.setdefault(self.hardware.name, {}).setdefault(vial_key, {"reference": [], "raw": []})
         vial_data["raw"].append(sensor_value)
+        calibration_data = self.hardware.calibrator.CalibrationData()
+        calibration_data.save_calibration_procedure_state(calibration_procedure_state=new_state)
         return new_state
 
 
@@ -103,24 +105,35 @@ class VialTempCalculateFitAction(CalibrationAction):
         if not reference_values or not raw_values:
             raise ValueError(f"Insufficient data to calculate fit for {hardware_name} {vial_key}")
 
+        if len(reference_values) != len(raw_values):
+            raise ValueError(
+                f"Reference and raw data lengths do not match for {hardware_name} {vial_key}, "
+                f"Procedure state has {len(reference_values)} reference_values and {len(raw_values)} raw_values recorded so far"
+                f"Unable to calculate fit, you must dispatch the appropriate actions to collect the required data"
+            )
+
         if not self.hardware.calibrator.Config.output_transformer:
             raise ValueError(f"No output transformer available for {hardware_name}")
 
         fit_config = self.hardware.calibrator.Config.output_transformer.fit(reference_values, raw_values)
 
         new_state = deepcopy(state)
-        new_state[hardware_name][vial_key]["output_fit_parameters"] = fit_config.dict()  # Save fit parameters as a dict
+        new_state[hardware_name][vial_key]["output_fit_parameters"] = fit_config.dict()
+        calibration_data = self.hardware.calibrator.CalibrationData()
+        calibration_data.save_calibration_procedure_state(calibration_procedure_state=new_state)
         return new_state
 
 
-class SaveCalibrationDataAction(CalibrationAction):
+class SaveCalibrationProcedureStateAction(CalibrationAction):
     class UserInput(pydantic.BaseModel):
         pass
 
-    def __init__(self, description: str, name: str):
+    def __init__(self, hardware, description: str, name: str):
         super().__init__(name, description)
+        self.hardware = hardware
 
     def execute(self, state: Dict[str, Any], payload: UserInput) -> Dict[str, Any]:
         # save the calibration procedure state to the parent calibrator's CalibrationData
-
+        calibration_data = self.hardware.calibrator.CalibrationData()
+        calibration_data.save_calibration_procedure_state(calibration_procedure_state=state.copy())
         return state.copy()
