@@ -76,6 +76,8 @@ As related to the above yaml configuration. We can see the top-level class
 ``ODSensor`` represented in ``classinfo`` and the config values as modeled in
 the ``Config`` class represented within the ``config`` key.
 
+.. _experiment_loop:
+
 Experiment loop
 ---------------
 
@@ -144,6 +146,12 @@ penalty, simplifying the controller code, for example when looping over the set
 of configured vials.
 
 .. note::
+  Note that values are typically neither read nor committed within the `control`
+  method itself - these are executed by the evolver in the **read** and
+  **commit** phases of :ref:`experiment_loop`. Multiple ``get`` calls would
+  return the same values and subsequent ``set`` calls would overwrite the value
+  to commit.
+
   While technically it is feasible to call the `read` and `commit` methods
   within a controller, we recommend against doing so. Due to the serial
   communication latency, and the fact that a commit will be done for all
