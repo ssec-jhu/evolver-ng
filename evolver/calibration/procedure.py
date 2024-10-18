@@ -1,5 +1,4 @@
 from typing import Any, Dict
-
 from evolver.calibration.actions import CalibrationAction
 
 
@@ -21,7 +20,6 @@ class CalibrationProcedure:
             - Dispatching an action will update the state of the calibration procedure.
             - Actions should be independent of one another with validation and error handling if the state is not as expected (e.g., calculate fit action is called on a vial that doesn't have reference and raw data pairs).
             - The procedure state is updated immutably, ensuring the state of the procedure is always consistent.
-            - TODO: Persist state after each action to the Calibrator.CalibrationData data structure (see Arik for details).
             - TODO: Introduce some kind of composition of procedures - so you can have an undoable procedure, and/or one that logs the actions that've been taken. Ditto for a resumable procedure.
         """
         self.name = name
