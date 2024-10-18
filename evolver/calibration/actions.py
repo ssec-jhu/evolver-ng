@@ -1,35 +1,42 @@
-from typing import Dict, Any
-from copy import deepcopy
 from abc import ABC, abstractmethod
+from copy import deepcopy
+from typing import Any, Dict
+
+import pydantic
 
 
 class CalibrationAction(ABC):
+    class UserInput(pydantic.BaseModel): ...
+
     @abstractmethod
-    def execute(self, state: Dict[str, Any], payload: Dict[str, Any] = None) -> Dict[str, Any]:
+    def execute(self, state: Dict[str, Any], payload: UserInput) -> Dict[str, Any]:
         pass
 
 
 class DisplayInstructionAction(CalibrationAction):
+    class UserInput(pydantic.BaseModel):
+        pass
+
     def __init__(self, description: str, name: str):
         self.description = description
         self.name = name
 
-    def execute(self, state: Dict[str, Any], payload: Dict[str, Any] = None) -> Dict[str, Any]:
+    def execute(self, state: Dict[str, Any], payload: UserInput = None) -> Dict[str, Any]:
         return state.copy()
 
 
 class VialTempReferenceValueAction(CalibrationAction):
+    class UserInput(pydantic.BaseModel):
+        temperature: float = pydantic.Field(title="Temperature", description="Temperature in degrees Celsius")
+
     def __init__(self, hardware, description: str, vial_idx: int, name: str):
         self.hardware = hardware
         self.description = description
         self.vial_idx = vial_idx
         self.name = name
 
-    def execute(self, state: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
-        reference_value = payload.get("reference_value")
-        if reference_value is None:
-            raise ValueError("Payload must include 'reference_value'")
-
+    def execute(self, state: Dict[str, Any], payload: UserInput) -> Dict[str, Any]:
+        reference_value = payload.temperature
         new_state = deepcopy(state)
         vial_key = f"vial_{self.vial_idx}"
         vial_data = new_state.setdefault(self.hardware.name, {}).setdefault(vial_key, {"reference": [], "raw": []})
@@ -38,16 +45,16 @@ class VialTempReferenceValueAction(CalibrationAction):
 
 
 class VialTempRawVoltageAction(CalibrationAction):
+    class UserInput(pydantic.BaseModel):
+        pass
+
     def __init__(self, hardware, vial_idx: int, description, name):
         self.name = name
         self.hardware = hardware
         self.description = description
         self.vial_idx = vial_idx
 
-    def execute(self, state: Dict[str, Any], payload: Dict[str, Any] = None) -> Dict[str, Any]:
-        # This action doesn't require any action input
-        # Beware the serial read has latency associated with it, e.g. 1.5s... and the best way is to do read once
-        # (goes to buffer) and get on that. TODO: think about hoisting all reads to the procedure state, periodically update it.
+    def execute(self, state: Dict[str, Any], payload: UserInput) -> Dict[str, Any]:
         sensor_value = self.hardware.read()[self.vial_idx]
         new_state = deepcopy(state)
         vial_key = f"vial_{self.vial_idx}"
@@ -57,13 +64,16 @@ class VialTempRawVoltageAction(CalibrationAction):
 
 
 class VialTempCalculateFitAction(CalibrationAction):
+    class UserInput(pydantic.BaseModel):
+        pass
+
     def __init__(self, hardware, vial_idx: int, description: str, name: str):
         self.hardware = hardware
         self.description = description
         self.name = name
         self.vial_idx = vial_idx
 
-    def execute(self, state: Dict[str, Any], payload: Dict[str, Any] = None) -> Dict[str, Any]:
+    def execute(self, state: Dict[str, Any], payload: UserInput) -> Dict[str, Any]:
         vial_key = f"vial_{self.vial_idx}"
         hardware_name = self.hardware.name
 

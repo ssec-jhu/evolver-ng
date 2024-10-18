@@ -1,3 +1,8 @@
+from typing import Any, Dict
+
+from evolver.calibration.actions import CalibrationAction
+
+
 class CalibrationProcedure:
     def __init__(self, name: str):
         self.name = name
@@ -8,7 +13,6 @@ class CalibrationProcedure:
         # The procedure state is updated immutably, so that the state of the procedure is always consistent.
         self.actions = []
         self.state = {}  # Holds the current state of calibration, when the procedure is done this is copied to the Calibrator state.
-        # TODO: undo/redo stack of states. This allows undo/redo functionality
         # TODO: persist state to after each action to the Calibrator.CalibrationData data structure.(see Arik for details)
 
     def add_action(self, step):
@@ -17,7 +21,8 @@ class CalibrationProcedure:
     def get_actions(self):
         return self.actions
 
-    def dispatch(self, action, payload):
-        # Execute the action and update the state
+    def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if payload is not None:
+            payload = action.UserInput(**payload)
         self.state = action.execute(self.state, payload)
         return self.state
