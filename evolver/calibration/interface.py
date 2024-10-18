@@ -159,8 +159,10 @@ class Calibrator(BaseInterface):
             raise ValueError("no calibration file provided")
 
     def load_calibration(self, calibration_data: CalibrationData):
+        """
         self.calibration_data = calibration_data
         self.init_transformers(calibration_data)
+        """
 
     def init_transformers(self, calibration_data: CalibrationData):
         """Initialize transformers from calibration data."""
@@ -179,8 +181,7 @@ class Calibrator(BaseInterface):
         self.state = self.calibration_procedure.dispatch(action)
         return self.state
 
-    def save_calibration_data(self):
-        self.calibration_data.save()
+    def save_calibration_data(self): ...
 
 
 class IndependentVialBasedCalibrator(Calibrator, ABC):
