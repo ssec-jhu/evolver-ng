@@ -146,6 +146,7 @@ async def abort():
     app.state.evolver.abort()
     # Disable commit also in persistent config in case application needs to restart
     config = Evolver.Config.load(app_settings.CONFIG_FILE)
+    config.enable_control = False
     config.enable_commit = False
     config.save(app_settings.CONFIG_FILE)
 
