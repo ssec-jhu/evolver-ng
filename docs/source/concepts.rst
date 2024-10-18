@@ -143,6 +143,13 @@ These methods can be called as many times as required with no additional
 penalty, simplifying the controller code, for example when looping over the set
 of configured vials.
 
+.. note::
+  While technically it is feasible to call the `read` and `commit` methods
+  within a controller, we recommend against doing so. Due to the serial
+  communication latency, and the fact that a commit will be done for all
+  hardware by the system at the **commit** step, it is recommended that loop
+  activity acts and submits proposals for only single value read-out.
+
 In Hardware code
 ~~~~~~~~~~~~~~~~
 
