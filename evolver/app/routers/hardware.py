@@ -67,7 +67,7 @@ def hardware_commit(hardware_name: str, request: Request):
 
 
 # Start the calibration procedure for the selected hardware and vials
-@router.post("/{hardware_name}/calibrator/start")
+@router.post("/{hardware_name}/calibrator/procedure/start")
 def start_calibration_procedure(
     hardware_name: str, request: Request, initial_state: TempCalibrationProcedureInitialState | None
 ):
@@ -92,7 +92,7 @@ def start_calibration_procedure(
 
 
 # Get available actions for the calibration procedure
-@router.get("/{hardware_name}/calibrator/actions")
+@router.get("/{hardware_name}/calibrator/procedure/actions")
 def get_calibrator_actions(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
@@ -108,7 +108,7 @@ def get_calibrator_actions(hardware_name: str, request: Request):
 
 
 # Dispatch an action to the calibration procedure
-@router.post("/{hardware_name}/calibrator/dispatch")
+@router.post("/{hardware_name}/calibrator/procedure/dispatch")
 def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...), action: dict = Body(...)):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
@@ -128,13 +128,11 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
     except pydantic.ValidationError as e:
         raise HTTPException(status_code=422, detail=f"Invalid payload: {e.errors()}")
 
-    print("SSSSSS", new_state)
-
     return {"state": new_state}
 
 
 # Get the current state of the calibrator for a hardware
-@router.get("/{hardware_name}/calibrator/state")
+@router.get("/{hardware_name}/calibrator/procedure/state")
 def get_calibrator_state(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
