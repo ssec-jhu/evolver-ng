@@ -118,7 +118,7 @@ class VialTempCalculateFitAction(CalibrationAction):
         fit_config = self.hardware.calibrator.Config.output_transformer.fit(reference_values, raw_values)
 
         new_state = deepcopy(state)
-        new_state[hardware_name][vial_key]["output_fit_parameters"] = fit_config.dict()
+        new_state[hardware_name][vial_key]["output_fit_parameters"] = fit_config.model_dump()
         calibration_data = self.hardware.calibrator.CalibrationData()
         calibration_data.save_calibration_procedure_state(calibration_procedure_state=new_state)
         return new_state

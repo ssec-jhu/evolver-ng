@@ -27,5 +27,4 @@ def test_pump_calibrator(cal_data):
 def test_pump_calibrator_read_from_file(cal_data):
     cal_data.save("test_cal_data.yaml")
     calibrator = GenericPumpCalibrator(calibration_file="test_cal_data.yaml")
-    print(calibrator.calibration_data)
     assert calibrator.calibration_data == cal_data

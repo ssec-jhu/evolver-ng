@@ -74,7 +74,6 @@ def test_temperature_calibration_procedure_actions():
 
     # Verify the available actions in the calibration procedure
     actions_response = client.get("hardware/temp/calibrator/procedure/actions")
-    print(actions_response.json())
     assert actions_response.status_code == 200
     expected_actions = [
         {"name": action.name, "description": action.description}
