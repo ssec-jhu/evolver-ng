@@ -1,3 +1,7 @@
+from typing import List
+
+from pydantic import BaseModel
+
 from evolver.calibration.actions import (
     DisplayInstructionAction,
     SaveCalibrationProcedureStateAction,
@@ -7,9 +11,6 @@ from evolver.calibration.actions import (
 )
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
-from pydantic import BaseModel
-from typing import List
-
 from evolver.hardware.interface import HardwareDriver
 
 
