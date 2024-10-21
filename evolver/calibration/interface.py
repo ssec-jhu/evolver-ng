@@ -153,6 +153,7 @@ class Calibrator(BaseInterface):
         self.calibration_procedure = None
         self.input_transformer = None
         self.output_transformer = None
+        self.calibration_data = self.CalibrationData()
         if self.calibration_file:
             self.load_calibration_file(self.calibration_file)
 
@@ -181,8 +182,7 @@ class Calibrator(BaseInterface):
         """Initialize transformers from calibration data."""
         ...
 
-    @abstractmethod
-    def initialize_calibration_procedure(self, *args, **kwargs):
+    def initialize_calibration_procedure(self, selected_hardware, initial_state, *args, **kwargs):
         """This initializes the calibration procedure. Subclasses should implement this method to initialize the calibration"""
         pass
 
@@ -190,9 +190,8 @@ class Calibrator(BaseInterface):
         # Delegate to the calibration procedure
         if self.calibration_procedure is None:
             raise ValueError("Calibration procedure is not initialized.")
-        # TODO: this is probably the best place for bumpoing calibration_procedure state up into CalibrationData state. (see Arik for details)
-        self.state = self.calibration_procedure.dispatch(action)
-        return self.state
+        self.calibration_procedure.dispatch(action)
+        return self.calibration_procedure.get_state()
 
     def save_calibration_data(self): ...
 
@@ -206,5 +205,3 @@ class IndependentVialBasedCalibrator(Calibrator, ABC):
 
         input_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
         output_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
-
-    def initialize_calibration_procedure(self, *args, **kwargs): ...

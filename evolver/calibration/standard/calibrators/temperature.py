@@ -7,30 +7,37 @@ from evolver.calibration.actions import (
 )
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
+from pydantic import BaseModel
+from typing import List
+
 from evolver.hardware.interface import HardwareDriver
+
+
+class TempCalibrationProcedureInitialState(BaseModel):
+    selected_vials: List[int]
 
 
 class TemperatureCalibrator(LinearCalibrator):
     def __init__(self, input_transformer=None, output_transformer=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.state = {"selected_vials": []}
         self.Config.input_transformer = input_transformer or LinearTransformer()
         self.Config.output_transformer = output_transformer or LinearTransformer()
 
     def initialize_calibration_procedure(
         self,
         selected_hardware: HardwareDriver,
-        selected_vials: list[int],
+        initial_state: TempCalibrationProcedureInitialState,
         *args,
         **kwargs,
     ):
-        self.state["selected_vials"] = selected_vials
-
-        calibration_procedure = CalibrationProcedure("Temperature Calibration")
+        selected_vials = initial_state.selected_vials
+        calibration_procedure = CalibrationProcedure(
+            "Temperature Calibration", initial_state=initial_state.model_dump()
+        )
         calibration_procedure.add_action(
             DisplayInstructionAction(description="Fill each vial with 15ml water", name="Fill_Vials_With_Water")
         )
-        for vial in self.state["selected_vials"]:
+        for vial in selected_vials:
             calibration_procedure.add_action(
                 VialTempReferenceValueAction(
                     hardware=selected_hardware,
@@ -48,7 +55,7 @@ class TemperatureCalibrator(LinearCalibrator):
                 )
             )
 
-        for vial in self.state["selected_vials"]:
+        for vial in selected_vials:
             calibration_procedure.add_action(
                 VialTempCalculateFitAction(
                     hardware=selected_hardware,

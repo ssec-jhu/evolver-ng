@@ -4,7 +4,8 @@ import pydantic
 from fastapi import APIRouter, Body, HTTPException, Path, Request
 from pydantic import BaseModel
 
-from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError
+from evolver.app.exceptions import HardwareNotFoundError
+from evolver.calibration.standard.calibrators.temperature import TempCalibrationProcedureInitialState
 from evolver.hardware.interface import HardwareDriver
 
 router = APIRouter(prefix="/hardware", tags=["hardware"], responses={404: {"description": "Not found"}})
@@ -68,20 +69,26 @@ def hardware_commit(hardware_name: str, request: Request):
 # Start the calibration procedure for the selected hardware and vials
 @router.post("/{hardware_name}/calibrator/start")
 def start_calibration_procedure(
-    hardware_name: str, request: Request, calibration_request: StartCalibrationProcedureRequest
+    hardware_name: str, request: Request, initial_state: TempCalibrationProcedureInitialState | None
 ):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
 
-    calibrator.initialize_calibration_procedure(
-        selected_hardware=hardware_instance,
-        selected_vials=calibration_request.selected_vials,
-        evolver=request.app.state.evolver,
-    )
+    match hardware_name:
+        case "temp":
+            calibrator.initialize_calibration_procedure(
+                selected_hardware=hardware_instance,
+                initial_state=initial_state,
+                evolver=request.app.state.evolver,
+            )
+        case _:
+            raise HTTPException(
+                status_code=404, detail=f"No initialize_calibration_procedure defined for '{hardware_name}'"
+            )
 
-    return calibrator.state
+    return calibrator.calibration_procedure.get_state()
 
 
 # Get available actions for the calibration procedure
@@ -121,6 +128,8 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
     except pydantic.ValidationError as e:
         raise HTTPException(status_code=422, detail=f"Invalid payload: {e.errors()}")
 
+    print("SSSSSS", new_state)
+
     return {"state": new_state}
 
 
@@ -130,6 +139,7 @@ def get_calibrator_state(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
-        raise CalibratorNotFoundError
-
-    return calibrator.state
+        raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
+    calibration_procedure = calibrator.calibration_procedure
+    print("calibration_procedure.get_state():", calibration_procedure.get_state())
+    return calibration_procedure.get_state()
