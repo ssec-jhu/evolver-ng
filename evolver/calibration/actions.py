@@ -78,7 +78,7 @@ class VialTempRawVoltageAction(CalibrationAction):
         vial_key = f"vial_{self.vial_idx}"
         vial_data = new_state.setdefault(self.hardware.name, {}).setdefault(vial_key, {"reference": [], "raw": []})
         vial_data["raw"].append(sensor_value)
-        calibration_data = self.hardware.calibrator.CalibrationData()
+        calibration_data = self.hardware.calibrator.calibration_data
         calibration_data.save_calibration_procedure_state(calibration_procedure_state=new_state)
         return new_state
 
@@ -119,7 +119,7 @@ class VialTempCalculateFitAction(CalibrationAction):
 
         new_state = deepcopy(state)
         new_state[hardware_name][vial_key]["output_fit_parameters"] = fit_config.model_dump()
-        calibration_data = self.hardware.calibrator.CalibrationData()
+        calibration_data = self.hardware.calibrator.calibration_data
         calibration_data.save_calibration_procedure_state(calibration_procedure_state=new_state)
         return new_state
 
