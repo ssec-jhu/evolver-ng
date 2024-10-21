@@ -73,12 +73,8 @@ class LinearCalibrator(PolyFitCalibrator):
         input_transformer: ConfigDescriptor | LinearTransformer | None = None
         output_transformer: ConfigDescriptor | LinearTransformer | None = None
 
-    def initialize_calibration_procedure(self, *args, **kwargs): ...
-
 
 class IndependentVialBasedLinearCalibrator(IndependentVialBasedCalibrator):
-    def initialize_calibration_procedure(self, *args, **kwargs): ...
-
     def run_calibration_procedure(self, data: dict):
         """Override to implement a calibration procedure that is vial-dependant and thus calibrates all vials either
         simultaneously or entirely as desired."""
