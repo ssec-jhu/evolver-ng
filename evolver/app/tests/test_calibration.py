@@ -36,11 +36,11 @@ class TestCalibration:
         }
 
         # Test the "temp" hardware's calibrator state
-        response = client.post("/hardware/temp/calibrator/start", json=request_payload)
+        response = client.post("/hardware/temp/calibrator/procedure/start", json=request_payload)
         assert response.status_code == 200
 
         # Test the "temp" hardware's calibrator state
-        response = client.get("/hardware/temp/calibrator/state")
+        response = client.get("/hardware/temp/calibrator/procedure/state")
         assert response.status_code == 200
         assert response.json() == {"selected_vials": [0, 1, 2]}
 
@@ -69,11 +69,11 @@ def test_temperature_calibration_procedure_actions():
     }
 
     # Test the "temp" hardware's calibrator initialization
-    response = client.post("/hardware/temp/calibrator/start", json=request_payload)
+    response = client.post("/hardware/temp/calibrator/procedure/start", json=request_payload)
     assert response.status_code == 200
 
     # Verify the available actions in the calibration procedure
-    actions_response = client.get("hardware/temp/calibrator/actions")
+    actions_response = client.get("hardware/temp/calibrator/procedure/actions")
     assert actions_response.status_code == 200
     expected_actions = [
         {"name": action.name, "description": action.description}
@@ -113,14 +113,14 @@ def test_dispatch_temperature_calibration_reference_value_action():
     }
 
     # Test the "temp" hardware's calibrator initialization
-    response = client.post("/hardware/temp/calibrator/start", json=request_payload)
+    response = client.post("/hardware/temp/calibrator/procedure/start", json=request_payload)
     assert response.status_code == 200
 
     # Now we will dispatch an action to the calibrator
     action_payload = {"action_name": "Vial_0_Temp_Reference_Value_Action", "payload": {"temperature": 25.0}}
 
     # Dispatch the action
-    dispatch_response = client.post("/hardware/temp/calibrator/dispatch", json=action_payload)
+    dispatch_response = client.post("/hardware/temp/calibrator/procedure/dispatch", json=action_payload)
     assert dispatch_response.status_code == 200
     assert dispatch_response.json() == {
         "state": {"selected_vials": [0, 1, 2], "temp": {"vial_0": {"reference": [25.0], "raw": []}}}
@@ -154,14 +154,14 @@ def test_dispatch_temperature_calibration_raw_value_action():
     }
 
     # Test the "temp" hardware's calibrator initialization
-    response = client.post("/hardware/temp/calibrator/start", json=request_payload)
+    response = client.post("/hardware/temp/calibrator/procedure/start", json=request_payload)
     assert response.status_code == 200
 
     # Now we will dispatch an action to the calibrator
     action_payload = {"action_name": "Vial_0_Temp_Raw_Voltage_Action", "payload": {}}
 
     # Dispatch the action
-    dispatch_response = client.post("/hardware/temp/calibrator/dispatch", json=action_payload)
+    dispatch_response = client.post("/hardware/temp/calibrator/procedure/dispatch", json=action_payload)
     assert dispatch_response.status_code == 200
     assert dispatch_response.json() == {
         "state": {"selected_vials": [0, 1, 2], "temp": {"vial_0": {"reference": [], "raw": [1.23]}}}
@@ -195,12 +195,14 @@ def test_dispatch_temperature_calibration_calculate_fit_action():
     }
 
     # Test the "temp" hardware's calibrator initialization
-    response = client.post("/hardware/temp/calibrator/start", json=request_payload)
+    response = client.post("/hardware/temp/calibrator/procedure/start", json=request_payload)
     assert response.status_code == 200
 
     # Dispatch the action to set the reference value
     reference_action_payload = {"action_name": "Vial_0_Temp_Reference_Value_Action", "payload": {"temperature": 25.0}}
-    reference_dispatch_response = client.post("/hardware/temp/calibrator/dispatch", json=reference_action_payload)
+    reference_dispatch_response = client.post(
+        "/hardware/temp/calibrator/procedure/dispatch", json=reference_action_payload
+    )
     assert reference_dispatch_response.status_code == 200
     assert reference_dispatch_response.json() == {
         "state": {"selected_vials": [0, 1, 2], "temp": {"vial_0": {"reference": [25.0], "raw": []}}}
@@ -208,7 +210,7 @@ def test_dispatch_temperature_calibration_calculate_fit_action():
 
     # Dispatch the action to read the raw value
     raw_action_payload = {"action_name": "Vial_0_Temp_Raw_Voltage_Action", "payload": {}}
-    raw_dispatch_response = client.post("/hardware/temp/calibrator/dispatch", json=raw_action_payload)
+    raw_dispatch_response = client.post("/hardware/temp/calibrator/procedure/dispatch", json=raw_action_payload)
     assert raw_dispatch_response.status_code == 200
     assert raw_dispatch_response.json() == {
         "state": {"selected_vials": [0, 1, 2], "temp": {"vial_0": {"reference": [25.0], "raw": [1.23]}}}
@@ -216,7 +218,7 @@ def test_dispatch_temperature_calibration_calculate_fit_action():
 
     # Dispatch the action to calculate the fit
     fit_action_payload = {"action_name": "Vial_0_Temp_Calculate_Fit_Action", "payload": {}}
-    fit_dispatch_response = client.post("/hardware/temp/calibrator/dispatch", json=fit_action_payload)
+    fit_dispatch_response = client.post("/hardware/temp/calibrator/procedure/dispatch", json=fit_action_payload)
     assert fit_dispatch_response.status_code == 200
     fit_dispatch_response_json = fit_dispatch_response.json()
     vial_0_data = fit_dispatch_response_json["state"]["temp"]["vial_0"]
