@@ -123,7 +123,7 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
         raise HTTPException(status_code=404, detail=f"Action '{action['action_name']}' not found")
 
     try:
-        payload = action["payload"]
+        payload = action.get("payload", {})
         new_state = calibration_procedure.dispatch(action_to_dispatch, payload)
     except pydantic.ValidationError as e:
         raise HTTPException(status_code=422, detail=f"Invalid payload: {e.errors()}")
@@ -131,7 +131,7 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
     return {"state": new_state}
 
 
-# Get the current state of the calibrator for a hardware
+# Get the current state of the calibration procedure
 @router.get("/{hardware_name}/calibrator/procedure/state")
 def get_calibrator_state(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
@@ -139,5 +139,19 @@ def get_calibrator_state(hardware_name: str, request: Request):
     if not calibrator:
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
     calibration_procedure = calibrator.calibration_procedure
-    print("calibration_procedure.get_state():", calibration_procedure.get_state())
     return calibration_procedure.get_state()
+
+
+@router.get("/{hardware_name}/calibrator/data")
+def get_calibration_data(hardware_name: str, request: Request):
+    hardware_instance = get_hardware_instance(request, hardware_name)
+
+    calibrator = hardware_instance.calibrator
+    if not calibrator:
+        raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
+
+    calibration_data = calibrator.calibration_data
+    if not calibration_data:
+        raise HTTPException(status_code=404, detail=f"Calibration data not found for '{hardware_name}'")
+
+    return calibration_data

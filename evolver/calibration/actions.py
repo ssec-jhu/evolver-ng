@@ -133,7 +133,6 @@ class SaveCalibrationProcedureStateAction(CalibrationAction):
         self.hardware = hardware
 
     def execute(self, state: Dict[str, Any], payload: UserInput) -> Dict[str, Any]:
-        # save the calibration procedure state to the parent calibrator's CalibrationData
-        calibration_data = self.hardware.calibrator.CalibrationData()
+        calibration_data = self.hardware.calibrator.calibration_data
         calibration_data.save_calibration_procedure_state(calibration_procedure_state=state.copy())
         return state.copy()
