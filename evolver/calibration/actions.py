@@ -6,10 +6,31 @@ import pydantic
 
 
 class CalibrationAction(ABC):
-    class UserInput(pydantic.BaseModel): ...
+    def __init__(self, name: str, description: str):
+        self.description = description
+        self.name = name
+
+    class UserInput(pydantic.BaseModel):
+        pass
 
     @abstractmethod
     def execute(self, state: Dict[str, Any], payload: UserInput) -> Dict[str, Any]:
+        """
+        Execute the calibration action.
+
+        This method should be implemented by subclasses to perform specific calibration actions.
+        It takes the current state of the calibration procedure, and an optional payload, it processes them and
+        returns the updated state.
+
+        The payload is a pydantic model that is validated in the dispatch method of the CalibrationProcedure.
+
+        Args:
+            state (Dict[str, Any]): The current state of the calibration process.
+            payload (UserInput): The user input required to perform the action.
+
+        Returns:
+            Dict[str, Any]: The updated state after performing the action.
+        """
         pass
 
 
@@ -17,9 +38,8 @@ class DisplayInstructionAction(CalibrationAction):
     class UserInput(pydantic.BaseModel):
         pass
 
-    def __init__(self, description: str, name: str):
-        self.description = description
-        self.name = name
+    def __init__(self, name: str, description: str):
+        super().__init__(name, description)
 
     def execute(self, state: Dict[str, Any], payload: UserInput = None) -> Dict[str, Any]:
         return state.copy()
@@ -30,10 +50,9 @@ class VialTempReferenceValueAction(CalibrationAction):
         temperature: float = pydantic.Field(title="Temperature", description="Temperature in degrees Celsius")
 
     def __init__(self, hardware, description: str, vial_idx: int, name: str):
+        super().__init__(name, description)
         self.hardware = hardware
-        self.description = description
         self.vial_idx = vial_idx
-        self.name = name
 
     def execute(self, state: Dict[str, Any], payload: UserInput) -> Dict[str, Any]:
         reference_value = payload.temperature
@@ -49,9 +68,8 @@ class VialTempRawVoltageAction(CalibrationAction):
         pass
 
     def __init__(self, hardware, vial_idx: int, description, name):
-        self.name = name
+        super().__init__(name, description)
         self.hardware = hardware
-        self.description = description
         self.vial_idx = vial_idx
 
     def execute(self, state: Dict[str, Any], payload: UserInput) -> Dict[str, Any]:
@@ -60,6 +78,8 @@ class VialTempRawVoltageAction(CalibrationAction):
         vial_key = f"vial_{self.vial_idx}"
         vial_data = new_state.setdefault(self.hardware.name, {}).setdefault(vial_key, {"reference": [], "raw": []})
         vial_data["raw"].append(sensor_value)
+        calibration_data = self.hardware.calibrator.calibration_data
+        calibration_data.save_calibration_procedure_state(calibration_procedure_state=new_state)
         return new_state
 
 
@@ -68,9 +88,8 @@ class VialTempCalculateFitAction(CalibrationAction):
         pass
 
     def __init__(self, hardware, vial_idx: int, description: str, name: str):
+        super().__init__(name, description)
         self.hardware = hardware
-        self.description = description
-        self.name = name
         self.vial_idx = vial_idx
 
     def execute(self, state: Dict[str, Any], payload: UserInput) -> Dict[str, Any]:
@@ -86,13 +105,34 @@ class VialTempCalculateFitAction(CalibrationAction):
         if not reference_values or not raw_values:
             raise ValueError(f"Insufficient data to calculate fit for {hardware_name} {vial_key}")
 
-        # Perform the fit calculation (to be implemented based on actual calibration logic)
-        # Perform the fit calculation
-        # TODO: Find out how to call the fit calculation method from the hardware
-        # fit_parameters = self.hardware.calibrate_transformer.calculate_fit(reference_values, raw_values)
-        # TODO: Persist the fit parameters to the Calibrator CalibrationData (see Arik's work) data structure.
-        fit_parameters = [0.5, 0.5]
+        if len(reference_values) != len(raw_values):
+            raise ValueError(
+                f"Reference and raw data lengths do not match for {hardware_name} {vial_key}, "
+                f"Procedure state has {len(reference_values)} reference_values and {len(raw_values)} raw_values recorded so far"
+                f"Unable to calculate fit, you must dispatch the appropriate actions to collect the required data"
+            )
+
+        if not self.hardware.calibrator.Config.output_transformer:
+            raise ValueError(f"No output transformer available for {hardware_name}")
+
+        fit_config = self.hardware.calibrator.Config.output_transformer.fit(reference_values, raw_values)
 
         new_state = deepcopy(state)
-        new_state[hardware_name][vial_key]["fit_parameters"] = fit_parameters
+        new_state[hardware_name][vial_key]["output_fit_parameters"] = fit_config.model_dump()
+        calibration_data = self.hardware.calibrator.calibration_data
+        calibration_data.save_calibration_procedure_state(calibration_procedure_state=new_state)
         return new_state
+
+
+class SaveCalibrationProcedureStateAction(CalibrationAction):
+    class UserInput(pydantic.BaseModel):
+        pass
+
+    def __init__(self, hardware, description: str, name: str):
+        super().__init__(name, description)
+        self.hardware = hardware
+
+    def execute(self, state: Dict[str, Any], payload: UserInput) -> Dict[str, Any]:
+        calibration_data = self.hardware.calibrator.calibration_data
+        calibration_data.save_calibration_procedure_state(calibration_procedure_state=state.copy())
+        return state.copy()
