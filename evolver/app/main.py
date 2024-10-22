@@ -1,11 +1,14 @@
 import asyncio
 from contextlib import asynccontextmanager
+from http import HTTPStatus
 
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
 
 import evolver.util
 from evolver import __project__, __version__
-from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError
+from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError, OperationNotSupportedError
 from evolver.app.html_routes import html_app
 from evolver.app.models import SchemaResponse
 from evolver.base import require_all_fields
@@ -43,6 +46,16 @@ app.state.evolver = None
 
 @require_all_fields
 class EvolverConfigWithoutDefaults(Evolver.Config): ...
+
+
+@app.exception_handler(AttributeError)
+async def attribute_error_handler(_, exc):
+    raise OperationNotSupportedError(exc)
+
+
+@app.exception_handler(ValidationError)
+async def validation_error_handler(_, exc):
+    return JSONResponse(status_code=HTTPStatus.UNPROCESSABLE_ENTITY, content=exc.errors())
 
 
 app.include_router(hardware.router)

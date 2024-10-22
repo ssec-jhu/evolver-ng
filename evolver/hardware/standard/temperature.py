@@ -35,7 +35,7 @@ class Temperature(SensorDriver, EffectorDriver):
         temperature: float = Field(None, description="Sensor temperature in degrees Celsius")
 
     class Input(EffectorDriver.Input):
-        temperature: float = Field(None, description="Target temperature in degrees Celsius")
+        temperature: float = Field(description="Target temperature in degrees Celsius")
 
     @property
     def serial(self):

@@ -32,4 +32,4 @@ class NoOpSensorDriver(SensorDriver):
 
 class NoOpEffectorDriver(EffectorDriver):
     def commit(self):
-        self.comitted = copy(self.proposal)
+        self.committed = copy(self.proposal)
