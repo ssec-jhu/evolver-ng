@@ -97,7 +97,7 @@ class Evolver(BaseInterface):
         self.enable_control = False
         self.enable_commit = False
         for device in self.effectors.values():
-            device.abort()
+            device.off()
 
     def __enter__(self):
         return self

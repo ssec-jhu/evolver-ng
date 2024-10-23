@@ -125,5 +125,5 @@ class SerialVialEffectorHardwareTestSuite:
             return
         config, command = self.abort_command
         hw = _from_config_desc(self.driver, config, {})
-        hw.abort()
+        hw.off()
         assert hw.evolver.serial.backend.hits_map[command] == 1

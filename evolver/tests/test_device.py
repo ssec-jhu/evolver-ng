@@ -151,8 +151,8 @@ class TestEvolver:
                 super().__init__(*args, **kwargs)
                 self.aborted = False
 
-            def abort(self):
-                super().abort()
+            def off(self):
+                super().off()
                 self.aborted = True
 
         demo_evolver.hardware["testeffector"] = AbortEffector()

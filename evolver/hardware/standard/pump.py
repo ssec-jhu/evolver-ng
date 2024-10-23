@@ -95,7 +95,7 @@ class GenericPump(EffectorDriver):
             comm.communicate(SerialData(addr=self.addr, data=cmd))
         self.committed = inputs
 
-    def abort(self):
+    def off(self):
         cmd = [b"0"] * self.slots
         for pump in self.ipp_pumps:
             for solenoid in range(3):
@@ -164,5 +164,5 @@ class VialIEPump(EffectorDriver):
         self._generic_pump.commit()
         self.committed = copy(self.proposal)
 
-    def abort(self):
-        self._generic_pump.abort()
+    def off(self):
+        self._generic_pump.off()

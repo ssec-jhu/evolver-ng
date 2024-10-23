@@ -35,7 +35,7 @@ class LED(EffectorDriver):
             comm.communicate(SerialData(addr=self.addr, data=cmd))
         self.committed = inputs
 
-    def abort(self):
+    def off(self):
         cmd = [b"0"] * self.slots
         with self.serial as comm:
             comm.communicate(SerialData(addr=self.addr, data=cmd))
