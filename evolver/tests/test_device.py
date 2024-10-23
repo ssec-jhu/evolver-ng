@@ -145,15 +145,18 @@ class TestEvolver:
         assert isinstance(status["testsensor"].output_transformer, Status)
         assert status["testsensor"].ok
 
-    def test_abort(self, demo_evolver, monkeypatch):
-        test_effector = demo_evolver.hardware["testeffector"]
-        test_effector.aborted = False
+    def test_abort(self, demo_evolver):
+        class AbortEffector(NoOpEffectorDriver):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.aborted = False
 
-        def patched_abort(self):
-            self.aborted = True
+            def abort(self):
+                super().abort()
+                self.aborted = True
 
-        monkeypatch.setattr(NoOpEffectorDriver, "abort", patched_abort)
+        demo_evolver.hardware["testeffector"] = AbortEffector()
         demo_evolver.enable_commit = True
         demo_evolver.abort()
         assert not demo_evolver.enable_commit
-        assert test_effector.aborted
+        assert demo_evolver.hardware["testeffector"].aborted
