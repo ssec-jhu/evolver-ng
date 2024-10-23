@@ -83,6 +83,7 @@ class TestTempSensor:
 )
 class TestTempEffectorMode(SerialVialEffectorHardwareTestSuite):
     driver = Temperature
+    abort_command = ({"addr": "temp", "slots": 2}, b"tempr,4095,4095,_!")
 
 
 @pytest.mark.parametrize(
@@ -107,6 +108,7 @@ class TestTempEffectorMode(SerialVialEffectorHardwareTestSuite):
 )
 class TestLED(SerialVialEffectorHardwareTestSuite):
     driver = LED
+    abort_command = ({"addr": "od_led", "slots": 2}, b"od_ledr,0,0,_!")
 
 
 @pytest.mark.parametrize(
@@ -126,6 +128,7 @@ class TestLED(SerialVialEffectorHardwareTestSuite):
 )
 class TestStir(SerialVialEffectorHardwareTestSuite):
     driver = Stir
+    abort_command = ({"addr": "stir", "slots": 2}, b"stirr,0,0,_!")
 
 
 @pytest.mark.parametrize(
@@ -155,3 +158,4 @@ class TestStir(SerialVialEffectorHardwareTestSuite):
 )
 class TestPump(SerialVialEffectorHardwareTestSuite):
     driver = VialIEPump
+    abort_command = ({"addr": "pump", "slots": 2, "ipp_pumps": [1]}, b"pumpr,0,0,0,0|1|1,0|1|2,0|1|3,_!")

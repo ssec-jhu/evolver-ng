@@ -207,6 +207,14 @@ class TestApp:
         else:
             assert response.json() == {"data": {}}
 
+    def test_abort_endpoint(self, app_client):
+        assert app.state.evolver.enable_commit
+        response = app_client.post("/abort")
+        assert response.status_code == 200
+        assert not app.state.evolver.enable_commit
+        saved_config = Evolver.Config.load(app_settings.CONFIG_FILE)
+        assert not saved_config.enable_commit
+
 
 def test_app_load_file(app_client):
     config = Evolver.Config(
