@@ -2,6 +2,12 @@ from typing import Any, Dict
 
 from evolver.calibration.actions import CalibrationAction
 
+from pydantic import BaseModel
+
+
+class CalibrationProcedureInitialState(BaseModel):
+    """Base class/interface for calibration procedure initial state."""
+
 
 class CalibrationProcedure:
     def __init__(self, name: str, initial_state: Dict[str, Any] = None):

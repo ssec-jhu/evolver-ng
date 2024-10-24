@@ -1,7 +1,3 @@
-from typing import List
-
-from pydantic import BaseModel
-
 from evolver.calibration.actions import (
     DisplayInstructionAction,
     SaveCalibrationProcedureStateAction,
@@ -9,12 +5,15 @@ from evolver.calibration.actions import (
     VialTempRawVoltageAction,
     VialTempReferenceValueAction,
 )
-from evolver.calibration.procedure import CalibrationProcedure
+from evolver.calibration.procedure import CalibrationProcedure, CalibrationProcedureInitialState
 from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
 from evolver.hardware.interface import HardwareDriver
+from typing import List, Dict
 
 
-class TempCalibrationProcedureInitialState(BaseModel):
+class TempCalibrationProcedureInitialState(CalibrationProcedureInitialState):
+    """Initial state for temperature calibration procedure."""
+
     selected_vials: List[int]
 
 
@@ -27,10 +26,17 @@ class TemperatureCalibrator(LinearCalibrator):
     def initialize_calibration_procedure(
         self,
         selected_hardware: HardwareDriver,
-        initial_state: TempCalibrationProcedureInitialState,
+        initial_state: Dict,
         *args,
         **kwargs,
     ):
+        try:
+            initial_state = TempCalibrationProcedureInitialState.model_validate(initial_state)
+        except TypeError:
+            raise ValueError(
+                "Calibration procedure initial state is invalid, procedure must be initialized with a list of vials that the procedure will run on"
+            )
+
         selected_vials = initial_state.selected_vials
         calibration_procedure = CalibrationProcedure(
             "Temperature Calibration", initial_state=initial_state.model_dump()

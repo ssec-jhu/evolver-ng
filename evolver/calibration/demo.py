@@ -3,8 +3,8 @@ from pydantic import Field
 from evolver.base import ConfigDescriptor
 from evolver.calibration.interface import Calibrator, Transformer
 from evolver.calibration.procedure import CalibrationProcedure
-from evolver.calibration.standard.calibrators.temperature import TempCalibrationProcedureInitialState
 from evolver.hardware.interface import HardwareDriver
+from typing import Dict
 
 
 class NoOpTransformer(Transformer):
@@ -29,12 +29,10 @@ class NoOpCalibrator(Calibrator):
     def initialize_calibration_procedure(
         self,
         selected_hardware: HardwareDriver,
-        initial_state: TempCalibrationProcedureInitialState,
+        initial_state: Dict,
         *args,
         **kwargs,
     ):
-        calibration_procedure = CalibrationProcedure(
-            "No Op Calibration Procedure ", initial_state=initial_state.model_dump()
-        )
+        calibration_procedure = CalibrationProcedure("No Op Calibration Procedure ", initial_state=initial_state)
         self.calibration_procedure = calibration_procedure
         pass

@@ -69,24 +69,24 @@ def hardware_commit(hardware_name: str, request: Request):
 # Start the calibration procedure for the selected hardware and vials
 @router.post("/{hardware_name}/calibrator/procedure/start")
 def start_calibration_procedure(
-    hardware_name: str, request: Request, initial_state: TempCalibrationProcedureInitialState | None
+    hardware_name: str,
+    request: Request,
+    initial_state: Dict | None,
 ):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
         raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
 
-    match hardware_name:
-        case "temp":
-            calibrator.initialize_calibration_procedure(
-                selected_hardware=hardware_instance,
-                initial_state=initial_state,
-                evolver=request.app.state.evolver,
-            )
-        case _:
-            raise HTTPException(
-                status_code=404, detail=f"No initialize_calibration_procedure defined for '{hardware_name}'"
-            )
+    if hasattr(calibrator, "initialize_calibration_procedure"):
+        calibrator.initialize_calibration_procedure(
+            selected_hardware=hardware_instance,
+            initial_state=initial_state,
+        )
+    else:
+        raise HTTPException(
+            status_code=404, detail=f"No initialize_calibration_procedure defined for '{hardware_name}'"
+        )
 
     return calibrator.calibration_procedure.get_state()
 
