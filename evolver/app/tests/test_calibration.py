@@ -236,11 +236,6 @@ def test_dispatch_temperature_calibration_calculate_fit_action():
 
     fit = vial_0_data["fit"]
 
-    assert "name" in fit
-    assert "dir" in fit
-    assert "created" in fit
-    assert "expire" in fit
-    assert fit["degree"] == 1
     assert fit["parameters"] == [0.6149999999999997, 0.024599999999999997]
 
 
@@ -292,15 +287,18 @@ def test_get_calibration_data():
     )
     assert save_dispatch_response.status_code == 200
 
-    # Verify the saved calibration data contains the procedure state
     calibration_data_response = client.get("/hardware/test/calibrator/data")
     assert calibration_data_response.status_code == 200
     calibration_data = calibration_data_response.json()
 
-    # Assertions on the top-level calibration data fields
     assert set(calibration_data.keys()).issuperset({"dir", "created", "expire"})
-    persisted_procedure_state = calibration_data["calibration_procedure_state"]
-    assert persisted_procedure_state["vial_data"]["0"]["fit"]["parameters"] == [
-        0.6149999999999997,
-        0.024599999999999997,
-    ]
+    assert calibration_data["calibration_procedure_state"] == {
+        "selected_vials": [0, 1, 2],
+        "vial_data": {
+            "0": {
+                "fit": {"degree": 1, "parameters": [0.6149999999999997, 0.024599999999999997]},
+                "raw": [1.23],
+                "reference": [25.0],
+            }
+        },
+    }

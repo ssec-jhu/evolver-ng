@@ -52,8 +52,7 @@ class RawValueAction(CalibrationAction):
             state.vial_data[self.vial_idx] = VialData()
         sensor_value = self.hardware.read()[self.vial_idx]
         state.vial_data[self.vial_idx].raw.append(sensor_value)
-        calibration_data = self.hardware.calibrator.calibration_data
-        calibration_data.save_calibration_procedure_state(calibration_procedure_state=state.model_copy())
+        self.hardware.calibrator.calibration_data.save()
         return state.model_copy()
 
 
@@ -78,10 +77,10 @@ class CalculateFitAction(CalibrationAction):
         fit_config = output_transformer.fit(reference_values, raw_values)
         fit_config.calibration_procedure_state = state.model_copy()
 
-        state.vial_data[self.vial_idx].fit = fit_config.model_dump()
-
-        calibration_data = self.hardware.calibrator.calibration_data
-        calibration_data.save_calibration_procedure_state(calibration_procedure_state=state.model_copy())
+        state.vial_data[self.vial_idx].fit["parameters"] = fit_config.model_dump()["parameters"]
+        state.vial_data[self.vial_idx].fit["degree"] = fit_config.model_dump()["degree"]
+        self.hardware.calibrator.calibration_data.calibration_procedure_state = state.model_copy()
+        self.hardware.calibrator.calibration_data.save()
 
         return state.model_copy()
 
@@ -95,6 +94,5 @@ class SaveProcedureStateAction(CalibrationAction):
         self.hardware = hardware
 
     def execute(self, state: ProcedureState, payload: Optional[FormModel] = None) -> ProcedureState:
-        calibration_data = self.hardware.calibrator.calibration_data
-        calibration_data.save_calibration_procedure_state(calibration_procedure_state=state.model_copy())
+        self.hardware.calibrator.calibration_data.save()
         return state.model_copy()

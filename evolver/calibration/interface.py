@@ -136,14 +136,6 @@ class Calibrator(BaseInterface):
         Calibrator's CalibrationData.
         """
 
-        def save_calibration_procedure_state(self, calibration_procedure_state: dict[str, Any]):
-            self.calibration_procedure_state = calibration_procedure_state
-            self.save()
-
-        def load_calibration_procedure_state(self) -> dict:
-            """Load or retrieve saved procedure state data."""
-            return self.calibration_procedure_state
-
     class Status(_BaseConfig):
         input_transformer: Status | None = None
         output_transformer: Status | None = None
