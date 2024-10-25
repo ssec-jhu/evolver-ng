@@ -10,7 +10,7 @@ from evolver.calibration.procedure import ProcedureStateModel
 class VialCalibrationData(BaseModel):
     reference: List[float] = Field(default_factory=list, description="Reference temperature values.")
     raw: List[float] = Field(default_factory=list, description="Raw temperature readings.")
-    fit_parameters: Dict = Field(
+    fit: Dict = Field(
         default_factory=dict,
         description="Fit parameters for the temperature sensor, calculated from reference and raw values collected in the procedure.",
     )
@@ -110,8 +110,9 @@ class VialTempCalculateFitAction(CalibrationAction):
             raise ValueError(f"No output transformer available for hardware {self.hardware.name}")
 
         fit_config = self.hardware.calibrator.Config.output_transformer.fit(reference_values, raw_values)
+        fit_config.calibration_procedure_state = state.model_copy()
 
-        state.vial_data[self.vial_idx].fit_parameters = fit_config.model_dump()
+        state.vial_data[self.vial_idx].fit = fit_config.model_dump()
 
         calibration_data = self.hardware.calibrator.calibration_data
         calibration_data.save_calibration_procedure_state(calibration_procedure_state=state.model_copy())

@@ -121,7 +121,7 @@ def test_dispatch_temperature_calibration_reference_value_action():
     assert dispatch_response.json() == {
         "state": {
             "selected_vials": [0, 1, 2],
-            "vial_data": {"0": {"fit_parameters": {}, "reference": [25.0], "raw": []}},
+            "vial_data": {"0": {"fit": {}, "reference": [25.0], "raw": []}},
         }
     }
 
@@ -165,7 +165,7 @@ def test_dispatch_temperature_calibration_raw_value_action():
     assert dispatch_response.json() == {
         "state": {
             "selected_vials": [0, 1, 2],
-            "vial_data": {"0": {"fit_parameters": {}, "reference": [], "raw": [1.23]}},
+            "vial_data": {"0": {"fit": {}, "reference": [], "raw": [1.23]}},
         }
     }
 
@@ -209,7 +209,7 @@ def test_dispatch_temperature_calibration_calculate_fit_action():
     assert reference_dispatch_response.json() == {
         "state": {
             "selected_vials": [0, 1, 2],
-            "vial_data": {"0": {"fit_parameters": {}, "reference": [25.0], "raw": []}},
+            "vial_data": {"0": {"fit": {}, "reference": [25.0], "raw": []}},
         }
     }
 
@@ -220,7 +220,7 @@ def test_dispatch_temperature_calibration_calculate_fit_action():
     assert raw_dispatch_response.json() == {
         "state": {
             "selected_vials": [0, 1, 2],
-            "vial_data": {"0": {"fit_parameters": {}, "reference": [25.0], "raw": [1.23]}},
+            "vial_data": {"0": {"fit": {}, "reference": [25.0], "raw": [1.23]}},
         }
     }
 
@@ -234,14 +234,14 @@ def test_dispatch_temperature_calibration_calculate_fit_action():
     assert vial_0_data["reference"] == [25.0]
     assert vial_0_data["raw"] == [1.23]
 
-    fit_parameters = vial_0_data["fit_parameters"]
+    fit = vial_0_data["fit"]
 
-    assert "name" in fit_parameters
-    assert "dir" in fit_parameters
-    assert "created" in fit_parameters
-    assert "expire" in fit_parameters
-    assert fit_parameters["degree"] == 1
-    assert fit_parameters["parameters"] == [0.6149999999999997, 0.024599999999999997]
+    assert "name" in fit
+    assert "dir" in fit
+    assert "created" in fit
+    assert "expire" in fit
+    assert fit["degree"] == 1
+    assert fit["parameters"] == [0.6149999999999997, 0.024599999999999997]
 
 
 def test_get_calibration_data():
@@ -252,72 +252,55 @@ def test_get_calibration_data():
     evolver_instance = Evolver(
         hardware={"test": NoOpSensorDriver(name="test", calibrator=temp_calibrator, vials=[0, 1, 2])}
     )
-
-    # Ensure the temp calibrator has access to the evolver
     temp_calibrator.evolver = evolver_instance
-
-    # Set the evolver state in the app before testing
     app.state.evolver = evolver_instance
 
-    # Mock the hardware read method to return a meaningful value
+    # Mock the hardware read method
     evolver_instance.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
-
-    # Create the test client
     client = TestClient(app)
 
-    # Prepare the request payload to initialize the calibration procedure
-    request_payload = {
-        "selected_vials": [0, 1, 2]  # Simulate the user selecting vials for calibration
-    }
-
-    # Test the "temp" hardware's calibrator initialization
-    calibration_data_response = client.post("/hardware/test/calibrator/procedure/start", json=request_payload)
+    # Initialize the calibration procedure
+    calibration_data_response = client.post(
+        "/hardware/test/calibrator/procedure/start", json={"selected_vials": [0, 1, 2]}
+    )
     assert calibration_data_response.status_code == 200
 
-    # Dispatch the action to set the reference value
-    reference_action_payload = {"action_name": "Vial_0_Temp_Reference_Value_Action", "payload": {"temperature": 25.0}}
+    # Dispatch actions to set reference value, read raw value, and calculate fit
     reference_dispatch_response = client.post(
-        "/hardware/test/calibrator/procedure/dispatch", json=reference_action_payload
+        "/hardware/test/calibrator/procedure/dispatch",
+        json={"action_name": "Vial_0_Temp_Reference_Value_Action", "payload": {"temperature": 25.0}},
     )
     assert reference_dispatch_response.status_code == 200
-    assert reference_dispatch_response.json() == {
-        "state": {
-            "selected_vials": [0, 1, 2],
-            "vial_data": {"0": {"fit_parameters": {}, "reference": [25.0], "raw": []}},
-        }
-    }
+    assert reference_dispatch_response.json()["state"]["vial_data"]["0"]["reference"] == [25.0]
 
-    # Dispatch the action to read the raw value
-    raw_action_payload = {"action_name": "Vial_0_Temp_Raw_Voltage_Action", "payload": {}}
-    raw_dispatch_response = client.post("/hardware/test/calibrator/procedure/dispatch", json=raw_action_payload)
+    raw_dispatch_response = client.post(
+        "/hardware/test/calibrator/procedure/dispatch",
+        json={"action_name": "Vial_0_Temp_Raw_Voltage_Action", "payload": {}},
+    )
     assert raw_dispatch_response.status_code == 200
-    assert raw_dispatch_response.json() == {
-        "state": {
-            "selected_vials": [0, 1, 2],
-            "vial_data": {"0": {"fit_parameters": {}, "reference": [25.0], "raw": [1.23]}},
-        }
-    }
+    assert raw_dispatch_response.json()["state"]["vial_data"]["0"]["raw"] == [1.23]
 
-    # Dispatch the action to calculate the fit
-    fit_action_payload = {"action_name": "Vial_0_Temp_Calculate_Fit_Action"}
-    fit_dispatch_response = client.post("/hardware/test/calibrator/procedure/dispatch", json=fit_action_payload)
+    fit_dispatch_response = client.post(
+        "/hardware/test/calibrator/procedure/dispatch", json={"action_name": "Vial_0_Temp_Calculate_Fit_Action"}
+    )
     assert fit_dispatch_response.status_code == 200
 
-    save_action_payload = {"action_name": "Save_Calibration_Procedure_State_Action", "payload": {}}
-
-    save_dispatch_response = client.post("/hardware/test/calibrator/procedure/dispatch", json=save_action_payload)
+    # Save the calibration procedure state
+    save_dispatch_response = client.post(
+        "/hardware/test/calibrator/procedure/dispatch",
+        json={"action_name": "Save_Calibration_Procedure_State_Action", "payload": {}},
+    )
     assert save_dispatch_response.status_code == 200
 
-    # Assert that the calibration data contains state from the now complete calibration_procedure
+    # Verify the saved calibration data contains the procedure state
     calibration_data_response = client.get("/hardware/test/calibrator/data")
     assert calibration_data_response.status_code == 200
     calibration_data = calibration_data_response.json()
-    assert "dir" in calibration_data
-    assert "created" in calibration_data
-    assert "expire" in calibration_data
-    assert "calibration_procedure_state" in calibration_data
-    assert "test" in calibration_data["calibration_procedure_state"]
-    assert "vial_0" in calibration_data["calibration_procedure_state"]["test"]
-    vial_0_data = calibration_data["calibration_procedure_state"]["test"]["vial_0"]
-    assert vial_0_data["reference"] == [25.0]
-    assert vial_0_data["raw"] == [1.23]
+
+    # Assertions on the top-level calibration data fields
+    assert set(calibration_data.keys()).issuperset({"dir", "created", "expire"})
+    persisted_procedure_state = calibration_data["calibration_procedure_state"]
+    assert persisted_procedure_state["vial_data"]["0"]["fit"]["parameters"] == [
+        0.6149999999999997,
+        0.024599999999999997,
+    ]

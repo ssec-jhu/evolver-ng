@@ -1,7 +1,7 @@
 import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional, Dict
 
 from pydantic import Field, PastDatetime, BaseModel
 
@@ -63,8 +63,8 @@ class Transformer(BaseInterface):
         )
         created: PastDatetime | None = CreatedTimestampField()
         expire: datetime.timedelta | None = ExpireField(default=settings.DEFAULT_CALIBRATION_EXPIRE)
-        calibration_procedure_state: dict[str, Any] = Field(
-            default_factory=dict,
+        calibration_procedure_state: Optional[Dict[str, Any]] = Field(
+            default=None,
             description="Measured data from the calibration procedure, including the overall procedure state",
         )
 
