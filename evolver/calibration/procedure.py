@@ -44,6 +44,7 @@ class CalibrationProcedure:
 
     def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]) -> Dict[str, Any]:
         if payload is not None:
-            payload = action.UserInput(**payload)
+            payload = action.FormModel(**payload)
+
         self.state = action.execute(self.state, payload)
         return self.state

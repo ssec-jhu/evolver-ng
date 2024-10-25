@@ -4,8 +4,13 @@ import pydantic
 from fastapi import APIRouter, Body, HTTPException, Path, Request
 from pydantic import BaseModel
 
-from evolver.app.exceptions import HardwareNotFoundError
-from evolver.calibration.standard.calibrators.temperature import TempCalibrationProcedureInitialState
+from evolver.app.exceptions import (
+    HardwareNotFoundError,
+    CalibratorNotFoundError,
+    CalibratorCalibrationProcedureFailedToInitializeError,
+    CalibrationProcedureActionNotFoundError,
+    CalibrationProcedureActionInvalidPayloadError,
+)
 from evolver.hardware.interface import HardwareDriver
 
 router = APIRouter(prefix="/hardware", tags=["hardware"], responses={404: {"description": "Not found"}})
@@ -20,14 +25,12 @@ class StartCalibrationProcedureRequest(BaseModel):
     selected_vials: None | List[int] = None
 
 
-# Utility function to fetch the evolver and hardware instance
 def get_hardware_instance(request: Request, hardware_name: str) -> HardwareDriver:
     if not (hardware_instance := request.app.state.evolver.hardware.get(hardware_name)):
         raise HardwareNotFoundError
     return hardware_instance
 
 
-# Endpoint used by the UI to present the user with a list of hardware to select from for calibration
 @router.get("/")
 def get_all_hardware(request: Request):
     evolver = request.app.state.evolver
@@ -38,7 +41,6 @@ def get_all_hardware(request: Request):
     return hardware_outputs
 
 
-# Having selected a hardware by name, the user can now select vials to calibrate
 @router.get("/{hardware_name}")
 def get_hardware(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
@@ -76,18 +78,14 @@ def start_calibration_procedure(
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
-        raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
-
+        raise CalibratorNotFoundError
     if hasattr(calibrator, "initialize_calibration_procedure"):
         calibrator.initialize_calibration_procedure(
             selected_hardware=hardware_instance,
             initial_state=initial_state,
         )
     else:
-        raise HTTPException(
-            status_code=404, detail=f"No initialize_calibration_procedure defined for '{hardware_name}'"
-        )
-
+        raise CalibratorCalibrationProcedureFailedToInitializeError
     return calibrator.calibration_procedure.get_state()
 
 
@@ -97,13 +95,12 @@ def get_calibrator_actions(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
-        raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
-
+        raise CalibratorNotFoundError
     calibration_procedure = calibrator.calibration_procedure
     actions = [
-        {"name": action.name, "description": action.description} for action in calibration_procedure.get_actions()
+        {"name": action.model.name, "description": action.model.description}
+        for action in calibration_procedure.get_actions()
     ]
-
     return {"actions": actions}
 
 
@@ -113,20 +110,22 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
-        raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
+        raise CalibratorNotFoundError
 
     calibration_procedure = calibrator.calibration_procedure
 
-    action_to_dispatch = next((a for a in calibration_procedure.get_actions() if a.name == action["action_name"]), None)
+    action_to_dispatch = next(
+        (a for a in calibration_procedure.get_actions() if a.model.name == action["action_name"]), None
+    )
 
     if not action_to_dispatch:
-        raise HTTPException(status_code=404, detail=f"Action '{action['action_name']}' not found")
+        raise CalibrationProcedureActionNotFoundError(action_name=action["action_name"])
 
     try:
         payload = action.get("payload", {})
         new_state = calibration_procedure.dispatch(action_to_dispatch, payload)
     except pydantic.ValidationError as e:
-        raise HTTPException(status_code=422, detail=f"Invalid payload: {e.errors()}")
+        raise CalibrationProcedureActionInvalidPayloadError(errors=e.errors())
 
     return {"state": new_state}
 
@@ -137,7 +136,7 @@ def get_calibrator_state(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
-        raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
+        raise CalibratorNotFoundError
     calibration_procedure = calibrator.calibration_procedure
     return calibration_procedure.get_state()
 
@@ -148,7 +147,7 @@ def get_calibration_data(hardware_name: str, request: Request):
 
     calibrator = hardware_instance.calibrator
     if not calibrator:
-        raise HTTPException(status_code=404, detail=f"Calibrator not found for '{hardware_name}'")
+        raise CalibratorNotFoundError
 
     calibration_data = calibrator.calibration_data
     if not calibration_data:
