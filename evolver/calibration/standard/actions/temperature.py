@@ -1,7 +1,6 @@
-from typing import Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
-from typing import List, Dict
 
 from evolver.calibration.action import CalibrationAction, CalibrationActionModel
 from evolver.calibration.procedure import ProcedureStateModel

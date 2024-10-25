@@ -1,6 +1,5 @@
 from typing import Any, Dict
 
-
 from evolver.calibration.action import CalibrationAction
 from evolver.calibration.interface import ProcedureStateModel
 

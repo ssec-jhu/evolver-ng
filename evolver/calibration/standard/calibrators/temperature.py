@@ -1,14 +1,14 @@
 from typing import Dict
 
+from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
     DisplayInstructionAction,
     SaveCalibrationProcedureStateAction,
+    TempCalibrationProcedureState,
     VialTempCalculateFitAction,
     VialTempRawVoltageAction,
     VialTempReferenceValueAction,
-    TempCalibrationProcedureState,
 )
-from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
 from evolver.hardware.interface import HardwareDriver
 

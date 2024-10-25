@@ -1,7 +1,7 @@
+from abc import ABC, abstractmethod
 from typing import Optional
 
 from pydantic import BaseModel, Field
-from abc import ABC, abstractmethod
 
 from evolver.calibration.interface import ProcedureStateModel
 

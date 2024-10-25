@@ -1,9 +1,9 @@
 import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Dict
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from pydantic import Field, PastDatetime, BaseModel
+from pydantic import BaseModel, Field, PastDatetime
 
 from evolver.base import (
     BaseConfig,
