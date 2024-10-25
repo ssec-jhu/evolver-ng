@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from pydantic import Field, PastDatetime
+from pydantic import Field, PastDatetime, BaseModel
 
 from evolver.base import (
     BaseConfig,
@@ -18,6 +18,13 @@ from evolver.settings import settings
 
 if TYPE_CHECKING:
     pass
+
+
+class ProcedureStateModel(BaseModel):
+    """
+    Calibration procedure state data
+    This model is shared by the calibration procedure and the calibrator's CalibrationData class.
+    """
 
 
 class Status(TimeStamp):
@@ -118,7 +125,7 @@ class Calibrator(BaseInterface):
         output_transformer: ConfigDescriptor | Transformer | None = None
         calibration_file: str | None = None
 
-    class CalibrationData(Transformer.Config):
+    class CalibrationData(Transformer.Config, ProcedureStateModel):
         """Stores calibration data, including the measured_data in the CalibrationProcedure.
 
         While the CalibrationProcedure attached to a Calibrator instance may hold state information, it will not
@@ -132,6 +139,10 @@ class Calibrator(BaseInterface):
         def save_calibration_procedure_state(self, calibration_procedure_state: dict[str, Any]):
             self.calibration_procedure_state = calibration_procedure_state
             self.save()
+
+        def load_calibration_procedure_state(self) -> dict:
+            """Load or retrieve saved procedure state data."""
+            return self.calibration_procedure_state
 
     class Status(_BaseConfig):
         input_transformer: Status | None = None

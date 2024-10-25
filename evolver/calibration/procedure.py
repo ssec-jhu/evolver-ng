@@ -1,16 +1,12 @@
 from typing import Any, Dict
 
-from pydantic import BaseModel
 
-from evolver.calibration.actions import CalibrationAction
-
-
-class CalibrationProcedureInitialState(BaseModel):
-    """Base class/interface for calibration procedure initial state."""
+from evolver.calibration.action import CalibrationAction
+from evolver.calibration.interface import ProcedureStateModel
 
 
 class CalibrationProcedure:
-    def __init__(self, name: str, initial_state: Dict[str, Any] = None):
+    def __init__(self, name: str, initial_state: ProcedureStateModel = None):
         """
         Initialize the CalibrationProcedure.
 
@@ -31,7 +27,7 @@ class CalibrationProcedure:
         """
         self.name = name
         self.actions = []
-        self.state = initial_state if initial_state is not None else {}
+        self.state = initial_state if initial_state else ProcedureStateModel()
 
     def add_action(self, action: CalibrationAction):
         self.actions.append(action)
@@ -39,7 +35,7 @@ class CalibrationProcedure:
     def get_actions(self):
         return self.actions
 
-    def get_state(self):
+    def get_state(self) -> ProcedureStateModel:
         return self.state
 
     def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]) -> Dict[str, Any]:

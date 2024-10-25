@@ -1,21 +1,16 @@
-from typing import Dict, List
+from typing import Dict
 
-from evolver.calibration.actions import (
+from evolver.calibration.standard.actions.temperature import (
     DisplayInstructionAction,
     SaveCalibrationProcedureStateAction,
     VialTempCalculateFitAction,
     VialTempRawVoltageAction,
     VialTempReferenceValueAction,
+    TempCalibrationProcedureState,
 )
-from evolver.calibration.procedure import CalibrationProcedure, CalibrationProcedureInitialState
+from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
 from evolver.hardware.interface import HardwareDriver
-
-
-class TempCalibrationProcedureInitialState(CalibrationProcedureInitialState):
-    """Initial state for temperature calibration procedure."""
-
-    selected_vials: List[int]
 
 
 class TemperatureCalibrator(LinearCalibrator):
@@ -32,16 +27,14 @@ class TemperatureCalibrator(LinearCalibrator):
         **kwargs,
     ):
         try:
-            initial_state = TempCalibrationProcedureInitialState.model_validate(initial_state)
+            initial_state = TempCalibrationProcedureState.model_validate(initial_state)
         except TypeError:
             raise ValueError(
                 "Calibration procedure initial state is invalid, procedure must be initialized with a list of vials that the procedure will run on"
             )
 
         selected_vials = initial_state.selected_vials
-        calibration_procedure = CalibrationProcedure(
-            "Temperature Calibration", initial_state=initial_state.model_dump()
-        )
+        calibration_procedure = CalibrationProcedure("Temperature Calibration", initial_state=initial_state)
         calibration_procedure.add_action(
             DisplayInstructionAction(description="Fill each vial with 15ml water", name="Fill_Vials_With_Water")
         )
