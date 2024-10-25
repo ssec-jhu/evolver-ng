@@ -95,6 +95,14 @@ class GenericPump(EffectorDriver):
             comm.communicate(SerialData(addr=self.addr, data=cmd))
         self.committed = inputs
 
+    def off(self):
+        cmd = [b"0"] * self.slots
+        for pump in self.ipp_pumps:
+            for solenoid in range(3):
+                cmd[pump * 3 + solenoid] = f"0|{pump}|{solenoid+1}".encode()
+        with self.serial as comm:
+            comm.communicate(SerialData(addr=self.addr, data=cmd))
+
 
 class VialIEPumpCalibrator(GenericPumpCalibrator):
     def run_calibration_procedure(self, *args, **kwargs):
@@ -155,3 +163,6 @@ class VialIEPump(EffectorDriver):
                 )
         self._generic_pump.commit()
         self.committed = copy(self.proposal)
+
+    def off(self):
+        self._generic_pump.off()

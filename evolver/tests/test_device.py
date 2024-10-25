@@ -7,7 +7,7 @@ from evolver.calibration.interface import Calibrator, Status
 from evolver.connection.interface import Connection
 from evolver.controller.interface import Controller
 from evolver.device import DEFAULT_HISTORY, DEFAULT_SERIAL, Evolver
-from evolver.hardware.demo import NoOpSensorDriver
+from evolver.hardware.demo import NoOpEffectorDriver, NoOpSensorDriver
 from evolver.hardware.interface import HardwareDriver
 from evolver.history.interface import History
 
@@ -144,3 +144,19 @@ class TestEvolver:
         assert isinstance(status["testsensor"].input_transformer, Status)
         assert isinstance(status["testsensor"].output_transformer, Status)
         assert status["testsensor"].ok
+
+    def test_abort(self, demo_evolver):
+        class AbortEffector(NoOpEffectorDriver):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, **kwargs)
+                self.aborted = False
+
+            def off(self):
+                super().off()
+                self.aborted = True
+
+        demo_evolver.hardware["testeffector"] = AbortEffector()
+        demo_evolver.enable_commit = True
+        demo_evolver.abort()
+        assert not demo_evolver.enable_commit
+        assert demo_evolver.hardware["testeffector"].aborted

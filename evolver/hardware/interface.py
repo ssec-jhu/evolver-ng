@@ -81,3 +81,13 @@ class EffectorDriver(VialHardwareDriver):
     @abstractmethod
     def commit(self):
         pass
+
+    @abstractmethod
+    def off(self):
+        """Immediately turn device into off state.
+
+        Used by framework in aborting an experiment. Implementations should
+        define off condition and implement in such a way that a commit call is
+        not necessary (i.e. the device turns off upon calling this method).
+        """
+        pass

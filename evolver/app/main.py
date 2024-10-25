@@ -141,6 +141,16 @@ async def calibrate(name: str, data: dict = None):
     return calibrator.run_calibration_procedure(data)  # TODO: or **data?
 
 
+@app.post("/abort")
+async def abort():
+    app.state.evolver.abort()
+    # Disable commit also in persistent config in case application needs to restart
+    config = Evolver.Config.load(app_settings.CONFIG_FILE)
+    config.enable_control = False
+    config.enable_commit = False
+    config.save(app_settings.CONFIG_FILE)
+
+
 app.mount("/html", html_app)
 
 

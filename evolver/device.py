@@ -93,6 +93,12 @@ class Evolver(BaseInterface):
         if self.enable_commit:
             self.commit_proposals()
 
+    def abort(self):
+        self.enable_control = False
+        self.enable_commit = False
+        for device in self.effectors.values():
+            device.off()
+
     def __enter__(self):
         return self
 

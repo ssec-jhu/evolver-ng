@@ -70,3 +70,8 @@ class Temperature(SensorDriver, EffectorDriver):
 
     def commit(self):
         self._do_serial(from_proposal=True)
+
+    def off(self):
+        cmd = [self.HEAT_OFF] * self.slots
+        with self.serial as comm:
+            comm.communicate(SerialData(addr=self.addr, data=cmd))
