@@ -1,3 +1,5 @@
+from typing import Dict, List
+
 from evolver.calibration.actions import (
     DisplayInstructionAction,
     SaveCalibrationProcedureStateAction,
@@ -8,7 +10,6 @@ from evolver.calibration.actions import (
 from evolver.calibration.procedure import CalibrationProcedure, CalibrationProcedureInitialState
 from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
 from evolver.hardware.interface import HardwareDriver
-from typing import List, Dict
 
 
 class TempCalibrationProcedureInitialState(CalibrationProcedureInitialState):

@@ -1,8 +1,8 @@
 from typing import Any, Dict
 
-from evolver.calibration.actions import CalibrationAction
-
 from pydantic import BaseModel
+
+from evolver.calibration.actions import CalibrationAction
 
 
 class CalibrationProcedureInitialState(BaseModel):

@@ -1,10 +1,11 @@
+from typing import Dict
+
 from pydantic import Field
 
 from evolver.base import ConfigDescriptor
 from evolver.calibration.interface import Calibrator, Transformer
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.hardware.interface import HardwareDriver
-from typing import Dict
 
 
 class NoOpTransformer(Transformer):
