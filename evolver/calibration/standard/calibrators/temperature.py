@@ -1,13 +1,13 @@
 from typing import Dict
 
+from evolver.calibration.action import DisplayInstructionAction
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
-    DisplayInstructionAction,
-    SaveCalibrationProcedureStateAction,
-    TempCalibrationProcedureState,
-    VialTempCalculateFitAction,
-    VialTempRawVoltageAction,
-    VialTempReferenceValueAction,
+    CalculateFitAction,
+    ProcedureState,
+    RawValueAction,
+    ReferenceValueAction,
+    SaveProcedureStateAction,
 )
 from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
 from evolver.hardware.interface import HardwareDriver
@@ -27,7 +27,7 @@ class TemperatureCalibrator(LinearCalibrator):
         **kwargs,
     ):
         try:
-            initial_state = TempCalibrationProcedureState.model_validate(initial_state)
+            initial_state = ProcedureState.model_validate(initial_state)
         except TypeError:
             raise ValueError(
                 "Calibration procedure initial state is invalid, procedure must be initialized with a list of vials that the procedure will run on"
@@ -40,7 +40,7 @@ class TemperatureCalibrator(LinearCalibrator):
         )
         for vial in selected_vials:
             calibration_procedure.add_action(
-                VialTempReferenceValueAction(
+                ReferenceValueAction(
                     hardware=selected_hardware,
                     vial_idx=vial,
                     description=f"Use a thermometer to measure the real temperature in the vial {vial}",
@@ -48,7 +48,7 @@ class TemperatureCalibrator(LinearCalibrator):
                 )
             )
             calibration_procedure.add_action(
-                VialTempRawVoltageAction(
+                RawValueAction(
                     hardware=selected_hardware,
                     vial_idx=vial,
                     description=f"The hardware will now read the raw voltage from the temperature sensor, vial {vial}",
@@ -58,7 +58,7 @@ class TemperatureCalibrator(LinearCalibrator):
 
         for vial in selected_vials:
             calibration_procedure.add_action(
-                VialTempCalculateFitAction(
+                CalculateFitAction(
                     hardware=selected_hardware,
                     vial_idx=vial,
                     description="Use the real and raw values that have been collected to calculate the fit for the temperature sensor",
@@ -67,7 +67,7 @@ class TemperatureCalibrator(LinearCalibrator):
             )
 
         calibration_procedure.add_action(
-            SaveCalibrationProcedureStateAction(
+            SaveProcedureStateAction(
                 hardware=selected_hardware,
                 description="Save the calibration procedure state",
                 name="Save_Calibration_Procedure_State_Action",

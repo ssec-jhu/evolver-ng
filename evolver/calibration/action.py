@@ -33,3 +33,14 @@ class CalibrationAction(ABC):
             ProcedureStateModel: The updated state after performing the action.
         """
         pass
+
+
+class DisplayInstructionAction(CalibrationAction):
+    class FormModel(BaseModel):
+        pass
+
+    def __init__(self, name: str, description: str):
+        super().__init__(CalibrationActionModel(name=name, description=description, requires_input=False))
+
+    def execute(self, state: ProcedureStateModel, payload: Optional[FormModel] = None) -> ProcedureStateModel:
+        return state.model_copy()
