@@ -113,14 +113,9 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
         raise CalibratorNotFoundError
 
     calibration_procedure = calibrator.calibration_procedure
-    print("HERE!!!")
     action_to_dispatch = next(
         (a for a in calibration_procedure.get_actions() if a.model.name == action["action_name"]), None
     )
-
-    print("ALL_ACTION_NAMES: ", [a.model.name for a in calibration_procedure.get_actions()])
-    print("ACTION_TO_DISPATCH: ", action_to_dispatch)
-    print("ACTION_NAME: ", action["action_name"])
     if not action_to_dispatch:
         raise CalibrationProcedureActionNotFoundError(action_name=action["action_name"])
 

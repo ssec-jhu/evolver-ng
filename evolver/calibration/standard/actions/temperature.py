@@ -73,8 +73,9 @@ class CalculateFitAction(CalibrationAction):
         vial_data = state.vial_data[self.vial_idx]
         reference_values = vial_data.reference
         raw_values = vial_data.raw
+        output_transformer = self.hardware.calibrator.output_transformer[self.vial_idx]
 
-        fit_config = self.hardware.calibrator.Config.output_transformer.fit(reference_values, raw_values)
+        fit_config = output_transformer.fit(reference_values, raw_values)
         fit_config.calibration_procedure_state = state.model_copy()
 
         state.vial_data[self.vial_idx].fit = fit_config.model_dump()

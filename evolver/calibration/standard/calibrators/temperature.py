@@ -1,6 +1,7 @@
 from typing import Dict
 
 from evolver.calibration.action import DisplayInstructionAction
+from evolver.calibration.interface import IndependentVialBasedCalibrator
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
     CalculateFitAction,
@@ -9,15 +10,17 @@ from evolver.calibration.standard.actions.temperature import (
     ReferenceValueAction,
     SaveProcedureStateAction,
 )
-from evolver.calibration.standard.polyfit import LinearCalibrator, LinearTransformer
+from evolver.calibration.standard.polyfit import LinearTransformer
 from evolver.hardware.interface import HardwareDriver
 
 
-class TemperatureCalibrator(LinearCalibrator):
+class TemperatureCalibrator(IndependentVialBasedCalibrator):
     def __init__(self, input_transformer=None, output_transformer=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.Config.input_transformer = input_transformer or LinearTransformer()
-        self.Config.output_transformer = output_transformer or LinearTransformer()
+        self.input_transformer = {}
+        self.output_transformer = {}
+        self.default_input_transformer = input_transformer or LinearTransformer()
+        self.default_output_transformer = output_transformer or LinearTransformer()
 
     def initialize_calibration_procedure(
         self,
@@ -34,6 +37,11 @@ class TemperatureCalibrator(LinearCalibrator):
             )
 
         selected_vials = initial_state.selected_vials
+
+        for vial in selected_vials:
+            self.input_transformer[vial] = self.default_input_transformer
+            self.output_transformer[vial] = self.default_output_transformer
+
         calibration_procedure = CalibrationProcedure("Temperature Calibration", initial_state=initial_state)
         calibration_procedure.add_action(
             DisplayInstructionAction(description="Fill each vial with 15ml water", name="Fill_Vials_With_Water")
