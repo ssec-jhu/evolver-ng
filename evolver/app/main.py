@@ -65,8 +65,7 @@ app.include_router(hardware.router)
 async def describe_evolver():
     return {
         "config": app.state.evolver.config_model,
-        "state": app.state.evolver.state,
-        "last_read": app.state.evolver.last_read,
+        **await get_state(),
     }
 
 
@@ -75,6 +74,7 @@ async def get_state():
     return {
         "state": app.state.evolver.state,
         "last_read": app.state.evolver.last_read,
+        "active": app.state.evolver.active,
     }
 
 
@@ -106,7 +106,7 @@ async def get_history(
 
 @app.get("/healthz", operation_id="healthcheck")
 async def healthz():
-    return {"message": f"Running '{__project__}' ver: '{__version__}'"}
+    return {"message": f"Running '{__project__}' ver: '{__version__}'", "active": app.state.evolver.active}
 
 
 async def evolver_async_loop():
@@ -151,14 +151,22 @@ async def abort():
     config.save(app_settings.CONFIG_FILE)
 
 
+@app.post("/start")
+async def start():
+    config = Evolver.Config.load(app_settings.CONFIG_FILE)
+    config.enable_control = True
+    config.enable_commit = True
+    await update_evolver(config)
+
+
 app.mount("/html", html_app)
 
 
-def start():
+def start_app():
     import uvicorn
 
     uvicorn.run(app, host=app_settings.HOST, port=app_settings.PORT, log_level="info")
 
 
 if __name__ == "__main__":
-    start()
+    start_app()

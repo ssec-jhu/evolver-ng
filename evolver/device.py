@@ -71,6 +71,10 @@ class Evolver(BaseInterface):
             "controllers": [{"kind": str(type(a)), "config": a.Config.model_json_schema()} for a in self.controllers],
         }
 
+    @property
+    def active(self):
+        return self.enable_control and self.enable_commit
+
     def read_state(self):
         for name, device in self.sensors.items():
             device.read()
