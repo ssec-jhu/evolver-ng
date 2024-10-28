@@ -68,7 +68,23 @@ class Transformer(BaseInterface):
             description="Measured data from the calibration procedure, including the overall procedure state",
         )
 
-        def save(self, file_path: Path = None, encoding: str | None = None):
+        def save(
+            self,
+            file_path: Path = None,
+            encoding: str | None = None,
+            calibration_procedure_state: ProcedureStateModel = None,
+        ):
+            """
+            Save the calibration procedure state to a file. This should be triggered by a calibration procedure action
+            when the calibration procedure is complete, or whenever it makes sense for example after each action, or
+            after a set of complex or laborious actions, when loosing the procedure state would be detrimental.
+
+            Args:
+                calibration_procedure_state (ProcedureStateModel): The state data from the calibration procedure to be saved.
+                file_path (Path, optional): The path to save the file. Defaults to a generated name based on `name` and `created`.
+                encoding (str, optional): The file encoding. Defaults to None.
+            """
+            self.calibration_procedure_state = calibration_procedure_state
             if file_path is None:
                 file_path = Path(f"{self.name}_{self.created.strftime(settings.DATETIME_PATH_FORMAT)}").with_suffix(
                     ".yml"
