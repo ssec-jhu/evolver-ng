@@ -3,6 +3,7 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from evolver.calibration.action import CalibrationAction, CalibrationActionModel
+from evolver.calibration.interface import ProcedureStateModel
 
 
 class VialData(BaseModel):
@@ -10,15 +11,20 @@ class VialData(BaseModel):
     raw: List[float] = Field(default_factory=list, description="Raw temperature readings.")
     fit: Dict = Field(
         default_factory=dict,
-        description="Fit parameters for the temperature sensor, calculated from reference and raw values collected in the procedure.",
+        description="Fit parameters for the temperature sensor, calculated using the output transformer defined "
+        "for the vial and the reference and raw values collected in the procedure.",
     )
 
 
-class ProcedureState(BaseModel):
-    """State model for temperature calibration procedure."""
+class ProcedureState(ProcedureStateModel):
+    """State model for the temperature calibration procedure."""
 
-    selected_vials: List[int] = Field(default_factory=list, description="List of vials being calibrated.")
-    vial_data: Dict[int, VialData] = Field(default_factory=dict, description="Calibration data for each vial.")
+    selected_vials: List[int] = Field(
+        default_factory=list, description="List of vials identified by their index being calibrated."
+    )
+    vial_data: Dict[int, VialData] = Field(
+        default_factory=dict, description="Calibration data for each vial, keyed by vial index."
+    )
 
 
 class ReferenceValueAction(CalibrationAction):

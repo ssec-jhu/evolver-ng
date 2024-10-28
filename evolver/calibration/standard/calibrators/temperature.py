@@ -15,6 +15,27 @@ from evolver.hardware.interface import HardwareDriver
 
 
 class TemperatureCalibrator(IndependentVialBasedCalibrator):
+    """
+    A calibrator for temperature sensors, extending the `IndependentVialBasedCalibrator` to allow for independent
+    calibration per vial with configurable input and output transformers.
+
+    Attributes:
+        input_transformer (dict): A dictionary of transformers for processing sensor input data on a per-vial basis.
+        output_transformer (dict): A dictionary of transformers for processing sensor output data on a per-vial basis.
+        default_input_transformer (Transformer): The default transformer for input data, set to `LinearTransformer` if
+            no specific transformer is provided.
+        default_output_transformer (Transformer): The default transformer for output data, also defaulting to
+            `LinearTransformer` if none is specified.
+
+    Parameters:
+        input_transformer (Transformer, optional): The transformer to use by default for input data. Defaults to
+            `LinearTransformer` if none is provided.
+        output_transformer (Transformer, optional): The transformer to use by default for output data, also defaults to
+            `LinearTransformer` if none is provided.
+        *args: Additional arguments to pass to the parent `IndependentVialBasedCalibrator`.
+        **kwargs: Additional keyword arguments to pass to the parent `IndependentVialBasedCalibrator`.
+    """
+
     def __init__(self, input_transformer=None, output_transformer=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.input_transformer = {}
@@ -44,23 +65,23 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
 
         calibration_procedure = CalibrationProcedure("Temperature Calibration", initial_state=initial_state)
         calibration_procedure.add_action(
-            DisplayInstructionAction(description="Fill each vial with 15ml water", name="Fill_Vials_With_Water")
+            DisplayInstructionAction(description="Fill each vial with 15ml water", name="fill_vials_instruction")
         )
         for vial in selected_vials:
             calibration_procedure.add_action(
                 ReferenceValueAction(
                     hardware=selected_hardware,
                     vial_idx=vial,
-                    description=f"Use a thermometer to measure the real temperature in the vial {vial}",
-                    name=f"Vial_{vial}_Temp_Reference_Value_Action",
+                    description=f"Use a thermometer to measure the real temperature in vial: {vial}.",
+                    name=f"measure_vial_{vial}_temperature",
                 )
             )
             calibration_procedure.add_action(
                 RawValueAction(
                     hardware=selected_hardware,
                     vial_idx=vial,
-                    description=f"The hardware will now read the raw voltage from the temperature sensor, vial {vial}",
-                    name=f"Vial_{vial}_Temp_Raw_Voltage_Action",
+                    description=f"The hardware will now read the raw output values of vial: {vial}'s temperature sensor.",
+                    name=f"read_vial_{vial}_raw_output",
                 )
             )
 
@@ -69,8 +90,8 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
                 CalculateFitAction(
                     hardware=selected_hardware,
                     vial_idx=vial,
-                    description="Use the real and raw values that have been collected to calculate the fit for the temperature sensor",
-                    name=f"Vial_{vial}_Temp_Calculate_Fit_Action",
+                    description=f"Calculate the fit for the vial: {vial}'s temperature sensor",
+                    name=f"calculate_vial_{vial}_fit",
                 )
             )
 
@@ -78,7 +99,7 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
             SaveProcedureStateAction(
                 hardware=selected_hardware,
                 description="Save the calibration procedure state",
-                name="Save_Calibration_Procedure_State_Action",
+                name="save_calibration_procedure_state",
             )
         )
 
