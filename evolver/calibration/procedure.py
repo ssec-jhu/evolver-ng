@@ -1,22 +1,23 @@
+from abc import ABC
 from typing import Any, Dict
 
+from evolver.base import BaseInterface
 from evolver.calibration.action import CalibrationAction
-from evolver.calibration.interface import ProcedureStateModel
 
 
-class CalibrationProcedure:
-    def __init__(self, name: str, initial_state: ProcedureStateModel = None):
+class CalibrationProcedure(BaseInterface, ABC):
+    class Config(BaseInterface.Config): ...
+
+    def __init__(self, name: str, *args, **kwargs):
         """
         Initialize the CalibrationProcedure.
 
         Args:
             name (str): The name of the calibration procedure.
-            initial_state (dict): The initial state of the calibration procedure. Defaults to an empty dictionary.
 
         Attributes:
             name (str): The name of the calibration procedure.
             actions (list): The list of actions to be executed in the calibration procedure. The order of actions is the default order of execution, but the frontend can change this if needed.
-            state (dict): The current state of the calibration procedure. This state is updated immutably after each action is dispatched. When the procedure is done, this state is copied to the Calibrator state (Calibrator.CalibrationData).
 
         Notes:
             - Dispatching an action will update the state of the calibration procedure.
@@ -24,9 +25,10 @@ class CalibrationProcedure:
             - The procedure state is updated immutably, ensuring the state of the procedure is always consistent.
             - TODO: Introduce some kind of composition of procedures - so you can have an undoable procedure, and/or one that logs the actions that've been taken.
         """
+        super().__init__(*args, **kwargs)
         self.name = name
         self.actions = []
-        self.state = initial_state if initial_state else ProcedureStateModel()
+        self.state = {}
 
     def add_action(self, action: CalibrationAction):
         self.actions.append(action)
@@ -34,12 +36,11 @@ class CalibrationProcedure:
     def get_actions(self):
         return self.actions
 
-    def get_state(self) -> ProcedureStateModel:
+    def get_state(self, *args, **kwargs):
         return self.state
 
-    def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]) -> Dict[str, Any]:
-        if payload is not None:
+    def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):
+        if payload is not None and action.model.requires_input:
             payload = action.FormModel(**payload)
-
         self.state = action.execute(self.state, payload)
         return self.state

@@ -33,10 +33,6 @@ class GenericPumpCalibrator(IndependentVialBasedCalibrator):
         for vial, (time, volume) in calibration_data.measured.items():
             self.input_transformer[vial] = RateTransformer(rate=volume / time)
 
-    def load_calibration(self, calibration_data):
-        super().load_calibration(calibration_data)  # If there's a parent implementation
-        self.init_transformers(calibration_data)
-
     def run_calibration_procedure(self, *args, **kwargs):
         pass
 

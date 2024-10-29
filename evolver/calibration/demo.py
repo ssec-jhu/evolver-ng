@@ -1,5 +1,3 @@
-from typing import Dict
-
 from pydantic import Field
 
 from evolver.base import ConfigDescriptor
@@ -27,13 +25,12 @@ class NoOpCalibrator(Calibrator):
         # No-op calibration procedure
         pass
 
-    def initialize_calibration_procedure(
+    def create_calibration_procedure(
         self,
         selected_hardware: HardwareDriver,
-        initial_state: Dict,
         *args,
         **kwargs,
     ):
-        calibration_procedure = CalibrationProcedure("No Op Calibration Procedure ", initial_state=initial_state)
+        calibration_procedure = CalibrationProcedure("No Op Calibration Procedure ")
         self.calibration_procedure = calibration_procedure
         pass

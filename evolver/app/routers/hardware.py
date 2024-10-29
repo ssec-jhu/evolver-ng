@@ -1,14 +1,13 @@
 from typing import Any, Dict, List
 
-import pydantic
-from fastapi import APIRouter, Body, HTTPException, Path, Request
+from fastapi import APIRouter, Body, Path, Request
 from pydantic import BaseModel
 
 from evolver.app.exceptions import (
-    CalibrationProcedureActionInvalidPayloadError,
     CalibrationProcedureActionNotFoundError,
-    CalibratorCalibrationProcedureFailedToInitializeError,
+    CalibratorCalibrationDataNotFoundError,
     CalibratorNotFoundError,
+    EvolverNotFoundError,
     HardwareNotFoundError,
 )
 from evolver.hardware.interface import HardwareDriver
@@ -35,7 +34,7 @@ def get_hardware_instance(request: Request, hardware_name: str) -> HardwareDrive
 def get_all_hardware(request: Request):
     evolver = request.app.state.evolver
     if not evolver:
-        raise HTTPException(status_code=500, detail="Evolver not initialized")
+        raise EvolverNotFoundError
 
     hardware_outputs = {name: driver.get() for name, driver in evolver.hardware.items()}
     return hardware_outputs
@@ -73,19 +72,16 @@ def hardware_commit(hardware_name: str, request: Request):
 def start_calibration_procedure(
     hardware_name: str,
     request: Request,
-    initial_state: Dict | None,
 ):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
         raise CalibratorNotFoundError
-    if hasattr(calibrator, "initialize_calibration_procedure"):
-        calibrator.initialize_calibration_procedure(
-            selected_hardware=hardware_instance,
-            initial_state=initial_state,
-        )
-    else:
-        raise CalibratorCalibrationProcedureFailedToInitializeError
+
+    calibrator.create_calibration_procedure(
+        selected_hardware=hardware_instance,
+    )
+
     return calibrator.calibration_procedure.get_state()
 
 
@@ -113,19 +109,18 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
         raise CalibratorNotFoundError
 
     calibration_procedure = calibrator.calibration_procedure
-    action_to_dispatch = next(
-        (a for a in calibration_procedure.get_actions() if a.model.name == action["action_name"]), None
-    )
+
+    action_to_dispatch = None
+    for a in calibration_procedure.get_actions():
+        if a.model.name == action["action_name"]:
+            action_to_dispatch = a
+            break
     if not action_to_dispatch:
         raise CalibrationProcedureActionNotFoundError(action_name=action["action_name"])
 
-    try:
-        payload = action.get("payload", {})
-        new_state = calibration_procedure.dispatch(action_to_dispatch, payload)
-    except pydantic.ValidationError as e:
-        raise CalibrationProcedureActionInvalidPayloadError(errors=e.errors())
+    payload = action.get("payload", {})
 
-    return {"state": new_state}
+    return calibration_procedure.dispatch(action_to_dispatch, payload)
 
 
 # Get the current state of the calibration procedure
@@ -146,9 +141,21 @@ def get_calibration_data(hardware_name: str, request: Request):
     calibrator = hardware_instance.calibrator
     if not calibrator:
         raise CalibratorNotFoundError
+    if not calibrator.calibration_data:
+        raise CalibratorCalibrationDataNotFoundError
 
-    calibration_data = calibrator.calibration_data
-    if not calibration_data:
-        raise HTTPException(status_code=404, detail=f"Calibration data not found for '{hardware_name}'")
+    return calibrator.calibration_data
 
-    return calibration_data
+
+@router.get("/{hardware_name}/calibrator/output_transformer")
+def get_calibration_data(hardware_name: str, request: Request):
+    hardware_instance = get_hardware_instance(request, hardware_name)
+
+    calibrator = hardware_instance.calibrator
+    if not calibrator:
+        raise CalibratorNotFoundError
+
+    if isinstance(calibrator.output_transformer, dict):
+        return {i: transformer.config_model for i, transformer in calibrator.output_transformer.items()}
+
+    return calibrator.output_transformer.config_model

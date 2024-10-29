@@ -3,6 +3,11 @@ from http import HTTPStatus
 from fastapi import HTTPException
 
 
+class EvolverNotFoundError(HTTPException):
+    def __init__(self, **kwargs):
+        return super().__init__(status_code=HTTPStatus.NOT_FOUND, detail="Evolver not found", **kwargs)
+
+
 class HardwareNotFoundError(HTTPException):
     def __init__(self, **kwargs):
         return super().__init__(status_code=HTTPStatus.NOT_FOUND, detail="Hardware not found", **kwargs)
@@ -26,18 +31,6 @@ class CalibratorCalibrationDataNotFoundError(HTTPException):
         )
 
 
-class CalibratorCalibrationProcedureFailedToInitializeError(HTTPException):
-    def __init__(self, **kwargs):
-        return super().__init__(
-            status_code=HTTPStatus.BAD_REQUEST, detail="Could not initialize the calibration procedure", **kwargs
-        )
-
-
 class CalibrationProcedureActionNotFoundError(HTTPException):
     def __init__(self, action_name: str, **kwargs):
         return super().__init__(status_code=HTTPStatus.NOT_FOUND, detail=f"Action '{action_name}' not found", **kwargs)
-
-
-class CalibrationProcedureActionInvalidPayloadError(HTTPException):
-    def __init__(self, errors: list[str], **kwargs):
-        return super().__init__(status_code=HTTPStatus.BAD_REQUEST, detail=f"Invalid payload: {errors}", **kwargs)

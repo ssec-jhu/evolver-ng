@@ -27,18 +27,12 @@ class PolyFitTransformer(Transformer):
         return config
 
     def refit(self, x, y, *args, **kwargs):
-        if self.parameters is None:
-            raise ValueError("No fitted parameters to refit.")
         return super().refit(x, y, self.degree, *args, **kwargs)
 
     def convert_to(self, x):
-        if self.parameters is None:
-            raise ValueError("Cannot convert without fitted parameters.")
         return poly.polyval(x, self.parameters)
 
     def convert_from(self, y):
-        if self.parameters is None:
-            raise ValueError("Cannot convert without fitted parameters.")
         return (poly.Polynomial(self.parameters) - y).roots()
 
 
@@ -67,6 +61,9 @@ class PolyFitCalibrator(Calibrator):
                 calibration_data[transformer].save()
         return calibration_data
 
+    def create_calibration_procedure(*args, **kwargs):
+        raise NotImplementedError
+
 
 class LinearCalibrator(PolyFitCalibrator):
     class Config(PolyFitCalibrator.Config):
@@ -92,3 +89,6 @@ class IndependentVialBasedLinearCalibrator(IndependentVialBasedCalibrator):
             calibration_data["output_transformer"][vial] = output_transformer.run_calibration_procedure(
                 data["output_transformer"][vial]
             )
+
+    def create_calibration_procedure(*args, **kwargs):
+        raise NotImplementedError

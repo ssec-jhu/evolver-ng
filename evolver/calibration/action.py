@@ -1,28 +1,26 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 
-from evolver.calibration.interface import ProcedureStateModel
-
 
 class CalibrationActionModel(BaseModel):
-    name: str = Field(..., description="The name of the action")
-    description: str = Field(..., description="Description of the action's purpose")
+    name: str = Field(description="The name of the action")
+    description: str = Field(description="Description of the action's purpose")
     requires_input: bool = Field(
         False, description="Flag indicating if user input is needed, FormModel defines the input shape"
     )
 
 
 class CalibrationAction(ABC):
-    def __init__(self, model: CalibrationActionModel):
-        self.model = model
+    def __init__(self, name: str, description: str, requires_input: bool = False):
+        self.model = CalibrationActionModel(name=name, description=description, requires_input=requires_input)
 
     class FormModel(BaseModel):
         pass
 
     @abstractmethod
-    def execute(self, state: ProcedureStateModel, payload: Optional[FormModel] = None) -> ProcedureStateModel:
+    def execute(self, state: Dict, payload: Optional[FormModel] = None) -> Dict:
         """
         Execute the calibration action.
         Args:
@@ -39,8 +37,5 @@ class DisplayInstructionAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
-    def __init__(self, name: str, description: str):
-        super().__init__(CalibrationActionModel(name=name, description=description, requires_input=False))
-
-    def execute(self, state: ProcedureStateModel, payload: Optional[FormModel] = None) -> ProcedureStateModel:
+    def execute(self, state: Dict, payload: Optional[FormModel] = None) -> Dict:
         return state.model_copy()

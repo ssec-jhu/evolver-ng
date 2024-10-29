@@ -1,9 +1,9 @@
 import datetime
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, Field, PastDatetime
+from pydantic import Field, PastDatetime
 
 from evolver.base import (
     BaseConfig,
@@ -18,13 +18,6 @@ from evolver.settings import settings
 
 if TYPE_CHECKING:
     pass
-
-
-class ProcedureStateModel(BaseModel):
-    """
-    Calibration procedure state data
-    This model is shared by the calibration procedure and the calibrator's CalibrationData class.
-    """
 
 
 class Status(TimeStamp):
@@ -63,28 +56,12 @@ class Transformer(BaseInterface):
         )
         created: PastDatetime | None = CreatedTimestampField()
         expire: datetime.timedelta | None = ExpireField(default=settings.DEFAULT_CALIBRATION_EXPIRE)
-        calibration_procedure_state: Optional[Dict[str, Any]] = Field(
-            default=None,
-            description="Measured data from the calibration procedure, including the overall procedure state",
-        )
 
         def save(
             self,
             file_path: Path = None,
             encoding: str | None = None,
-            calibration_procedure_state: ProcedureStateModel = None,
         ):
-            """
-            Save the calibration procedure state to a file. This should be triggered by a calibration procedure action
-            when the calibration procedure is complete, or whenever it makes sense for example after each action, or
-            after a set of complex or laborious actions, when loosing the procedure state would be detrimental.
-
-            Args:
-                calibration_procedure_state (ProcedureStateModel): The state data from the calibration procedure to be saved.
-                file_path (Path, optional): The path to save the file. Defaults to a generated name based on `name` and `created`.
-                encoding (str, optional): The file encoding. Defaults to None.
-            """
-            self.calibration_procedure_state = calibration_procedure_state
             if file_path is None:
                 file_path = Path(f"{self.name}_{self.created.strftime(settings.DATETIME_PATH_FORMAT)}").with_suffix(
                     ".yml"
@@ -141,12 +118,8 @@ class Calibrator(BaseInterface):
         output_transformer: ConfigDescriptor | Transformer | None = None
         calibration_file: str | None = None
 
-    class CalibrationData(Transformer.Config, ProcedureStateModel):
-        """Stores calibration data, including the measured_data in the CalibrationProcedure.
-
-        While the CalibrationProcedure attached to a Calibrator instance may hold state information, it will not
-        be persisted between sessions. This class is intended to store the state information in a file that can be
-        loaded and saved as needed.
+    class CalibrationData(Transformer.Config):
+        """Stores calibration data, including the measured data from the CalibrationProcedure.
 
         The CalibrationProcedure must explicitly include an action to "save" CalibrationProcedure state to the
         Calibrator's CalibrationData.
@@ -197,26 +170,33 @@ class Calibrator(BaseInterface):
         """Initialize transformers from calibration data."""
         ...
 
-    def initialize_calibration_procedure(self, selected_hardware, initial_state, *args, **kwargs):
-        """This initializes the calibration procedure. Subclasses should implement this method to initialize the calibration"""
+    @abstractmethod
+    def create_calibration_procedure(self, selected_hardware, *args, **kwargs):
+        """This creates the calibration procedure, which is composed of a sequence of actions."""
         pass
 
     def dispatch(self, action):
-        # Delegate to the calibration procedure
+        """Delegate to the calibration procedure"""
         if self.calibration_procedure is None:
             raise ValueError("Calibration procedure is not initialized.")
-        self.calibration_procedure.dispatch(action)
-        return self.calibration_procedure.get_state()
+        return self.calibration_procedure.dispatch(action)
 
     def save_calibration_data(self): ...
 
 
-class IndependentVialBasedCalibrator(Calibrator, ABC):
+class IndependentVialBasedCalibrator(Calibrator):
     class Config(Calibrator.Config):
         """Specify transformers for each vial independently. Whilst they may all use the same transformer class, each
         vial will mostly likely have different transformer config parameters and thus require their own transformer
         instance.
         """
 
+        vials: list = Field(
+            list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX)),
+            description="The vials that this calibrator is for.",
+        )
         input_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
         output_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
+
+    def create_calibration_procedure(self, selected_hardware, *args, **kwargs):
+        raise NotImplementedError
