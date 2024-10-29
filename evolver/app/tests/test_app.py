@@ -221,6 +221,15 @@ class TestApp:
             assert response.status_code == 200
             assert not response.json()["active"]
 
+    def test_start_endpoint(self, app_client):
+        _ = app_client.post("/abort")
+        assert not app.state.evolver.enable_commit
+        assert not app.state.evolver.enable_control
+        response = app_client.post("/start")
+        assert response.status_code == 200
+        assert app.state.evolver.enable_commit
+        assert app.state.evolver.enable_control
+
 
 def test_app_load_file(app_client):
     config = Evolver.Config(
