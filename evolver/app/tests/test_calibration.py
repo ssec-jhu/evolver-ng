@@ -64,7 +64,7 @@ def test_temperature_calibration_procedure_actions():
     actions_response = client.get("hardware/test/calibrator/procedure/actions")
     assert actions_response.status_code == 200
     expected_actions = [
-        {"name": action.model.name, "description": action.model.description}
+        {"name": action.name, "description": action.description}
         for action in temp_calibrator.calibration_procedure.actions
     ]
 

@@ -37,7 +37,7 @@ class CalibrationProcedure(BaseInterface, ABC):
         return self.state
 
     def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):
-        if payload is not None and action.model.requires_input:
+        if payload is not None and action.requires_input:
             payload = action.FormModel(**payload)
         self.state = action.execute(self.state, payload)
         return self.state

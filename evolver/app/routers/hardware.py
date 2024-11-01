@@ -93,9 +93,9 @@ def get_calibrator_actions(hardware_name: str, request: Request):
     if not calibrator:
         raise CalibratorNotFoundError
     calibration_procedure = calibrator.calibration_procedure
+    print("IDK")
     actions = [
-        {"name": action.model.name, "description": action.model.description}
-        for action in calibration_procedure.get_actions()
+        {"name": action.name, "description": action.description} for action in calibration_procedure.get_actions()
     ]
     return {"actions": actions}
 
@@ -112,7 +112,7 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
 
     action_to_dispatch = None
     for a in calibration_procedure.get_actions():
-        if a.model.name == action["action_name"]:
+        if a.name == action["action_name"]:
             action_to_dispatch = a
             break
     if not action_to_dispatch:
