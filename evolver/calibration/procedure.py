@@ -17,7 +17,7 @@ class CalibrationProcedure(BaseInterface, ABC):
 
         Attributes:
             name (str): The name of the calibration procedure.
-            actions (list): The list of actions to be executed in the calibration procedure. The order of actions is the default order of execution, but the frontend can change this if needed.
+            actions (list): The list of actions to be executed in the calibration procedure.
 
         Notes:
             - Dispatching an action will update the state of the calibration procedure.

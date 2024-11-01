@@ -119,11 +119,7 @@ class Calibrator(BaseInterface):
         calibration_file: str | None = None
 
     class CalibrationData(Transformer.Config):
-        """Stores calibration data, including the measured data from the CalibrationProcedure.
-
-        The CalibrationProcedure must explicitly include an action to "save" CalibrationProcedure state to the
-        Calibrator's CalibrationData.
-        """
+        """Stores calibration data, including the measured data from the CalibrationProcedure."""
 
     class Status(_BaseConfig):
         input_transformer: Status | None = None
@@ -142,7 +138,6 @@ class Calibrator(BaseInterface):
 
     def __init__(self, *args, calibration_file=None, **kwargs):
         super().__init__(*args, calibration_file=calibration_file, **kwargs)
-        self.calibration_procedure = None
         self.calibration_data = self.CalibrationData()
         if self.calibration_file:
             self.load_calibration_file(self.calibration_file)
@@ -180,8 +175,6 @@ class Calibrator(BaseInterface):
         if self.calibration_procedure is None:
             raise ValueError("Calibration procedure is not initialized.")
         return self.calibration_procedure.dispatch(action)
-
-    def save_calibration_data(self): ...
 
 
 class IndependentVialBasedCalibrator(Calibrator):
