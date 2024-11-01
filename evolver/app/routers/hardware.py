@@ -148,7 +148,7 @@ def get_calibration_data(hardware_name: str, request: Request):
 
 
 @router.get("/{hardware_name}/calibrator/output_transformer")
-def get_calibration_data(hardware_name: str, request: Request):
+def get_calibration_output_transformer(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
 
     calibrator = hardware_instance.calibrator
