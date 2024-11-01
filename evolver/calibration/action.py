@@ -13,6 +13,8 @@ class CalibrationActionModel(BaseModel):
 
 
 class CalibrationAction(ABC):
+    model: CalibrationActionModel
+
     def __init__(self, name: str, description: str, requires_input: bool = False):
         self.model = CalibrationActionModel(name=name, description=description, requires_input=requires_input)
 
@@ -20,15 +22,15 @@ class CalibrationAction(ABC):
         pass
 
     @abstractmethod
-    def execute(self, state: Dict, payload: Optional[FormModel] = None) -> Dict:
+    def execute(self, state: Dict, payload: Optional[FormModel] = None):
         """
         Execute the calibration action.
         Args:
-            state (ProcedureStateModel): The current state of the calibration process.
+            state (Dict): The data collected in the course of the calibration process.
             payload (FormModel): Developer-defined input for the action.
 
         Returns:
-            ProcedureStateModel: The updated state after performing the action.
+            Dict: The updated state after performing the action.
         """
         pass
 
@@ -37,5 +39,5 @@ class DisplayInstructionAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
-    def execute(self, state: Dict, payload: Optional[FormModel] = None) -> Dict:
-        return state.model_copy()
+    def execute(self, state: Dict, payload: Optional[FormModel] = None):
+        return state.copy()

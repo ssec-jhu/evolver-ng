@@ -48,8 +48,8 @@ class CalculateFitAction(CalibrationAction):
     def execute(self, state, payload: Optional[FormModel] = None):
         state.setdefault(self.vial_idx, {"reference": [], "raw": []})
         vial_data = state[self.vial_idx]
-        self.hardware.calibrator.output_transformer[self.vial_idx].refit(vial_data["reference"], vial_data["raw"])
         # The result of the refit is stored in the output_transformer, accessible via hardware.calibrator.output_transformer
+        self.hardware.calibrator.output_transformer[self.vial_idx].refit(vial_data["reference"], vial_data["raw"])
         return state
 
 
