@@ -21,9 +21,6 @@ class CalibrationProcedure(BaseInterface, ABC):
 
         Notes:
             - Dispatching an action will update the state of the calibration procedure.
-            - Actions should be independent of one another with validation and error handling if the state is not as expected (e.g., calculate fit action is called on a vial that doesn't have reference and raw data pairs).
-            - The procedure state is updated immutably, ensuring the state of the procedure is always consistent.
-            - TODO: Introduce some kind of composition of procedures - so you can have an undoable procedure, and/or one that logs the actions that've been taken.
         """
         super().__init__(*args, **kwargs)
         self.name = name
