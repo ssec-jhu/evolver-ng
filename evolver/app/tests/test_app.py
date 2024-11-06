@@ -37,11 +37,12 @@ class TestApp:
         assert response.status_code == 200
         if __version__:
             assert __version__ in response.json()["message"], response.json()
+        assert response.json()["active"]
 
     def test_evolver_app_default_config_dump_endpoint(self, app_client):
         response = app_client.get("/")
         assert response.status_code == 200
-        assert sorted(response.json().keys()) == ["config", "last_read", "state"]
+        assert sorted(response.json().keys()) == ["active", "config", "last_read", "state"]
 
     def test_EvolverConfigWithoutDefaults(self):
         EvolverConfigWithoutDefaults.model_validate(Evolver.Config().model_dump())
@@ -208,12 +209,24 @@ class TestApp:
             assert response.json() == {"data": {}}
 
     def test_abort_endpoint(self, app_client):
-        assert app.state.evolver.enable_commit
+        assert app.state.evolver.enable_control
         response = app_client.post("/abort")
         assert response.status_code == 200
-        assert not app.state.evolver.enable_commit
+        assert not app.state.evolver.enable_control
         saved_config = Evolver.Config.load(app_settings.CONFIG_FILE)
-        assert not saved_config.enable_commit
+        assert not saved_config.enable_control
+        # healthz and state should report inactive state
+        for endpoint in ("/healthz", "/state"):
+            response = app_client.get(endpoint)
+            assert response.status_code == 200
+            assert not response.json()["active"]
+
+    def test_start_endpoint(self, app_client):
+        _ = app_client.post("/abort")
+        assert not app.state.evolver.enable_control
+        response = app_client.post("/start")
+        assert response.status_code == 200
+        assert app.state.evolver.enable_control
 
 
 def test_app_load_file(app_client):

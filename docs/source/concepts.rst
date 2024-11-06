@@ -101,10 +101,10 @@ following steps in succession:
 These activities are coordinated in the
 :py:class:`Evolver<evolver.device.Evolver>` class, via the
 :py:meth:`loop_once<evolver.device.Evolver.loop_once>` method, and executed
-continuously within the application. Configuration options `enable_control` and
-`enable_commit` control whether the control (executing the `commit` method of
-Controllers) and commit steps (executing the `commit` method of Effectors) are
-executed, respectively.
+continuously within the application. Configuration option `enable_control`
+controls whether the control (executing the `control` method of Controllers) and
+commit steps (executing the `commit` method of Effectors) are executed during
+the loop.
 
 
 .. _buffering:
