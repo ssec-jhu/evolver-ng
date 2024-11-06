@@ -24,7 +24,6 @@ class Evolver(BaseInterface):
         serial: ConfigDescriptor | Connection = ConfigDescriptor.model_validate(DEFAULT_SERIAL)
         history: ConfigDescriptor | History = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
         enable_control: bool = True
-        enable_commit: bool = True
         interval: int = settings.DEFAULT_LOOP_INTERVAL
 
     def __init__(self, *args, **kwargs):
@@ -71,10 +70,6 @@ class Evolver(BaseInterface):
             "controllers": [{"kind": str(type(a)), "config": a.Config.model_json_schema()} for a in self.controllers],
         }
 
-    @property
-    def active(self):
-        return self.enable_control and self.enable_commit
-
     def read_state(self):
         for name, device in self.sensors.items():
             device.read()
@@ -94,12 +89,10 @@ class Evolver(BaseInterface):
         # for any hardware awaiting calibration, call calibration update method here
         if self.enable_control:
             self.evaluate_controllers()
-        if self.enable_commit:
             self.commit_proposals()
 
     def abort(self):
         self.enable_control = False
-        self.enable_commit = False
         for device in self.effectors.values():
             device.off()
 

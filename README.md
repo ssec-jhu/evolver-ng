@@ -45,7 +45,6 @@ for example:
 
 ```yaml
 enable_react: true  # run the experiment controllers
-enable_commit: true  # enable controllers to send commands to hardware
 interval: 20  # how often in seconds to loop
 hardware:
   temp:

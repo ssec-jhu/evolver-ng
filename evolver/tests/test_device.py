@@ -156,9 +156,9 @@ class TestEvolver:
                 self.aborted = True
 
         demo_evolver.hardware["testeffector"] = AbortEffector()
-        demo_evolver.enable_commit = True
-        assert demo_evolver.active
+        demo_evolver.enable_control = True
+        assert demo_evolver.enable_control
         demo_evolver.abort()
-        assert not demo_evolver.enable_commit
+        assert not demo_evolver.enable_control
         assert demo_evolver.hardware["testeffector"].aborted
-        assert not demo_evolver.active
+        assert not demo_evolver.enable_control

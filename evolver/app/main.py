@@ -74,7 +74,7 @@ async def get_state():
     return {
         "state": app.state.evolver.state,
         "last_read": app.state.evolver.last_read,
-        "active": app.state.evolver.active,
+        "active": app.state.evolver.enable_control,
     }
 
 
@@ -106,7 +106,7 @@ async def get_history(
 
 @app.get("/healthz", operation_id="healthcheck")
 async def healthz():
-    return {"message": f"Running '{__project__}' ver: '{__version__}'", "active": app.state.evolver.active}
+    return {"message": f"Running '{__project__}' ver: '{__version__}'", "active": app.state.evolver.enable_control}
 
 
 async def evolver_async_loop():
@@ -144,10 +144,9 @@ async def calibrate(name: str, data: dict = None):
 @app.post("/abort")
 async def abort():
     app.state.evolver.abort()
-    # Disable commit also in persistent config in case application needs to restart
+    # Disable control/commit also in persistent config in case application needs to restart
     config = Evolver.Config.load(app_settings.CONFIG_FILE)
     config.enable_control = False
-    config.enable_commit = False
     config.save(app_settings.CONFIG_FILE)
 
 
@@ -155,7 +154,6 @@ async def abort():
 async def start():
     config = Evolver.Config.load(app_settings.CONFIG_FILE)
     config.enable_control = True
-    config.enable_commit = True
     await update_evolver(config)
 
 
