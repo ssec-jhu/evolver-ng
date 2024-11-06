@@ -26,6 +26,7 @@ class Evolver(BaseInterface):
         enable_control: bool = True
         interval: int = settings.DEFAULT_LOOP_INTERVAL
         raise_loop_exceptions: bool = False
+        abort_on_control_errors: bool = False
         skip_control_on_read_failure: bool = True
 
     def __init__(self, *args, **kwargs):
@@ -92,8 +93,8 @@ class Evolver(BaseInterface):
         return read_error
 
     def evaluate_controllers(self):
-        for controller in self.controllers:
-            self._loop_exception_wrapper(controller.run, f"updating controller {controller}")
+        errs = [self._loop_exception_wrapper(c.run, f"updating controller {c}") for c in self.controllers]
+        return any(errs)
 
     def commit_proposals(self):
         for device in self.effectors.values():
@@ -104,9 +105,11 @@ class Evolver(BaseInterface):
         if read_error and self.skip_control_on_read_failure:
             self.logger.info("Skipping control loop due to read error")
             return
-        # for any hardware awaiting calibration, call calibration update method here
         if self.enable_control:
-            self.evaluate_controllers()
+            control_error = self.evaluate_controllers()
+            if control_error and self.abort_on_control_errors:
+                self.abort()
+                return
             self.commit_proposals()
 
     def abort(self):

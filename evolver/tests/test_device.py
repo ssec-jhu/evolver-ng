@@ -148,6 +148,19 @@ class TestEvolver:
         demo_evolver.loop_once()
         mock_controller.run.assert_called_once()
 
+    def test_abort_on_control_failure(self, demo_evolver):
+        demo_evolver.abort_on_control_errors = True
+        mock_controller = MagicMock(spec=Controller)
+        mock_controller.run = MagicMock(side_effect=Exception("test control"))
+        demo_evolver.controllers.append(mock_controller)
+        mock_hardware = MagicMock(spec=EffectorDriver)
+        demo_evolver.hardware["testsensor"] = mock_hardware
+        assert demo_evolver.enable_control
+        demo_evolver.loop_once()
+        # aborts effect is to turn off the control flag and call off on all effectors
+        assert not demo_evolver.enable_control
+        mock_hardware.off.assert_called_once()
+
     def test_remove_driver(self, demo_evolver, conf_with_driver):
         assert "testeffector" in demo_evolver.hardware
         del conf_with_driver["hardware"]["testeffector"]
