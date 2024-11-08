@@ -10,9 +10,13 @@ class CalibrationAction(ABC):
         Initialize a CalibrationAction.
 
         Args:
-            name (str): The name of the calibration action, used to identify it within a calibration procedure composed of many actions.
-            description (str): A short description of the action's purpose, useful for documentation or display to the person performing a calibration procedure composed of actions.
-            requires_input (bool): Indicates whether this action requires user input (default is False) actions that require input should have a FormModel defined to express the shape of the required user input.
+            name (str): The name of the calibration action.
+                Used to identify it within a calibration procedure composed of many actions.
+                Must be unique within a procedure.
+            description (str): A short description of the action's purpose.
+                Useful for documentation or display of instructions to the person performing a calibration procedure action.
+            requires_input (bool): Indicates whether this action requires user input.
+                Actions that require input should have a FormModel defined to express the model of the required user input.
         """
         self.name = name
         self.description = description
