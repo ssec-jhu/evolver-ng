@@ -24,6 +24,11 @@ class CalibrationProcedure(BaseInterface, ABC):
         self.state = {}
 
     def add_action(self, action: CalibrationAction):
+        if any(existing_action.name == action.name for existing_action in self.actions):
+            raise ValueError(
+                f"Action with name '{action.name}' already exists. Each action must have a unique name and functionality.  "
+                f"If you want to repeat an action, any action can be dispatched multiple times using the HTTP api."
+            )
         self.actions.append(action)
 
     def get_actions(self):
