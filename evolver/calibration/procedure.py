@@ -12,12 +12,9 @@ class CalibrationProcedure(BaseInterface, ABC):
         """
         Initialize the CalibrationProcedure.
 
-        Args:
-            name (str): The name of the calibration procedure.
-
         Attributes:
-            name (str): The name of the calibration procedure.
             actions (list): The list of actions to be executed in the calibration procedure.
+            state (dict): The state of the calibration procedure.
 
         Notes:
             - Dispatching an action will update the state of the calibration procedure.
