@@ -1,60 +1,69 @@
-from evolver.calibration.actions import (
-    DisplayInstructionAction,
-    VialTempCalculateFitAction,
-    VialTempRawVoltageAction,
-    VialTempReferenceValueAction,
-)
-from evolver.calibration.interface import Calibrator
+from typing import Dict, List
+
+from evolver.calibration.action import DisplayInstructionAction
+from evolver.calibration.interface import IndependentVialBasedCalibrator, Transformer
 from evolver.calibration.procedure import CalibrationProcedure
+from evolver.calibration.standard.actions.temperature import (
+    CalculateFitAction,
+    RawValueAction,
+    ReferenceValueAction,
+    SaveProcedureStateAction,
+)
 from evolver.hardware.interface import HardwareDriver
 
 
-class TemperatureCalibrator(Calibrator):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.state = {"selected_vials": []}
+class TemperatureCalibrator(IndependentVialBasedCalibrator):
+    """
+    A calibrator for each vial's temperature sensor.
+    """
 
-    def initialize_calibration_procedure(
+    class CalibrationData(Transformer.Config):
+        measured: Dict[int, Dict[str, List[float]]] = {}  # {vial_index: {"reference": [], "raw": []}}
+
+    def create_calibration_procedure(
         self,
         selected_hardware: HardwareDriver,
-        selected_vials: list[int],
-        evolver=None,
         *args,
         **kwargs,
     ):
-        # TODO: integrate self.state with self.CalibrationData, see Arik & Iain for context.
-        self.state["selected_vials"] = selected_vials
-
-        calibration_procedure = CalibrationProcedure("Temperature Calibration")
+        calibration_procedure = CalibrationProcedure()
         calibration_procedure.add_action(
-            DisplayInstructionAction(description="Fill each vial with 15ml water", name="Fill_Vials_With_Water")
+            DisplayInstructionAction(description="Fill each vial with 15ml water", name="fill_vials_instruction")
         )
-        for vial in self.state["selected_vials"]:
+        for vial in self.vials:
             calibration_procedure.add_action(
-                VialTempReferenceValueAction(
+                ReferenceValueAction(
                     hardware=selected_hardware,
                     vial_idx=vial,
-                    description=f"Use a thermometer to measure the real temperature in the vial {vial}",
-                    name=f"Vial_{vial}_Temp_Reference_Value_Action",
+                    description=f"Use a thermometer to measure the real temperature in vial: {vial}.",
+                    name=f"measure_vial_{vial}_temperature",
                 )
             )
             calibration_procedure.add_action(
-                VialTempRawVoltageAction(
+                RawValueAction(
                     hardware=selected_hardware,
                     vial_idx=vial,
-                    description=f"The hardware will now read the raw voltage from the temperature sensor, vial {vial}",
-                    name=f"Vial_{vial}_Temp_Raw_Voltage_Action",
+                    description=f"The hardware will now read the raw output values of vial: {vial}'s temperature sensor.",
+                    name=f"read_vial_{vial}_raw_output",
                 )
             )
 
-        # Add a final step to calculate the fit.
-        for vial in self.state["selected_vials"]:
+        for vial in self.vials:
             calibration_procedure.add_action(
-                VialTempCalculateFitAction(
+                CalculateFitAction(
                     hardware=selected_hardware,
                     vial_idx=vial,
-                    description="Use the real and raw values that have been collected to calculate the fit for the temperature sensor",
-                    name=f"Vial_{vial}_Temp_Calculate_Fit_Action",
+                    description=f"Calculate the fit for the vial: {vial}'s temperature sensor",
+                    name=f"calculate_vial_{vial}_fit",
                 )
             )
+
+        calibration_procedure.add_action(
+            SaveProcedureStateAction(
+                hardware=selected_hardware,
+                description="Save the calibration procedure state",
+                name="save_calibration_procedure_state",
+            )
+        )
+
         self.calibration_procedure = calibration_procedure

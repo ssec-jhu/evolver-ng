@@ -11,11 +11,12 @@ from evolver.settings import settings
 class PolyFitTransformer(Transformer):
     class Config(Transformer.Config):
         degree: int = Field(ge=0, description="Polynomial degree.")
-        parameters: list[float] = Field(min_length=1, description="Polynomial coefficients.")
+        parameters: list[float] | None = Field(default=None, min_length=1, description="Polynomial coefficients.")
 
         @model_validator(mode="after")
         def check_parameters_length(self) -> Self:
-            if len(self.parameters) - 1 != self.degree:
+            # Only validate parameters if they are provided.
+            if self.parameters and (len(self.parameters) - 1 != self.degree):
                 raise ValueError(f"Degree={self.degree} but {len(self.parameters)} parameters given.")
             return self
 
@@ -60,18 +61,17 @@ class PolyFitCalibrator(Calibrator):
                 calibration_data[transformer].save()
         return calibration_data
 
+    def create_calibration_procedure(*args, **kwargs):
+        raise NotImplementedError
+
 
 class LinearCalibrator(PolyFitCalibrator):
     class Config(PolyFitCalibrator.Config):
         input_transformer: ConfigDescriptor | LinearTransformer | None = None
         output_transformer: ConfigDescriptor | LinearTransformer | None = None
 
-    def initialize_calibration_procedure(self, *args, **kwargs): ...
-
 
 class IndependentVialBasedLinearCalibrator(IndependentVialBasedCalibrator):
-    def initialize_calibration_procedure(self, *args, **kwargs): ...
-
     def run_calibration_procedure(self, data: dict):
         """Override to implement a calibration procedure that is vial-dependant and thus calibrates all vials either
         simultaneously or entirely as desired."""
@@ -89,3 +89,6 @@ class IndependentVialBasedLinearCalibrator(IndependentVialBasedCalibrator):
             calibration_data["output_transformer"][vial] = output_transformer.run_calibration_procedure(
                 data["output_transformer"][vial]
             )
+
+    def create_calibration_procedure(*args, **kwargs):
+        raise NotImplementedError

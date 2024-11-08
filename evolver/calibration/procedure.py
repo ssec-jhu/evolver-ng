@@ -1,28 +1,52 @@
+from abc import ABC
 from typing import Any, Dict
 
-from evolver.calibration.actions import CalibrationAction
+from evolver.base import BaseInterface
+from evolver.calibration.action import CalibrationAction
 
 
-class CalibrationProcedure:
-    def __init__(self, name: str):
-        self.name = name
-        # The order of actions is the default order of execution, the frontend can change this if it likes
-        # Dispatching an action will update the state of the calibration procedure.
-        # Actions should be independent of one another with validation and error handling if state is not as expected.
-        # e.g. calculate fit action is called on a vial that doesn't have reference and raw data pairs.
-        # The procedure state is updated immutably, so that the state of the procedure is always consistent.
+class CalibrationProcedure(BaseInterface, ABC):
+    class Config(BaseInterface.Config): ...
+
+    def __init__(self, *args, **kwargs):
+        """
+        Initialize the CalibrationProcedure.
+
+        Attributes:
+            actions (list): The list of actions that can be executed in the calibration procedure.
+                All actions are added to this list in the create_calibration_procedure method.
+                Typically, a procedure is complete when all actions have been dispatched in sequence using the HTTP API.
+            state (dict): The state of the calibration procedure, updated as actions are executed.
+
+        Notes:
+            Dispatching an action will update the state of the calibration procedure.
+
+            The measured data that accumulates in procedure state is eventually used by the Calibrator's Transformer class
+            to fit a model to the data. This can be done by defining a CalculateFit action in the procedure and dispatching it.
+            Data stored in the CalibrationProcedure state should also be periodically saved to the Calibraor's CalibrationData class.
+            That way CalibrationProcedure state can be saved and reloaded to continue the calibration procedure if interupted.
+            This can be done by defining a SaveProcedureState action in the procedure and dispatching it.
+        """
+        super().__init__(*args, **kwargs)
         self.actions = []
-        self.state = {}  # Holds the current state of calibration, when the procedure is done this is copied to the Calibrator state.
-        # TODO: persist state to after each action to the Calibrator.CalibrationData data structure.(see Arik for details)
+        self.state = {}
 
-    def add_action(self, step):
-        self.actions.append(step)
+    def add_action(self, action: CalibrationAction):
+        if any(existing_action.name == action.name for existing_action in self.actions):
+            raise ValueError(
+                f"Action with name '{action.name}' already exists. Each action must have a unique name and functionality.  "
+                f"If you want to repeat an action, any action can be dispatched multiple times using the HTTP api."
+            )
+        self.actions.append(action)
 
     def get_actions(self):
         return self.actions
 
-    def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]) -> Dict[str, Any]:
-        if payload is not None:
-            payload = action.UserInput(**payload)
+    def get_state(self, *args, **kwargs):
+        return self.state
+
+    def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):
+        if payload is not None and action.requires_input:
+            payload = action.FormModel(**payload)
         self.state = action.execute(self.state, payload)
         return self.state

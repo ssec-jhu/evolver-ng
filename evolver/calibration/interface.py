@@ -1,5 +1,5 @@
 import datetime
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -57,7 +57,11 @@ class Transformer(BaseInterface):
         created: PastDatetime | None = CreatedTimestampField()
         expire: datetime.timedelta | None = ExpireField(default=settings.DEFAULT_CALIBRATION_EXPIRE)
 
-        def save(self, file_path: Path = None, encoding: str | None = None):
+        def save(
+            self,
+            file_path: Path = None,
+            encoding: str | None = None,
+        ):
             if file_path is None:
                 file_path = Path(f"{self.name}_{self.created.strftime(settings.DATETIME_PATH_FORMAT)}").with_suffix(
                     ".yml"
@@ -109,16 +113,13 @@ class Calibrator(BaseInterface):
     A modular layer for encapsulating the calibration procedure and data transformations.
     """
 
-    # Calibration state, this is where the calibration data is stored - TODO refactor to use CalibrationData instead.
-    class state(_BaseConfig):
-        status: str | None = "not calibrated"
-
     class Config(Transformer.Config):
         input_transformer: ConfigDescriptor | Transformer | None = None
         output_transformer: ConfigDescriptor | Transformer | None = None
         calibration_file: str | None = None
 
-    class CalibrationData(Transformer.Config): ...
+    class CalibrationData(Transformer.Config):
+        """Stores calibration data, including the measured data from the CalibrationProcedure."""
 
     class Status(_BaseConfig):
         input_transformer: Status | None = None
@@ -137,9 +138,11 @@ class Calibrator(BaseInterface):
 
     def __init__(self, *args, calibration_file=None, **kwargs):
         super().__init__(*args, calibration_file=calibration_file, **kwargs)
-        self.calibration_procedure = None
-        if self.calibration_file:
-            self.load_calibration_file(self.calibration_file)
+        if calibration_file:
+            self.calibration_file = calibration_file
+            self.load_calibration_file(calibration_file)
+        else:
+            self.calibration_data = self.CalibrationData()
 
     @property
     def status(self) -> Status:
@@ -165,27 +168,30 @@ class Calibrator(BaseInterface):
         ...
 
     @abstractmethod
-    def initialize_calibration_procedure(self, *args, **kwargs):
-        """This initializes the calibration procedure. Subclasses should implement this method to initialize the calibration"""
-        ...
+    def create_calibration_procedure(self, selected_hardware, *args, **kwargs):
+        """This creates the calibration procedure, which is composed of a sequence of actions."""
+        pass
 
     def dispatch(self, action):
-        # Delegate to the calibration procedure
+        """Delegate to the calibration procedure"""
         if self.calibration_procedure is None:
             raise ValueError("Calibration procedure is not initialized.")
-        # TODO: this is probably the best place for bumpoing calibration_procedure state up into CalibrationData state. (see Arik for details)
-        self.state = self.calibration_procedure.dispatch(action)
-        return self.state
+        return self.calibration_procedure.dispatch(action)
 
 
-class IndependentVialBasedCalibrator(Calibrator, ABC):
+class IndependentVialBasedCalibrator(Calibrator):
     class Config(Calibrator.Config):
         """Specify transformers for each vial independently. Whilst they may all use the same transformer class, each
         vial will mostly likely have different transformer config parameters and thus require their own transformer
         instance.
         """
 
+        vials: list = Field(
+            list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX)),
+            description="The vials that this calibrator is for.",
+        )
         input_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
         output_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
 
-    def initialize_calibration_procedure(self, *args, **kwargs): ...
+    def create_calibration_procedure(self, selected_hardware, *args, **kwargs):
+        raise NotImplementedError
