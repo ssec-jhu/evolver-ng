@@ -29,12 +29,22 @@ class CalibrationAction(ABC):
     def execute(self, state: Dict, payload: Optional[FormModel] = None):
         """
         Execute the calibration action.
+
+
         Args:
-            state (Dict): The data collected in the course of the calibration process.
-            payload (FormModel): Developer-defined input for the action.
+            state (Dict): The data collected in the course of the calibration procedure.
+            payload (FormModel): Input for the action.
 
         Returns:
             Dict: The updated state after performing the action.
+
+        Notes:
+            Ideally this method should be idempotent, or "pure" in functional programming terms.
+            This means that it should not have side effects.
+            However, in practice this is not always possible, and actions may have side effects,
+            such as saving the state of the calibration procedure to the parent
+            Calibrator's CalibrationData class (which saves the state to a file).
+            or calling the Calibrator's Transformer's refit method to update the calibration model.
         """
         pass
 
