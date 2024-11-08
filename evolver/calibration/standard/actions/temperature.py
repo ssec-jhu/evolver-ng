@@ -9,8 +9,8 @@ class ReferenceValueAction(CalibrationAction):
     class FormModel(BaseModel):
         temperature: float = Field(..., title="Temperature", description="Temperature in degrees Celsius")
 
-    def __init__(self, hardware, description: str, vial_idx: int, name: str):
-        super().__init__(name=name, description=description, requires_input=True)
+    def __init__(self, hardware, vial_idx: int, *args, **kwargs):
+        super().__init__(requires_input=True, *args, **kwargs)
         self.hardware = hardware
         self.vial_idx = vial_idx
 
@@ -24,8 +24,8 @@ class RawValueAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
-    def __init__(self, hardware, vial_idx: int, description, name):
-        super().__init__(name=name, description=description, requires_input=False)
+    def __init__(self, hardware, vial_idx: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.hardware = hardware
         self.vial_idx = vial_idx
 
@@ -40,8 +40,8 @@ class CalculateFitAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
-    def __init__(self, hardware, vial_idx: int, description: str, name: str):
-        super().__init__(name=name, description=description, requires_input=False)
+    def __init__(self, hardware, vial_idx: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.hardware = hardware
         self.vial_idx = vial_idx
 
@@ -57,8 +57,8 @@ class SaveProcedureStateAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
-    def __init__(self, hardware, description: str, name: str):
-        super().__init__(name=name, description=description, requires_input=False)
+    def __init__(self, hardware, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.hardware = hardware
 
     def execute(self, state, payload: Optional[FormModel] = None):
