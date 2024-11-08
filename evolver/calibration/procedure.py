@@ -8,7 +8,7 @@ from evolver.calibration.action import CalibrationAction
 class CalibrationProcedure(BaseInterface, ABC):
     class Config(BaseInterface.Config): ...
 
-    def __init__(self, name: str, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
         Initialize the CalibrationProcedure.
 
@@ -23,7 +23,6 @@ class CalibrationProcedure(BaseInterface, ABC):
             - Dispatching an action will update the state of the calibration procedure.
         """
         super().__init__(*args, **kwargs)
-        self.name = name
         self.actions = []
         self.state = {}
 

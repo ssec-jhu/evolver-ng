@@ -31,6 +31,6 @@ class NoOpCalibrator(Calibrator):
         *args,
         **kwargs,
     ):
-        calibration_procedure = CalibrationProcedure("No Op Calibration Procedure ")
+        calibration_procedure = CalibrationProcedure()
         self.calibration_procedure = calibration_procedure
         pass

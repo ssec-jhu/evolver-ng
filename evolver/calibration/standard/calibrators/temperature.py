@@ -26,7 +26,7 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
         *args,
         **kwargs,
     ):
-        calibration_procedure = CalibrationProcedure("Temperature Calibration")
+        calibration_procedure = CalibrationProcedure()
         calibration_procedure.add_action(
             DisplayInstructionAction(description="Fill each vial with 15ml water", name="fill_vials_instruction")
         )
