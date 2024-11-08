@@ -15,16 +15,17 @@ class CalibrationProcedure(BaseInterface, ABC):
         Attributes:
             actions (list): The list of actions that can be executed in the calibration procedure.
                 All actions are added to this list in the create_calibration_procedure method.
-                Typically a procedure is complete when all actions have been dispatched in sequence using the HTTP api.
+                Typically, a procedure is complete when all actions have been dispatched in sequence using the HTTP API.
             state (dict): The state of the calibration procedure, updated as actions are executed.
-                It eventually passes the measured data to the transformer(s) for calibration,
-                This can be done by defining a CalculateFit action in the procedure and dispatching it.
-                Data stored here should also be saved to the CalibrationData on the Calibrator. That way
-                calibration procedure state can be saved and reloaded to continue the calibration procedure if interupted.
-                This can be done by defining a SaveProcedureState action in the procedure and dispatching it.
 
         Notes:
             Dispatching an action will update the state of the calibration procedure.
+
+            The measured data that accumulates in procedure state is eventually used by the Calibrator's Transformer class
+            to fit a model to the data. This can be done by defining a CalculateFit action in the procedure and dispatching it.
+            Data stored in the CalibrationProcedure state should also be periodically saved to the Calibraor's CalibrationData class.
+            That way CalibrationProcedure state can be saved and reloaded to continue the calibration procedure if interupted.
+            This can be done by defining a SaveProcedureState action in the procedure and dispatching it.
         """
         super().__init__(*args, **kwargs)
         self.actions = []
