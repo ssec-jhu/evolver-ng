@@ -1,7 +1,7 @@
 import datetime
 from abc import abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import Field, PastDatetime
 
@@ -138,11 +138,15 @@ class Calibrator(BaseInterface):
 
     def __init__(self, *args, calibration_file=None, **kwargs):
         super().__init__(*args, calibration_file=calibration_file, **kwargs)
-
-        if self.calibration_file:
-            self.load_calibration_file(self.calibration_file)
-
-        if self.calibration_data is None:
+        self.calibration_data = None
+        if calibration_file:
+            self.calibration_file = calibration_file
+            try:
+                self.load_calibration_file(calibration_file)
+            except FileNotFoundError:
+                print(f"Calibration file {calibration_file} not found.")
+                self.calibration_data = self.CalibrationData()
+        else:
             self.calibration_data = self.CalibrationData()
 
     @property
@@ -152,13 +156,14 @@ class Calibrator(BaseInterface):
             output_transformer=self.output_transformer.status if self.output_transformer else None,
         )
 
-    def load_calibration_file(self, calibration_file: str | None = None):
-        if not Path(calibration_file).is_absolute():
-            calibration_file = self.dir / calibration_file
-        if calibration_file is not None:
-            self.load_calibration(self.CalibrationData.load(calibration_file))
+    def load_calibration_file(self, calibration_file: Optional[str] = None):
+        calibration_path = (
+            Path(calibration_file) if Path(calibration_file).is_absolute() else self.dir / calibration_file
+        )
+        if calibration_path.exists():
+            self.load_calibration(self.CalibrationData.load(calibration_path))
         else:
-            raise ValueError("no calibration file provided")
+            raise FileNotFoundError(f"Calibration file '{calibration_path}' not found.")
 
     def load_calibration(self, calibration_data: CalibrationData):
         self.calibration_data = calibration_data
