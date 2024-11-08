@@ -1,7 +1,7 @@
 import datetime
 from abc import abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from pydantic import Field, PastDatetime
 
@@ -141,11 +141,7 @@ class Calibrator(BaseInterface):
         self.calibration_data = None
         if calibration_file:
             self.calibration_file = calibration_file
-            try:
-                self.load_calibration_file(calibration_file)
-            except FileNotFoundError:
-                print(f"Calibration file {calibration_file} not found.")
-                self.calibration_data = self.CalibrationData()
+            self.load_calibration_file(calibration_file)
         else:
             self.calibration_data = self.CalibrationData()
 
@@ -156,14 +152,13 @@ class Calibrator(BaseInterface):
             output_transformer=self.output_transformer.status if self.output_transformer else None,
         )
 
-    def load_calibration_file(self, calibration_file: Optional[str] = None):
-        calibration_path = (
-            Path(calibration_file) if Path(calibration_file).is_absolute() else self.dir / calibration_file
-        )
-        if calibration_path.exists():
-            self.load_calibration(self.CalibrationData.load(calibration_path))
+    def load_calibration_file(self, calibration_file: str | None = None):
+        if not Path(calibration_file).is_absolute():
+            calibration_file = self.dir / calibration_file
+        if calibration_file is not None:
+            self.load_calibration(self.CalibrationData.load(calibration_file))
         else:
-            raise FileNotFoundError(f"Calibration file '{calibration_path}' not found.")
+            raise ValueError("no calibration file provided")
 
     def load_calibration(self, calibration_data: CalibrationData):
         self.calibration_data = calibration_data
