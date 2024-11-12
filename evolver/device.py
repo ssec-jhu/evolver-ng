@@ -77,46 +77,43 @@ class Evolver(BaseInterface):
     def _loop_exception_wrapper(self, callable, message="unknown") -> bool:
         try:
             callable()
-            return False
-        except Exception:
-            self.logger.exception(f"Error in loop: {message}:")
+            return None
+        except Exception as exc:
+            self.logger.exception(f"Error in loop: {message}")
             if self.raise_loop_exceptions:
                 raise
-            return True
+            return exc
 
     def read_state(self):
-        read_error = False
+        read_errors = []
         for name, device in self.sensors.items():
-            err = self._loop_exception_wrapper(device.read, f"reading device {name}")
-            read_error = read_error or err
+            read_errors.append(self._loop_exception_wrapper(device.read, f"reading device {name}"))
             self.last_read[name] = time.time()
             self.history.put(name, device.get())
-        return read_error
+        return read_errors
 
     def evaluate_controllers(self):
-        errs = [self._loop_exception_wrapper(c.run, f"updating controller {c}") for c in self.controllers]
-        return any(errs)
+        return [self._loop_exception_wrapper(c.run, f"updating controller {c}") for c in self.controllers]
 
     def commit_proposals(self):
-        errs = [
+        return [
             self._loop_exception_wrapper(d.commit, f"committing proposals for {d}") for d in self.effectors.values()
         ]
-        return any(errs)
 
     def loop_once(self):
-        read_error = self.read_state()
-        if read_error and self.skip_control_on_read_failure:
+        read_errors = self.read_state()
+        if any(read_errors) and self.skip_control_on_read_failure:
             self.logger.info("Skipping control loop due to read error")
             return
         if self.enable_control:
-            control_error = self.evaluate_controllers()
-            if control_error and self.abort_on_control_errors:
+            control_errors = self.evaluate_controllers()
+            if any(control_errors) and self.abort_on_control_errors:
                 self.abort()
-                raise RuntimeError("Aborted due to control error")
-            commit_error = self.commit_proposals()
-            if commit_error and self.abort_on_commit_errors:
+                raise RuntimeError("Aborted due to control error(s) - see logs for all errors") from control_errors[0]
+            commit_errors = self.commit_proposals()
+            if any(commit_errors) and self.abort_on_commit_errors:
                 self.abort()
-                raise RuntimeError("Aborted due to commit error")
+                raise RuntimeError("Aborted due to commit error(s) - see logs for all errors") from commit_errors[0]
 
     def abort(self):
         self.enable_control = False
