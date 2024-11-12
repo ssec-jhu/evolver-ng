@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 
@@ -111,7 +112,10 @@ async def healthz():
 
 async def evolver_async_loop():
     while True:
-        app.state.evolver.loop_once()
+        try:
+            app.state.evolver.loop_once()
+        except RuntimeError:
+            logging.exception("Error in loop")
         await asyncio.sleep(app.state.evolver.interval)
 
 

@@ -156,7 +156,8 @@ class TestEvolver:
         mock_hardware = MagicMock(spec=EffectorDriver)
         demo_evolver.hardware["testsensor"] = mock_hardware
         assert demo_evolver.enable_control
-        demo_evolver.loop_once()
+        with pytest.raises(RuntimeError):
+            demo_evolver.loop_once()
         # aborts effect is to turn off the control flag and call off on all effectors
         assert not demo_evolver.enable_control
         mock_hardware.off.assert_called_once()
@@ -167,7 +168,8 @@ class TestEvolver:
         demo_evolver.hardware["testeffector"] = mock_hardware
         mock_hardware.commit = MagicMock(side_effect=Exception("test commit"))
         assert demo_evolver.enable_control
-        demo_evolver.loop_once()
+        with pytest.raises(RuntimeError):
+            demo_evolver.loop_once()
         assert not demo_evolver.enable_control
         mock_hardware.off.assert_called_once()
 

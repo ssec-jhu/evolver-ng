@@ -112,11 +112,11 @@ class Evolver(BaseInterface):
             control_error = self.evaluate_controllers()
             if control_error and self.abort_on_control_errors:
                 self.abort()
-                return
+                raise RuntimeError("Aborted due to control error")
             commit_error = self.commit_proposals()
             if commit_error and self.abort_on_commit_errors:
                 self.abort()
-                return
+                raise RuntimeError("Aborted due to commit error")
 
     def abort(self):
         self.enable_control = False
