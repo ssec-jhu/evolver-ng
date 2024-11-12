@@ -27,6 +27,7 @@ class Evolver(BaseInterface):
         interval: int = settings.DEFAULT_LOOP_INTERVAL
         raise_loop_exceptions: bool = False
         abort_on_control_errors: bool = False
+        abort_on_commit_errors: bool = False
         skip_control_on_read_failure: bool = True
 
     def __init__(self, *args, **kwargs):
@@ -97,8 +98,10 @@ class Evolver(BaseInterface):
         return any(errs)
 
     def commit_proposals(self):
-        for device in self.effectors.values():
-            self._loop_exception_wrapper(device.commit, f"committing proposals for {device}")
+        errs = [
+            self._loop_exception_wrapper(d.commit, f"committing proposals for {d}") for d in self.effectors.values()
+        ]
+        return any(errs)
 
     def loop_once(self):
         read_error = self.read_state()
@@ -110,7 +113,10 @@ class Evolver(BaseInterface):
             if control_error and self.abort_on_control_errors:
                 self.abort()
                 return
-            self.commit_proposals()
+            commit_error = self.commit_proposals()
+            if commit_error and self.abort_on_commit_errors:
+                self.abort()
+                return
 
     def abort(self):
         self.enable_control = False

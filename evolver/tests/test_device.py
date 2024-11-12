@@ -161,6 +161,16 @@ class TestEvolver:
         assert not demo_evolver.enable_control
         mock_hardware.off.assert_called_once()
 
+    def test_abort_on_commit_failure(self, demo_evolver):
+        demo_evolver.abort_on_commit_errors = True
+        mock_hardware = MagicMock(spec=EffectorDriver)
+        demo_evolver.hardware["testeffector"] = mock_hardware
+        mock_hardware.commit = MagicMock(side_effect=Exception("test commit"))
+        assert demo_evolver.enable_control
+        demo_evolver.loop_once()
+        assert not demo_evolver.enable_control
+        mock_hardware.off.assert_called_once()
+
     def test_remove_driver(self, demo_evolver, conf_with_driver):
         assert "testeffector" in demo_evolver.hardware
         del conf_with_driver["hardware"]["testeffector"]
