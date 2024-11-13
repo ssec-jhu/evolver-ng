@@ -1,4 +1,5 @@
 import json
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -8,7 +9,7 @@ from evolver.connection.interface import Connection
 from evolver.controller.interface import Controller
 from evolver.device import DEFAULT_HISTORY, DEFAULT_SERIAL, Evolver
 from evolver.hardware.demo import NoOpEffectorDriver, NoOpSensorDriver
-from evolver.hardware.interface import HardwareDriver
+from evolver.hardware.interface import EffectorDriver, HardwareDriver, SensorDriver
 from evolver.history.interface import History
 
 
@@ -119,6 +120,58 @@ class TestEvolver:
         demo_evolver.enable_control = enable_control
         demo_evolver.loop_once()
         assert demo_evolver.controllers[0].ncalls == (1 if enable_control else 0)
+
+    @pytest.mark.parametrize("spec", [SensorDriver, EffectorDriver, Controller])
+    def test_loop_exception_option(self, demo_evolver, spec):
+        demo_evolver.raise_loop_exceptions = True
+        raises_mock_component = MagicMock(spec=spec)
+        if spec == Controller:
+            demo_evolver.controllers = [raises_mock_component]
+            raises_mock_component.run = MagicMock(side_effect=Exception("test control"))
+        else:
+            demo_evolver.hardware["testsensor"] = raises_mock_component
+            raises_mock_component.read = MagicMock(side_effect=Exception("test read"))
+            raises_mock_component.commit = MagicMock(side_effect=Exception("test commit"))
+        with pytest.raises(Exception, match="test .*"):
+            demo_evolver.loop_once()
+        demo_evolver.raise_loop_exceptions = False
+        demo_evolver.loop_once()
+
+    def test_skip_control_on_read_failure(self, demo_evolver):
+        demo_evolver.skip_control_on_read_failure = True
+        demo_evolver.hardware["testsensor"].read = MagicMock(side_effect=Exception("test read"))
+        mock_controller = MagicMock(spec=Controller)
+        demo_evolver.controllers.append(mock_controller)
+        demo_evolver.loop_once()
+        mock_controller.run.assert_not_called()
+        demo_evolver.skip_control_on_read_failure = False
+        demo_evolver.loop_once()
+        mock_controller.run.assert_called_once()
+
+    def test_abort_on_control_failure(self, demo_evolver):
+        demo_evolver.abort_on_control_errors = True
+        mock_controller = MagicMock(spec=Controller)
+        mock_controller.run = MagicMock(side_effect=Exception("test control"))
+        demo_evolver.controllers.append(mock_controller)
+        mock_hardware = MagicMock(spec=EffectorDriver)
+        demo_evolver.hardware["testsensor"] = mock_hardware
+        assert demo_evolver.enable_control
+        with pytest.raises(RuntimeError, match="Aborted due to control error"):
+            demo_evolver.loop_once()
+        # aborts effect is to turn off the control flag and call off on all effectors
+        assert not demo_evolver.enable_control
+        mock_hardware.off.assert_called_once()
+
+    def test_abort_on_commit_failure(self, demo_evolver):
+        demo_evolver.abort_on_commit_errors = True
+        mock_hardware = MagicMock(spec=EffectorDriver)
+        demo_evolver.hardware["testeffector"] = mock_hardware
+        mock_hardware.commit = MagicMock(side_effect=Exception("test commit"))
+        assert demo_evolver.enable_control
+        with pytest.raises(RuntimeError, match="Aborted due to commit error"):
+            demo_evolver.loop_once()
+        assert not demo_evolver.enable_control
+        mock_hardware.off.assert_called_once()
 
     def test_remove_driver(self, demo_evolver, conf_with_driver):
         assert "testeffector" in demo_evolver.hardware

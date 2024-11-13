@@ -25,6 +25,10 @@ class Evolver(BaseInterface):
         history: ConfigDescriptor | History = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
         enable_control: bool = True
         interval: int = settings.DEFAULT_LOOP_INTERVAL
+        raise_loop_exceptions: bool = False
+        abort_on_control_errors: bool = False
+        abort_on_commit_errors: bool = False
+        skip_control_on_read_failure: bool = True
 
     def __init__(self, *args, **kwargs):
         self.last_read = defaultdict(lambda: int(-1))
@@ -70,26 +74,46 @@ class Evolver(BaseInterface):
             "controllers": [{"kind": str(type(a)), "config": a.Config.model_json_schema()} for a in self.controllers],
         }
 
+    def _loop_exception_wrapper(self, callable, message="unknown") -> bool:
+        try:
+            callable()
+            return None
+        except Exception as exc:
+            self.logger.exception(f"Error in loop: {message}")
+            if self.raise_loop_exceptions:
+                raise
+            return exc
+
     def read_state(self):
+        read_errors = []
         for name, device in self.sensors.items():
-            device.read()
+            read_errors.append(self._loop_exception_wrapper(device.read, f"reading device {name}"))
             self.last_read[name] = time.time()
             self.history.put(name, device.get())
+        return read_errors
 
     def evaluate_controllers(self):
-        for controller in self.controllers:
-            controller.run()
+        return [self._loop_exception_wrapper(c.run, f"updating controller {c}") for c in self.controllers]
 
     def commit_proposals(self):
-        for device in self.effectors.values():
-            device.commit()
+        return [
+            self._loop_exception_wrapper(d.commit, f"committing proposals for {d}") for d in self.effectors.values()
+        ]
 
     def loop_once(self):
-        self.read_state()
-        # for any hardware awaiting calibration, call calibration update method here
+        read_errors = self.read_state()
+        if any(read_errors) and self.skip_control_on_read_failure:
+            self.logger.info("Skipping control loop due to read error")
+            return
         if self.enable_control:
-            self.evaluate_controllers()
-            self.commit_proposals()
+            control_errors = self.evaluate_controllers()
+            if any(control_errors) and self.abort_on_control_errors:
+                self.abort()
+                raise RuntimeError("Aborted due to control error(s) - see logs for all errors") from control_errors[0]
+            commit_errors = self.commit_proposals()
+            if any(commit_errors) and self.abort_on_commit_errors:
+                self.abort()
+                raise RuntimeError("Aborted due to commit error(s) - see logs for all errors") from commit_errors[0]
 
     def abort(self):
         self.enable_control = False
