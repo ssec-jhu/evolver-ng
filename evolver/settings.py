@@ -34,12 +34,26 @@ class Settings(BaseSettings):
 
 
 class AppSettings(BaseSettings):
-    CONFIG_FILE: Path = (
-        Path(__file__).resolve().parent.parent / "evolver.yml"
-    )  # CONFIG_FILE is in the project root, regardless of the working directory.
+    def find_project_root(self, marker: str = "pyproject.toml") -> Path:
+        """
+        Find the project root by looking for a marker file in parent directories.
+        Defaults to "pyproject.toml".
+        """
+        path = Path(__file__).resolve()
+        for parent in path.parents:
+            if (parent / marker).exists():
+                return parent
+        raise FileNotFoundError(f"Project root marker '{marker}' not found in any parent directories.")
+
+    CONFIG_FILE: Path | None = None
     LOAD_FROM_CONFIG_ON_STARTUP: bool = True
     HOST: str = "127.0.0.1"
     PORT: int = 8080
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.CONFIG_FILE is None:
+            self.CONFIG_FILE = self.find_project_root() / "evolver.yml"
 
 
 settings = Settings()
