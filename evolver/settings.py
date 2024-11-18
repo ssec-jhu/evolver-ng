@@ -34,7 +34,9 @@ class Settings(BaseSettings):
 
 
 class AppSettings(BaseSettings):
-    CONFIG_FILE: Path = Path("evolver.yml")  # in current directory
+    CONFIG_FILE: Path = (
+        Path(__file__).resolve().parent.parent / "evolver.yml"
+    )  # CONFIG_FILE is in the project root, regardless of the working directory.
     LOAD_FROM_CONFIG_ON_STARTUP: bool = True
     HOST: str = "127.0.0.1"
     PORT: int = 8080
