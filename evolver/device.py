@@ -19,7 +19,7 @@ class Evolver(BaseInterface):
         name: str = "Evolver"
         experiment: str = "unspecified"
         vials: list = list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
-        hardware: dict[str, ConfigDescriptor | HardwareDriver] = {}
+        hardware: dict[str, ConfigDescriptor] = {}
         controllers: list[ConfigDescriptor | Controller] = []
         serial: ConfigDescriptor | Connection = ConfigDescriptor.model_validate(DEFAULT_SERIAL)
         history: ConfigDescriptor | History = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
