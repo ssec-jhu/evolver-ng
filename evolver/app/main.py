@@ -65,7 +65,7 @@ app.include_router(hardware.router)
 @app.get("/", operation_id="describe")
 async def describe_evolver():
     return {
-        "config": app.state.evolver.config_model,
+        "config": app.state.evolver.config,
         **await get_state(),
     }
 
