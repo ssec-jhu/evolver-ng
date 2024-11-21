@@ -1,3 +1,4 @@
+import logging
 import time
 from collections import defaultdict
 
@@ -7,6 +8,7 @@ from evolver.controller.interface import Controller
 from evolver.hardware.interface import EffectorDriver, HardwareDriver, SensorDriver
 from evolver.history.interface import History
 from evolver.history.standard import HistoryServer
+from evolver.logutils import EVENT, CaptureHandler
 from evolver.serial import EvolverSerialUART
 from evolver.settings import settings
 
@@ -29,10 +31,21 @@ class Evolver(BaseInterface):
         abort_on_control_errors: bool = False
         abort_on_commit_errors: bool = False
         skip_control_on_read_failure: bool = True
+        log_level: int = EVENT
+        log_logger: str = "root"  # though we might want to prefix things in this package with package name?
 
     def __init__(self, *args, **kwargs):
         self.last_read = defaultdict(lambda: int(-1))
         super().__init__(*args, evolver=self, **kwargs)
+        self._setup_log_capture()
+
+    def _setup_log_capture(self):
+        self._log_capture_handler = CaptureHandler(self.history)
+        self._log_capture_handler.setLevel(self.log_level)
+        logging.getLogger(self.log_logger).addHandler(self._log_capture_handler)
+
+    def __del__(self):
+        logging.getLogger(self.log_logger).removeHandler(self._log_capture_handler)
 
     def get_hardware(self, name):
         return self.hardware[name]
@@ -89,7 +102,8 @@ class Evolver(BaseInterface):
         for name, device in self.sensors.items():
             read_errors.append(self._loop_exception_wrapper(device.read, f"reading device {name}"))
             self.last_read[name] = time.time()
-            self.history.put(name, device.get())
+            if data := device.get():
+                self.history.put(name, "sensor", data)  # TODO: store as vials separately
         return read_errors
 
     def evaluate_controllers(self):
@@ -101,9 +115,10 @@ class Evolver(BaseInterface):
         ]
 
     def loop_once(self):
+        self.logger.info("running control loop iteration")
         read_errors = self.read_state()
         if any(read_errors) and self.skip_control_on_read_failure:
-            self.logger.info("Skipping control loop due to read error")
+            self.logger.warning("Skipping control loop due to read error")
             return
         if self.enable_control:
             control_errors = self.evaluate_controllers()

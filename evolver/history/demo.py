@@ -14,12 +14,13 @@ class InMemoryHistoryServer(History):
         self.history = defaultdict(lambda: deque(maxlen=self.buffer_size))
         super().__init__(*args, **kwargs)
 
-    def put(self, name, data):
-        self.history[name].append(HistoricDatum(timestamp=time.time(), data=data))
+    def put(self, name, kind, data, vial=None):
+        self.history[name].append(HistoricDatum(timestamp=time.time(), data=data, kind=kind, vial=vial))
 
     def get(
         self,
         name: str = None,
+        kinds: list[str] = None,
         t_start: float = None,
         t_stop: float = None,
         vials: list[int] | None = None,
@@ -36,5 +37,13 @@ class InMemoryHistoryServer(History):
                 history = [filter_vial_data(d, vials, properties) for d in history]
             except Exception:
                 pass
-            data[n] = list(history)
+
+            def filter_records(record):
+                if kinds and record.kind not in kinds:
+                    return False
+                if vials and record.vial not in vials:
+                    return False
+                return True
+
+            data[n] = [i for i in history if filter_records(i)]
         return HistoryResult(data=data)

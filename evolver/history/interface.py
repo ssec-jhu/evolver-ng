@@ -8,6 +8,8 @@ from evolver.base import BaseInterface
 
 class HistoricDatum(BaseModel):
     timestamp: float
+    kind: str
+    vial: int | None
     data: Any
 
 
@@ -20,7 +22,7 @@ class History(BaseInterface):
         pass
 
     @abstractmethod
-    def put(self, name: str, data: Any):
+    def put(self, name: str, kind: str, data: Any, vial: int = None):
         """Add data for hardware component to history.
 
         Args:
@@ -34,6 +36,7 @@ class History(BaseInterface):
     def get(
         self,
         name: str = None,
+        kinds: list[str] = None,
         t_start: float = None,
         t_stop: float = None,
         vials: list[int] | None = None,
