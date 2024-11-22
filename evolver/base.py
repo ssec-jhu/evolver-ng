@@ -8,6 +8,7 @@ from typing import Any, Dict
 import pydantic
 import pydantic_core
 import yaml
+from pydantic._internal._validators import import_string
 
 import evolver.util
 from evolver.settings import settings
@@ -42,6 +43,26 @@ def require_all_fields(cls):
 
 class _BaseConfig(pydantic.BaseModel):
     model_config = pydantic.ConfigDict(extra="ignore", from_attributes=True)
+
+    @classmethod
+    def get_classinfo(cls):
+        """The fully qualified classname for cls's container class (if one exists).
+           Raises `TypeError` if parent class is not derived from BaseInterface.
+        """
+        fqn = evolver.util.fully_qualified_name(cls)
+        containers = fqn.split('.')[:-1]
+        container = ".".join(containers)
+        container_class = import_string(container)
+        if issubclass(container_class, BaseInterface):
+            cls = container_class
+        return f"{cls.__module__}.{cls.__qualname__}"
+
+    @pydantic.model_serializer(mode="wrap", when_used='json')
+    def to_descriptor(self, handler) -> dict:
+        serialized_by_super = handler(self)
+        if issubclass(self.__class__, ConfigDescriptor):
+            return serialized_by_super
+        return dict(classinfo=self.get_classinfo(), config=serialized_by_super)
 
     @classmethod
     def model_validate(cls, obj, *, strict=None, from_attributes=None, context=None):
