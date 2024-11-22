@@ -84,6 +84,9 @@ class TestBaseConfig:
         assert obj.a == 44
         assert obj.b == 55
 
+    def test_classinfo(self):
+        assert ConcreteInterface.Config.classinfo() == evolver.util.fully_qualified_name(ConcreteInterface)
+
 
 class TestBaseInterface:
     def test_create(self):
