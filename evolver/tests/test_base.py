@@ -17,6 +17,10 @@ class ConcreteInterface(evolver.base.BaseInterface):
         b: int = 3
 
 
+class ConcreteInterface2(evolver.base.BaseInterface):
+    ...
+
+
 class Nested(evolver.base.BaseInterface):
     class Config(evolver.base.BaseInterface.Config):
         stuff: evolver.base.ConfigDescriptor
@@ -60,7 +64,10 @@ class TestBaseConfig:
         assert isinstance(obj, ConcreteInterface.Config)
 
     def test_auto_json_handling(self):
-        config = ConcreteInterface.Config(a=6, b=7).model_dump_json()
+        config = ConcreteInterface.Config(a=6, b=7)
+        assert config.a == 6
+        assert config.b == 7
+        config = config.model_dump_json()
         obj = ConcreteInterface.Config.model_validate(config)
         assert isinstance(obj, ConcreteInterface.Config)
         assert obj.a == 6
@@ -85,7 +92,7 @@ class TestBaseConfig:
         assert obj.b == 55
 
     def test_classinfo(self):
-        assert ConcreteInterface.Config.classinfo() == evolver.util.fully_qualified_name(ConcreteInterface)
+        assert ConcreteInterface.Config.get_classinfo() == evolver.util.fully_qualified_name(ConcreteInterface)
 
 
 class TestBaseInterface:
@@ -144,13 +151,13 @@ class TestBaseInterface:
         assert obj.config_model == ConcreteInterface.Config()
 
     def test_create_descriptor_cls_missmatch(self):
-        descriptor = evolver.base.ConfigDescriptor(classinfo=int, config=ConcreteInterface.Config().model_dump())
-        with pytest.raises(TypeError, match="is not compatible with this class"):
-            ConcreteInterface.create(descriptor)
+        config = ConcreteInterface.Config().model_dump()
 
         with pytest.raises(TypeError, match="is not compatible with this class"):
-            ConcreteInterface.create(descriptor.model_dump())
+            ConcreteInterface.create(dict(classinfo=int, config=config))
 
+    def test_create_descriptor_cls_missmatch_from_json(self):
+        descriptor = evolver.base.ConfigDescriptor(classinfo=ConcreteInterface2, config={})
         with pytest.raises(TypeError, match="is not compatible with this class"):
             ConcreteInterface.create(descriptor.model_dump_json())
 
@@ -298,6 +305,10 @@ class TestConfigDescriptor:
             ).classinfo,
             type,
         )
+
+    def test_classinfo_validator(self):
+        with pytest.raises(pydantic.ValidationError):
+            evolver.base.ConfigDescriptor(classinfo=int, config={})
 
     def test_from_file(self, tmp_path, mock_descriptor):
         file_path = tmp_path / "ConcreteInterfaceConfigDescriptor.yml"
