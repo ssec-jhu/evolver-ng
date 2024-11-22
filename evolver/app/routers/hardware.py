@@ -93,8 +93,15 @@ def get_calibrator_actions(hardware_name: str, request: Request):
     if not calibrator:
         raise CalibratorNotFoundError
     calibration_procedure = calibrator.calibration_procedure
+
     actions = [
-        {"name": action.name, "description": action.description} for action in calibration_procedure.get_actions()
+        {
+            "name": action.name,
+            "description": action.description,
+            "requires_input": action.requires_input,
+            "input_schema": action.FormModel.schema() if action.FormModel else None,
+        }
+        for action in calibration_procedure.get_actions()
     ]
     return {"actions": actions}
 

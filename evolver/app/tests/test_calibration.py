@@ -64,7 +64,12 @@ def test_temperature_calibration_procedure_actions():
     actions_response = client.get("hardware/test/calibrator/procedure/actions")
     assert actions_response.status_code == 200
     expected_actions = [
-        {"name": action.name, "description": action.description}
+        {
+            "name": action.name,
+            "description": action.description,
+            "requires_input": action.requires_input,
+            "input_schema": action.FormModel.schema() if action.FormModel else None,
+        }
         for action in temp_calibrator.calibration_procedure.actions
     ]
 
