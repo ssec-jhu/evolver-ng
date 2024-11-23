@@ -17,8 +17,7 @@ class ConcreteInterface(evolver.base.BaseInterface):
         b: int = 3
 
 
-class ConcreteInterface2(evolver.base.BaseInterface):
-    ...
+class ConcreteInterface2(evolver.base.BaseInterface): ...
 
 
 class Nested(evolver.base.BaseInterface):
