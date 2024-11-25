@@ -8,7 +8,7 @@ from fastapi.encoders import jsonable_encoder
 
 from evolver.history.interface import HistoricDatum, History, HistoryResult
 from evolver.settings import settings
-from evolver.util import filter_vial_data
+from evolver.util import filter_data_properties
 
 
 class HistoryServer(History):
@@ -132,6 +132,9 @@ class HistoryServer(History):
         if kinds:
             kinds_filter = ",".join([f"'{k}'" for k in kinds])
             res = res.filter(f"kind in ({kinds_filter})")
+        if vials:
+            vials_filter = ",".join([str(v) for v in vials])
+            res = res.filter(f"vial in ({vials_filter})")
         if name:
             res = res.filter(f"name='{name}'")
         if t_start:
@@ -143,7 +146,7 @@ class HistoryServer(History):
 
         res = (
             res.select("name", "timestamp", "data", "kind", "vial")
-            .order("timestamp DESC")
+            .order("timestamp DESC, name ASC, vial ASC")
             .limit(n_max or self.default_n_max)
         )
         data = defaultdict(deque)
@@ -163,7 +166,7 @@ class HistoryServer(History):
             except Exception:
                 pass
             try:
-                row_data = filter_vial_data(row_data, vials, properties)
+                row_data = filter_data_properties(row_data, properties)
             except Exception:
                 pass
             if not row_data:

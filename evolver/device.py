@@ -104,7 +104,11 @@ class Evolver(BaseInterface):
             read_errors.append(self._loop_exception_wrapper(device.read, f"reading device {name}"))
             self.last_read[name] = time.time()
             if data := device.get():
-                self.history.put(name, "sensor", data)  # TODO: store as vials separately
+                if isinstance(data, dict):
+                    for vial, output in data.items():
+                        self.history.put(name, "sensor", output, vial=vial)
+                else:
+                    self.history.put(name, "sensor", data, vial=getattr(data, "vial", None))
         return read_errors
 
     def evaluate_controllers(self):

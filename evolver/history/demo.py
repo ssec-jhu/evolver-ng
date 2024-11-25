@@ -2,7 +2,7 @@ import time
 from collections import defaultdict, deque
 
 from evolver.history.interface import HistoricDatum, History, HistoryResult
-from evolver.util import filter_vial_data
+from evolver.util import filter_data_properties
 
 
 class InMemoryHistoryServer(History):
@@ -34,7 +34,7 @@ class InMemoryHistoryServer(History):
         for n in names:
             history = list(self.history[n])[:n_max]
             try:
-                history = [filter_vial_data(d, vials, properties) for d in history]
+                history = [filter_data_properties(d, properties) for d in history]
             except Exception:
                 pass
 
