@@ -312,7 +312,7 @@ class BaseInterface(ABC):
         init_and_set_vars_from_descriptors(self, **non_config_kwargs)
 
     def _setup_logger(self):
-        self.logger = logging.getLogger(self.name)
+        self.logger = logging.getLogger(f"{__package__}.{self.name}")
 
     @classmethod
     def __get_pydantic_core_schema__(cls, *args, **kwargs):

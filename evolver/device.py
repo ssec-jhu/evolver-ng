@@ -8,7 +8,7 @@ from evolver.controller.interface import Controller
 from evolver.hardware.interface import EffectorDriver, HardwareDriver, SensorDriver
 from evolver.history.interface import History
 from evolver.history.standard import HistoryServer
-from evolver.logutils import EVENT, CaptureHandler
+from evolver.logutils import EVENT, LogHistoryCaptureHandler
 from evolver.serial import EvolverSerialUART
 from evolver.settings import settings
 
@@ -32,7 +32,6 @@ class Evolver(BaseInterface):
         abort_on_commit_errors: bool = False
         skip_control_on_read_failure: bool = True
         log_level: int = EVENT
-        log_logger: str = "root"  # though we might want to prefix things in this package with package name?
 
     def __init__(self, *args, **kwargs):
         self.last_read = defaultdict(lambda: int(-1))
@@ -40,12 +39,14 @@ class Evolver(BaseInterface):
         self._setup_log_capture()
 
     def _setup_log_capture(self):
-        self._log_capture_handler = CaptureHandler(self.history)
+        self._log_capture_handler = LogHistoryCaptureHandler(self.history)
         self._log_capture_handler.setLevel(self.log_level)
-        logging.getLogger(self.log_logger).addHandler(self._log_capture_handler)
+        logger = logging.getLogger(__package__)
+        logger.addHandler(self._log_capture_handler)
+        logger.setLevel(self.log_level)
 
     def __del__(self):
-        logging.getLogger(self.log_logger).removeHandler(self._log_capture_handler)
+        logging.getLogger(__package__).removeHandler(self._log_capture_handler)
 
     def get_hardware(self, name):
         return self.hardware[name]
