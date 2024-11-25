@@ -5,6 +5,9 @@ import pytest
 
 import evolver.base
 import evolver.util
+from evolver.calibration.standard.calibrators.temperature import TemperatureCalibrator
+from evolver.device import Evolver
+from evolver.hardware.standard.temperature import Temperature
 
 
 class ConcreteInterface(evolver.base.BaseInterface):
@@ -218,6 +221,22 @@ class TestBaseInterface:
         obj = ConcreteInterface.create(mock_config_file)
         assert obj.a == 44
         assert obj.b == 55
+
+    def test_nested_config_models(self):
+        # Setup.
+        calibrator = TemperatureCalibrator()
+        hardware = Temperature(addr="x", calibrator=calibrator)
+        config = Evolver(hardware={"test": hardware}).config
+
+        # Test hardware description.
+        hardware_descriptor = config["hardware"]["test"]
+        assert set(hardware_descriptor.keys()) == {"classinfo", "config"}
+        assert hardware_descriptor["classinfo"] == evolver.util.fully_qualified_name(hardware.__class__)
+
+        # Test calibrator description.
+        calibrator_descriptor = hardware_descriptor["config"]["calibrator"]
+        assert set(calibrator_descriptor.keys()) == {"classinfo", "config"}
+        assert calibrator_descriptor["classinfo"] == evolver.util.fully_qualified_name(calibrator.__class__)
 
 
 class TestConfigDescriptor:
