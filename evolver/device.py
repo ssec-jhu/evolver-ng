@@ -136,9 +136,11 @@ class Evolver(BaseInterface):
                 raise RuntimeError("Aborted due to commit error(s) - see logs for all errors") from commit_errors[0]
 
     def abort(self):
+        self.logger.log(EVENT, "Abort start")
         self.enable_control = False
         for device in self.effectors.values():
             device.off()
+        self.logger.log(EVENT, "Abort complete - device now inactive")
 
     def __enter__(self):
         return self
