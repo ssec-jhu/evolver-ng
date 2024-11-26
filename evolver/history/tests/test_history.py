@@ -41,7 +41,7 @@ def test_history_server(history_server, sensor):
     result = history_server.get(name="test")
     # first sanity check that we have populated multiple records
     assert len(result.data["test"]) == 2
-    result = history_server.get(name="test", t_start=t1)
+    result = history_server.get(name="test", kinds=["sensor"], t_start=t1)
     assert len(result.data["test"]) == 1
     assert result.data["test"][0].timestamp >= t1
     # filter by vial and property
@@ -50,6 +50,8 @@ def test_history_server(history_server, sensor):
     # filter by vial and property, but no match
     result = history_server.get(name="test", vials=[100])
     assert result == HistoryResult(data={})
+    # kinds we don't have
+    assert history_server.get(name="test", kinds=["nonexistent"]) == HistoryResult(data={})
 
 
 def test_history_server_nonexistent_empty_result(history_server, sensor):
@@ -59,6 +61,12 @@ def test_history_server_nonexistent_empty_result(history_server, sensor):
 
 def test_history_server_empty_history_empty_result(history_server):
     assert history_server.get() == HistoryResult(data={})
+
+
+def test_history_server_non_json_ok(history_server):
+    history_server.put("test", "sensor", "not json")
+    result = history_server.get(name="test")
+    assert result.data["test"][0].data == "not json"
 
 
 def test_history_resume_history(sensor):

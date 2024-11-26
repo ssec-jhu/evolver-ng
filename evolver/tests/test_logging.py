@@ -30,9 +30,10 @@ def test_log_evolver_hookup():
     evolver.loop_once()
     log = history.get("test", "log").data["test"][0]
     assert log.data == {"level": "WARNING", "message": "test from HW"}
-    event = history.get("test", "event").data["test"][0]
+    event = history.get("test", "event", vials=[1]).data["test"][0]
     assert event.data == {"level": "EVENT", "message": "event from HW"}
     assert event.vial == 1
+    assert history.get("test", "event", vials=[2]).data["test"] == []
 
     test_msg = "test outside evolver"
     logging.warning(test_msg)  # should not be captured since it is root logger
