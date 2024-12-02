@@ -15,14 +15,18 @@ class CalibrationAction(ABC):
                 Must be unique within a procedure.
             description (str): A short description of the action's purpose.
                 Useful for documentation or display of instructions to the person performing a calibration procedure action.
-            requires_input (bool): Indicates whether this action requires user input.
-                Actions that require input should have a FormModel defined to express the model of the required user input.
         """
         self.name = name
         self.description = description
-        self.requires_input = requires_input
 
     class FormModel(BaseModel):
+        """
+        A Pydantic model for the input to the action.
+        For actions that require input, this should be overridden in a subclass.
+        This is used by the frontend to generate a form for the user to fill out.
+        Actions that do not require input should leave this empty
+        """
+
         pass
 
     @abstractmethod

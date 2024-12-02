@@ -7,10 +7,15 @@ from evolver.calibration.action import CalibrationAction
 
 class ReferenceValueAction(CalibrationAction):
     class FormModel(BaseModel):
+        """
+        Because this action requires manual user input, we define a Pydantic model for the input to the action.
+        This is used by the frontend to generate a form for the user to fill out.
+        """
+
         temperature: float = Field(..., title="Temperature", description="Temperature in degrees Celsius")
 
     def __init__(self, hardware, vial_idx: int, *args, **kwargs):
-        super().__init__(requires_input=True, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.hardware = hardware
         self.vial_idx = vial_idx
 

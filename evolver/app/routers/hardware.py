@@ -98,7 +98,7 @@ def get_calibrator_actions(hardware_name: str, request: Request):
         {
             "name": action.name,
             "description": action.description,
-            "requires_input": action.requires_input,
+            "requires_input": action.FormModel.model_fields != {},
             "input_schema": action.FormModel.schema() if action.FormModel else None,
         }
         for action in calibration_procedure.get_actions()
