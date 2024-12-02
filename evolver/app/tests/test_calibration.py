@@ -67,7 +67,6 @@ def test_temperature_calibration_procedure_actions():
         {
             "name": action.name,
             "description": action.description,
-            "requires_input": action.FormModel.model_fields != {},
             "input_schema": action.FormModel.schema() if action.FormModel else None,
         }
         for action in temp_calibrator.calibration_procedure.actions

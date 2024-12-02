@@ -5,7 +5,11 @@ from pydantic import BaseModel
 
 
 class CalibrationAction(ABC):
-    def __init__(self, name: str, description: str, requires_input: bool = False):
+    def __init__(
+        self,
+        name: str,
+        description: str,
+    ):
         """
         Initialize a CalibrationAction.
 
