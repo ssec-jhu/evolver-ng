@@ -10,6 +10,7 @@ import pydantic_core
 import yaml
 
 import evolver.util
+from evolver.settings import settings
 from evolver.types import CreatedTimestampField, ExpireField, ImportString
 
 
@@ -312,7 +313,7 @@ class BaseInterface(ABC):
         init_and_set_vars_from_descriptors(self, **non_config_kwargs)
 
     def _setup_logger(self):
-        self.logger = logging.getLogger(self.name)
+        self.logger = logging.getLogger(f"{settings.DEFAULT_LOGGER}.{self.name}")
 
     @classmethod
     def __get_pydantic_core_schema__(cls, *args, **kwargs):

@@ -204,7 +204,8 @@ class TestApp:
         if query_params.get("name", "test") == "test":
             assert response.json()["data"]["test"][0]["timestamp"] > 0
             assert isinstance(response.json()["data"]["test"][0]["data"], dict)
-            assert len(response.json()["data"]["test"]) <= query_params.get("n_max", 2)
+            if n_max := query_params.get("n_max", None):
+                assert len(response.json()["data"]["test"]) <= n_max
         else:
             assert response.json() == {"data": {}}
 

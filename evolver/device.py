@@ -1,3 +1,4 @@
+import logging
 import time
 from collections import defaultdict
 
@@ -7,6 +8,7 @@ from evolver.controller.interface import Controller
 from evolver.hardware.interface import EffectorDriver, HardwareDriver, SensorDriver
 from evolver.history.interface import History
 from evolver.history.standard import HistoryServer
+from evolver.logutils import EVENT, LogHistoryCaptureHandler
 from evolver.serial import EvolverSerialUART
 from evolver.settings import settings
 
@@ -29,10 +31,22 @@ class Evolver(BaseInterface):
         abort_on_control_errors: bool = False
         abort_on_commit_errors: bool = False
         skip_control_on_read_failure: bool = True
+        log_level: int = EVENT
 
     def __init__(self, *args, **kwargs):
         self.last_read = defaultdict(lambda: int(-1))
         super().__init__(*args, evolver=self, **kwargs)
+        self._setup_log_capture()
+
+    def _setup_log_capture(self):
+        self._log_capture_handler = LogHistoryCaptureHandler(self.history)
+        self._log_capture_handler.setLevel(self.log_level)
+        logger = logging.getLogger(settings.DEFAULT_LOGGER)
+        logger.addHandler(self._log_capture_handler)
+        logger.setLevel(self.log_level)
+
+    def __del__(self):
+        logging.getLogger(settings.DEFAULT_LOGGER).removeHandler(self._log_capture_handler)
 
     def get_hardware(self, name):
         return self.hardware[name]
@@ -89,7 +103,12 @@ class Evolver(BaseInterface):
         for name, device in self.sensors.items():
             read_errors.append(self._loop_exception_wrapper(device.read, f"reading device {name}"))
             self.last_read[name] = time.time()
-            self.history.put(name, device.get())
+            if data := device.get():
+                if isinstance(data, dict):
+                    for vial, output in data.items():
+                        self.history.put(name, "sensor", output, vial=vial)
+                else:
+                    self.history.put(name, "sensor", data, vial=getattr(data, "vial", None))
         return read_errors
 
     def evaluate_controllers(self):
@@ -101,9 +120,10 @@ class Evolver(BaseInterface):
         ]
 
     def loop_once(self):
+        self.logger.info("running control loop iteration")
         read_errors = self.read_state()
         if any(read_errors) and self.skip_control_on_read_failure:
-            self.logger.info("Skipping control loop due to read error")
+            self.logger.warning("Skipping control loop due to read error")
             return
         if self.enable_control:
             control_errors = self.evaluate_controllers()
@@ -116,9 +136,11 @@ class Evolver(BaseInterface):
                 raise RuntimeError("Aborted due to commit error(s) - see logs for all errors") from commit_errors[0]
 
     def abort(self):
+        self.logger.log(EVENT, "Abort start")
         self.enable_control = False
         for device in self.effectors.values():
             device.off()
+        self.logger.log(EVENT, "Abort complete - device now inactive")
 
     def __enter__(self):
         return self

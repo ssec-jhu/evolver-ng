@@ -8,7 +8,7 @@ from fastapi.encoders import jsonable_encoder
 
 from evolver.history.interface import HistoricDatum, History, HistoryResult
 from evolver.settings import settings
-from evolver.util import filter_vial_data
+from evolver.util import filter_data_properties
 
 
 class HistoryServer(History):
@@ -36,14 +36,16 @@ class HistoryServer(History):
             read_json('{self.history_dir}/*/history.json',
             format='newline_delimited',
             ignore_errors=true,
-            columns={{timestamp: 'double', name: 'varchar', data: 'varchar'}},
+            columns={{timestamp: 'double', name: 'varchar', kind: 'varchar', data: 'varchar', vial: 'int'}},
             auto_detect=false,
             hive_partitioning=true)
             """
         self.current_partition = None
         self.current_file = None
         self._db = duckdb.connect(":memory:")
-        self._db.execute("CREATE TABLE history (time_part INT, timestamp DOUBLE, name VARCHAR, data VARCHAR)")
+        self._db.execute(
+            "CREATE TABLE history (time_part INT, timestamp DOUBLE, name VARCHAR, kind VARCHAR, data VARCHAR, vial INT)"
+        )
         self._backfill_buffer()
 
     def _backfill_buffer(self):
@@ -59,8 +61,8 @@ class HistoryServer(History):
             if "No files found" in str(exc):
                 return
             raise
-        self._db.execute("""INSERT INTO history (time_part, timestamp, name, data)
-                        SELECT time_part, timestamp, name, data FROM to_backfill""")
+        self._db.execute("""INSERT INTO history (time_part, timestamp, name, kind, data, vial)
+                        SELECT time_part, timestamp, name, kind, data, vial FROM to_backfill""")
 
     def _get_part(self, timestamp):
         if self.partition_seconds <= 0:
@@ -85,7 +87,7 @@ class HistoryServer(History):
                 expire_beyond = timestamp - self.partition_seconds * self.buffer_partitions
                 self._db.execute("DELETE FROM history WHERE time_part<?", parameters=(expire_beyond,))
 
-    def put(self, name: str, data):
+    def put(self, name: str, kind: str, data, vial: int = None):
         timestamp = time.time()
         self._rotate(timestamp)
         # if we append newlines at the end of each record, JSONL readers will
@@ -93,18 +95,19 @@ class HistoryServer(History):
         # so append only if we are not at the beginning of the file.
         if self.current_file.tell() != 0:
             self.current_file.write("\n")
-        record = {"timestamp": timestamp, "name": name, "data": jsonable_encoder(data)}
+        record = {"timestamp": timestamp, "name": name, "kind": kind, "vial": vial, "data": jsonable_encoder(data)}
         json.dump(record, self.current_file)
         self.current_file.flush()
         if self.buffer_partitions > 0:
             self._db.execute(
-                "INSERT INTO history (time_part, timestamp, name, data) VALUES (?, ?, ?, ?)",
-                parameters=(self.current_partition, timestamp, name, json.dumps(jsonable_encoder(data))),
+                "INSERT INTO history (time_part, timestamp, name, kind, data, vial) VALUES (?, ?, ?, ?, ?, ?)",
+                parameters=(self.current_partition, timestamp, name, kind, json.dumps(jsonable_encoder(data)), vial),
             )
 
     def get(
         self,
         name: str = None,
+        kinds: list[str] = None,
         t_start: float = None,
         t_stop: float = None,
         vials: list[int] | None = None,
@@ -126,6 +129,12 @@ class HistoryServer(History):
             if "No files found" in str(exc):
                 return HistoryResult(data={})
             raise exc
+        if kinds:
+            kinds_filter = ",".join([f"'{k}'" for k in kinds])
+            res = res.filter(f"kind in ({kinds_filter})")
+        if vials:
+            vials_filter = ",".join([str(v) for v in vials])
+            res = res.filter(f"vial in ({vials_filter})")
         if name:
             res = res.filter(f"name='{name}'")
         if t_start:
@@ -135,7 +144,11 @@ class HistoryServer(History):
             stop_part = self._get_part(t_stop)
             res = res.filter(f"time_part<={stop_part}").filter(f"timestamp<{t_stop}")
 
-        res = res.select("name", "timestamp", "data").order("timestamp DESC").limit(n_max or self.default_n_max)
+        res = (
+            res.select("name", "timestamp", "data", "kind", "vial")
+            .order("timestamp DESC, name ASC, vial ASC")
+            .limit(n_max or self.default_n_max)
+        )
         data = defaultdict(deque)
 
         while row := res.fetchone():
@@ -143,18 +156,22 @@ class HistoryServer(History):
             # Attempt data cleaning and filtering, but pass data as-is if these
             # operations fail, in order to support arbitrary data shapes.
             try:
+                row_data = json.loads(row_data)
+            except json.JSONDecodeError:
+                pass
+            try:
                 # json only allows string keys, might want to revisit the assumptions
                 # here, and/or have a more concrete vial-data container
-                row_data = {int(k): v for k, v in json.loads(row_data).items()}
+                row_data = {int(k): v for k, v in row_data.items()}
             except Exception:
                 pass
             try:
-                row_data = filter_vial_data(row_data, vials, properties)
+                row_data = filter_data_properties(row_data, properties)
             except Exception:
                 pass
             if not row_data:
                 continue
 
-            data[row[0]].appendleft(HistoricDatum(timestamp=row[1], data=row_data))
+            data[row[0]].appendleft(HistoricDatum(timestamp=row[1], data=row_data, kind=row[3], vial=row[4]))
 
         return HistoryResult(data=data)
