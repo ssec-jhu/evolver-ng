@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     )
     AUTO_SAVE_NEW_CALIBRATIONS: bool = True
     SNAPSHOT: Path = Path("evolver_snapshot.yml")  # in current directory
+    DEFAULT_LOGGER: str = __package__  # logger name for provided loggers and capture
 
 
 class AppSettings(BaseSettings):

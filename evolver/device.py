@@ -41,12 +41,12 @@ class Evolver(BaseInterface):
     def _setup_log_capture(self):
         self._log_capture_handler = LogHistoryCaptureHandler(self.history)
         self._log_capture_handler.setLevel(self.log_level)
-        logger = logging.getLogger(__package__)
+        logger = logging.getLogger(settings.DEFAULT_LOGGER)
         logger.addHandler(self._log_capture_handler)
         logger.setLevel(self.log_level)
 
     def __del__(self):
-        logging.getLogger(__package__).removeHandler(self._log_capture_handler)
+        logging.getLogger(settings.DEFAULT_LOGGER).removeHandler(self._log_capture_handler)
 
     def get_hardware(self, name):
         return self.hardware[name]
