@@ -22,6 +22,7 @@ async def network_html():
             <p>Running '{__project__}' ver: '{__version__}'</p>
             <p>Hostname: {hostname}</p>
             <p>IP Address: {ip_address}</p>
+            <a href="/docs">API Documentation</a>
         </body>
     </html>
     """
