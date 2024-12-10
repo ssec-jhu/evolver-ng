@@ -19,14 +19,26 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
 
     class CalibrationData(Transformer.Config):
         measured: Dict[int, Dict[str, List[float]]] = {}  # {vial_index: {"reference": [], "raw": []}}
+        completed_actions: List[str] = []
 
     def create_calibration_procedure(
         self,
         selected_hardware: HardwareDriver,
+        # Resume by default
+        resume: bool = True,
         *args,
         **kwargs,
     ):
-        calibration_procedure = CalibrationProcedure()
+        # Cherrypick data persisted to Calibrator.CalibrationData, to resume the CalibrationProcedure from the last saved state.
+        persisted_state = {
+            **self.calibration_data.measured,
+            "completed_actions": self.calibration_data.completed_actions,
+        }
+
+        calibration_procedure = (
+            CalibrationProcedure(persisted_state) if resume and persisted_state else CalibrationProcedure()
+        )
+
         calibration_procedure.add_action(
             DisplayInstructionAction(description="Fill each vial with 15ml water", name="fill_vials_instruction")
         )

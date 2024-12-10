@@ -22,6 +22,7 @@ class ReferenceValueAction(CalibrationAction):
     def execute(self, state: Dict, payload: Optional[FormModel] = None):
         state.setdefault(self.vial_idx, {"reference": [], "raw": []})
         state[self.vial_idx]["reference"].append(payload.temperature)
+        state.setdefault("completed_actions", []).append(self.name)
         return state
 
 
@@ -38,6 +39,7 @@ class RawValueAction(CalibrationAction):
         state.setdefault(self.vial_idx, {"reference": [], "raw": []})
         sensor_value = self.hardware.read()[self.vial_idx]
         state[self.vial_idx]["raw"].append(sensor_value)
+        state.setdefault("completed_actions", []).append(self.name)
         return state
 
 
@@ -55,6 +57,7 @@ class CalculateFitAction(CalibrationAction):
         vial_data = state[self.vial_idx]
         # The result of the refit is stored in the output_transformer, accessible via hardware.calibrator.output_transformer
         self.hardware.calibrator.output_transformer[self.vial_idx].refit(vial_data["reference"], vial_data["raw"])
+        state.setdefault("completed_actions", []).append(self.name)
         return state
 
 
@@ -67,5 +70,8 @@ class SaveProcedureStateAction(CalibrationAction):
         self.hardware = hardware
 
     def execute(self, state, payload: Optional[FormModel] = None):
+        # Note this is a side effect, but it is necessary to save the state of the calibration procedure
+        state.setdefault("completed_actions", []).append(self.name)
+        # Note this is a side effect, but it is necessary to save the state of the calibration procedure
         self.hardware.calibrator.calibration_data.measured = state
         return state

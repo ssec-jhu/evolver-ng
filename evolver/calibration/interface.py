@@ -168,7 +168,7 @@ class Calibrator(BaseInterface):
         ...
 
     @abstractmethod
-    def create_calibration_procedure(self, selected_hardware, *args, **kwargs):
+    def create_calibration_procedure(self, selected_hardware, resume, *args, **kwargs):
         """This creates the calibration procedure, which is composed of a sequence of actions."""
         pass
 
@@ -193,5 +193,5 @@ class IndependentVialBasedCalibrator(Calibrator):
         input_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
         output_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
 
-    def create_calibration_procedure(self, selected_hardware, *args, **kwargs):
+    def create_calibration_procedure(self, selected_hardware, resume, *args, **kwargs):
         raise NotImplementedError

@@ -1,5 +1,6 @@
 from abc import ABC
 from typing import Any, Dict
+from copy import deepcopy
 
 from evolver.base import BaseInterface
 from evolver.calibration.action import CalibrationAction
@@ -8,7 +9,7 @@ from evolver.calibration.action import CalibrationAction
 class CalibrationProcedure(BaseInterface, ABC):
     class Config(BaseInterface.Config): ...
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, state=None, *args, **kwargs):
         """
         Initialize the CalibrationProcedure.
 
@@ -16,7 +17,7 @@ class CalibrationProcedure(BaseInterface, ABC):
             actions (list): The list of actions that can be executed in the calibration procedure.
                 All actions are added to this list in the create_calibration_procedure method.
                 Typically, a procedure is complete when all actions have been dispatched in sequence using the HTTP API.
-            state (dict): The state of the calibration procedure, updated as actions are executed.
+            state (dict): The persisted state of the calibration procedure (from Calibrator.CalibrationData), updated as actions are executed.
 
         Notes:
             Dispatching an action will update the state of the calibration procedure.
@@ -29,7 +30,8 @@ class CalibrationProcedure(BaseInterface, ABC):
         """
         super().__init__(*args, **kwargs)
         self.actions = []
-        self.state = {}
+        self.state = state is not None and state or {}
+        self.history = []
 
     def add_action(self, action: CalibrationAction):
         if any(existing_action.name == action.name for existing_action in self.actions):
@@ -45,8 +47,16 @@ class CalibrationProcedure(BaseInterface, ABC):
     def get_state(self, *args, **kwargs):
         return self.state
 
+    def undo(self):
+        if len(self.history) > 0:
+            self.state = self.history.pop()
+        return self.state
+
     def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):
         if payload is not None and action.FormModel.model_fields != {}:
             payload = action.FormModel(**payload)
-        self.state = action.execute(self.state, payload)
+        previous_state = deepcopy(self.state)
+        next_state = action.execute(self.state, payload)
+        self.history.append(previous_state)
+        self.state = next_state
         return self.state
