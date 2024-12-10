@@ -56,7 +56,7 @@ class CalibrationProcedure(BaseInterface, ABC):
         if payload is not None and action.FormModel.model_fields != {}:
             payload = action.FormModel(**payload)
         previous_state = deepcopy(self.state)
-        next_state = action.execute(self.state, payload)
+        updated_state = action.execute(self.state, payload)
         self.history.append(previous_state)
-        self.state = next_state
+        self.state = updated_state
         return self.state

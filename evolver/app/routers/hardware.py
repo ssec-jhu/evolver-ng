@@ -145,8 +145,8 @@ def get_calibrator_state(hardware_name: str, request: Request):
     return calibration_procedure.get_state()
 
 
-# Undo the last action dispatched to the calibration procedure
-@router.get("/{hardware_name}/calibrator/procedure/undo")
+# Undo the last calibration procedure action, reverting the state to the previous state
+@router.post("/{hardware_name}/calibrator/procedure/undo")
 def undo_calibration_procedure_action(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
