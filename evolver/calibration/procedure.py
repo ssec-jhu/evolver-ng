@@ -1,6 +1,6 @@
 from abc import ABC
-from typing import Any, Dict
 from copy import deepcopy
+from typing import Any, Dict
 
 from evolver.base import BaseInterface
 from evolver.calibration.action import CalibrationAction
