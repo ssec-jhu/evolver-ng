@@ -1,5 +1,7 @@
 import logging
 
+import pytest
+
 from evolver.device import Evolver
 from evolver.hardware.interface import SensorDriver
 from evolver.history.demo import InMemoryHistoryServer
@@ -40,3 +42,13 @@ def test_log_evolver_hookup():
     for logs in history.get(kinds=["log"]).data.values():
         all_messages = [log.data["message"] for log in logs]
         assert test_msg not in all_messages
+
+
+def test_log_info_helper():
+    li = LogInfo(vial=1, event_class="something").dump()
+    assert li == {LogInfo.EXTRA_KEY: {"vial": 1, "event_class": "something"}}
+    assert list(li.keys()) == [LogInfo.EXTRA_KEY]
+    assert li[LogInfo.EXTRA_KEY] == {"vial": 1, "event_class": "something"}
+    with pytest.raises(ValueError):
+        LogInfo(no_json=LogInfo)
+    assert LogInfo.json_check({"no_json": LogInfo}, silent=True) == {}
