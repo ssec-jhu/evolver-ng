@@ -62,4 +62,5 @@ class DisplayInstructionAction(CalibrationAction):
         pass
 
     def execute(self, state: Dict, payload: Optional[FormModel] = None):
+        state.setdefault("completed_actions", []).append(self.name)
         return state.copy()

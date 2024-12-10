@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Body, Path, Request
+from fastapi.params import Query
 from pydantic import BaseModel
 
 from evolver.app.exceptions import (
@@ -67,11 +68,15 @@ def hardware_commit(hardware_name: str, request: Request):
     hardware_instance.commit()
 
 
-# Start the calibration procedure for the selected hardware and vials
+# Start the calibration procedure for the selected hardware and vials,
+# resume will init the procedure with the CalibrationData from the Calibrator.
+# Where CalibrationData is the state of the procedure that has been persisted to the config file.
+# If resume is False, the procedure state will reset.
 @router.post("/{hardware_name}/calibrator/procedure/start")
 def start_calibration_procedure(
     hardware_name: str,
     request: Request,
+    resume: bool = Query(True),
 ):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
@@ -80,6 +85,7 @@ def start_calibration_procedure(
 
     calibrator.create_calibration_procedure(
         selected_hardware=hardware_instance,
+        resume=resume,
     )
 
     return calibrator.calibration_procedure.get_state()
@@ -139,6 +145,19 @@ def get_calibrator_state(hardware_name: str, request: Request):
     return calibration_procedure.get_state()
 
 
+# Undo the last action dispatched to the calibration procedure
+@router.get("/{hardware_name}/calibrator/procedure/undo")
+def undo_calibration_procedure_action(hardware_name: str, request: Request):
+    hardware_instance = get_hardware_instance(request, hardware_name)
+    calibrator = hardware_instance.calibrator
+    if not calibrator:
+        raise CalibratorNotFoundError
+    calibration_procedure = calibrator.calibration_procedure
+    return calibration_procedure.undo()
+
+
+# Get the calibrator's CalibrationData, representing the state from the procedure that has been saved
+# This data will appear in the config file even if the procedure is interupted. And will be used as the initial state when the procedure is resumed.
 @router.get("/{hardware_name}/calibrator/data")
 def get_calibration_data(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)

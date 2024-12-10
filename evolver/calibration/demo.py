@@ -28,6 +28,7 @@ class NoOpCalibrator(Calibrator):
     def create_calibration_procedure(
         self,
         selected_hardware: HardwareDriver,
+        resume: bool = False,
         *args,
         **kwargs,
     ):
