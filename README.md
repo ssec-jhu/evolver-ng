@@ -188,17 +188,17 @@ tox -e test
 
 ### Example run
 
-We can leverage the tox testing environment, which contains all required dependencies, to run the application locally for evaluation:
+We can leverage the tox environment, which contains all required dependencies, to run the application locally for evaluation and development:
 
 #### Running **without** `evolver.yml` configuration file
 
-```shellscript
-EVOLVER_LOAD_FROM_CONFIG_ON_STARTUP=false tox -e test exec -- python -m evolver.app.main
+```sh
+EVOLVER_LOAD_FROM_CONFIG_ON_STARTUP=false tox -e dev
 ```
 
 #### Running **with** `evolver.yml` configuration file
-```
-tox -e test exec -- python -m evolver.app.main
+```sh
+tox -e dev
 ```
 
 You should then be able to visit the automatically generated API documentation in your local browser at
