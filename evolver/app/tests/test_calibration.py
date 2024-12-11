@@ -35,7 +35,7 @@ class TestCalibration:
         assert response.status_code == 200
         response = client.get("/hardware/test/calibrator/procedure/state")
         assert response.status_code == 200
-        assert response.json() == {}
+        assert response.json() == {"completed_actions": []}
 
 
 def test_temperature_calibration_procedure_actions():

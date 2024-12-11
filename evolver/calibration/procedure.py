@@ -1,9 +1,15 @@
 from abc import ABC
 from copy import deepcopy
-from typing import Any, Dict
+from typing import Any, Dict, List
+
+from pydantic import BaseModel, Field
 
 from evolver.base import BaseInterface
 from evolver.calibration.action import CalibrationAction
+
+
+class CalibrationStateModel(BaseModel):
+    completed_actions: List[str] = Field(default_factory=list)
 
 
 class CalibrationProcedure(BaseInterface, ABC):
@@ -17,20 +23,20 @@ class CalibrationProcedure(BaseInterface, ABC):
             actions (list): The list of actions that can be executed in the calibration procedure.
                 All actions are added to this list in the create_calibration_procedure method.
                 Typically, a procedure is complete when all actions have been dispatched in sequence using the HTTP API.
-            state (dict): The persisted state of the calibration procedure (from Calibrator.CalibrationData), updated as actions are executed.
+            state (dict): The persisted state of the calibration procedure (from Calibrator.CalibrationData),updated as actions are executed.
 
         Notes:
             Dispatching an action will update the state of the calibration procedure.
 
             The measured data that accumulates in procedure state is eventually used by the Calibrator's Transformer class
             to fit a model to the data. This can be done by defining a CalculateFit action in the procedure and dispatching it.
-            Data stored in the CalibrationProcedure state should also be periodically saved to the Calibraor's CalibrationData class.
-            That way CalibrationProcedure state can be saved and reloaded to continue the calibration procedure if interupted.
+            Data stored in the CalibrationProcedure state should also be periodically saved to the Calibrator's CalibrationData class.
+            That way CalibrationProcedure state can be saved and reloaded to continue the calibration procedure if interrupted.
             This can be done by defining a SaveProcedureState action in the procedure and dispatching it.
         """
         super().__init__(*args, **kwargs)
         self.actions = []
-        self.state = state is not None and state or {}
+        self.state = CalibrationStateModel(**(state or {})).model_dump()
         self.history = []
 
     def add_action(self, action: CalibrationAction):
