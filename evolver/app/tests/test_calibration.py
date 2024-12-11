@@ -150,6 +150,51 @@ def test_dispatch_temperature_calibration_raw_value_action():
     }
 
 
+def test_reset_calibration_procedure():
+    # Set up the evolver instance with hardware and a Temperature Calibrator
+    temp_calibrator = TemperatureCalibrator()  # Ensure this is properly initialized
+
+    # Create NoOpSensorDriver and assign the temp calibrator to it
+    evolver_instance = Evolver(
+        hardware={"test": NoOpSensorDriver(name="test", calibrator=temp_calibrator, vials=[0, 1, 2])}
+    )
+
+    # Ensure the temp calibrator has access to the evolver
+    temp_calibrator.evolver = evolver_instance
+
+    # Set the evolver state in the app before testing
+    app.state.evolver = evolver_instance
+
+    # Mock the hardware read method to return a meaningful value
+    evolver_instance.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
+
+    # Create the test client
+    client = TestClient(app)
+
+    # Test the "temp" hardware's calibrator initialization
+    response = client.post("/hardware/test/calibrator/procedure/start")
+    assert response.status_code == 200
+
+    # Now we will dispatch an action to the calibrator
+    action_payload = {"action_name": "read_vial_0_raw_output"}
+
+    # Dispatch the action
+    dispatch_response = client.post("/hardware/test/calibrator/procedure/dispatch", json=action_payload)
+    assert dispatch_response.status_code == 200
+    assert dispatch_response.json() == {
+        "0": {"reference": [], "raw": [1.23]},
+        "completed_actions": ["read_vial_0_raw_output"],
+    }
+
+    # Reset the calibration procedure
+    reset_response = client.post("/hardware/test/calibrator/procedure/start", json={"resume": False})
+
+    assert reset_response.status_code == 200
+    assert reset_response.json() == {
+        "completed_actions": [],
+    }
+
+
 def test_calibration_procedure_undo_action_utility():
     # Set up the evolver instance with hardware and a Temperature Calibrator
     temp_calibrator = TemperatureCalibrator()  # Ensure this is properly initialized
