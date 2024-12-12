@@ -10,11 +10,15 @@ logging.addLevelName(EVENT, "EVENT")
 class LogInfo:
     """Helper class to provide "extra" to log records integrated with history.
 
-    This class acts similar to a dict, but with all fields within a dict under a
-    specific key and ensures the fields are json-serializable. Used with the
-    history integration, fields provided will be available in the stored record.
-    This is useful because all fields within extra are placed at the top level
-    of a logrecord dict, so otherwise there is no way to distinguish them.
+    This class acts similar to a dict, but with all fields within it "keyed" by
+    an EXTRA_KEY that is stripped when the log event is read. This has the
+    effect of normalizing LogInfo data, so that when it is read it appears at
+    the same level as the Log entry's top-level properties.
+
+    Note:
+        This is useful because all fields within extra are placed at the top
+        level of a logrecord dict, so otherwise there is no way to distinguish
+        them.
 
     Example:
         self.logger.log(EVENT, "Event message", extra=LogInfo(vial=1))
