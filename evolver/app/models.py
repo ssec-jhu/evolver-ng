@@ -23,3 +23,10 @@ class SchemaResponse(pydantic.BaseModel):
 
             if hasattr(self.classinfo, "Output") and issubclass(self.classinfo.Output, pydantic.BaseModel):
                 self.output = self.classinfo.Output.model_json_schema()
+
+
+class EventInfo(pydantic.BaseModel):
+    name: str
+    message: str
+    vial: int | None = None
+    data: dict = {}

@@ -11,11 +11,12 @@ import evolver.util
 from evolver import __project__, __version__
 from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError, OperationNotSupportedError
 from evolver.app.html_routes import html_app
-from evolver.app.models import SchemaResponse
+from evolver.app.models import EventInfo, SchemaResponse
 from evolver.base import require_all_fields
 from evolver.device import Evolver
 from evolver.history.interface import HistoryResult
-from evolver.settings import app_settings
+from evolver.logutils import EVENT, LogInfo
+from evolver.settings import app_settings, settings
 from evolver.types import ImportString
 
 # Import routers
@@ -103,6 +104,12 @@ async def get_history(
     return app.state.evolver.history.get(
         name=name, kinds=kinds, t_start=t_start, t_stop=t_stop, vials=vials, properties=properties, n_max=n_max
     )
+
+
+@app.post("/event")
+async def post_event(info: EventInfo):
+    full_name = f"{settings.DEFAULT_LOGGER}.{info.name}"
+    logging.getLogger(full_name).log(EVENT, info.message, extra=LogInfo(vial=info.vial, **info.data))
 
 
 @app.get("/healthz", operation_id="healthcheck")
