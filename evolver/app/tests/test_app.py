@@ -229,6 +229,16 @@ class TestApp:
         assert response.status_code == 200
         assert app.state.evolver.enable_control
 
+    def test_event_endpoint(self, app_client):
+        app.state.evolver = Evolver(history=InMemoryHistoryServer())
+        response = app_client.post(
+            "/event", json={"name": "test", "message": "test_event_api", "vial": 99, "data": {"key": "value"}}
+        )
+        assert response.status_code == 200
+        recorded_event = app.state.evolver.history.get("test", kinds=["event"]).data["test"][0]
+        assert recorded_event.vial == 99
+        assert recorded_event.data == {"message": "test_event_api", "key": "value", "vial": 99, "level": "EVENT"}
+
 
 def test_app_load_file(app_client):
     config = Evolver.Config(
