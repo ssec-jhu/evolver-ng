@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Dict, Optional
 from functools import wraps
+from typing import Dict, Optional
 
 from pydantic import BaseModel
 
