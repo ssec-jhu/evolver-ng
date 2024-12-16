@@ -1,7 +1,8 @@
 import datetime
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+
 
 from pydantic import Field, PastDatetime
 
@@ -179,7 +180,7 @@ class Calibrator(BaseInterface):
         return self.calibration_procedure.dispatch(action)
 
 
-class IndependentVialBasedCalibrator(Calibrator):
+class IndependentVialBasedCalibrator(Calibrator, ABC):
     class Config(Calibrator.Config):
         """Specify transformers for each vial independently. Whilst they may all use the same transformer class, each
         vial will mostly likely have different transformer config parameters and thus require their own transformer
@@ -192,6 +193,3 @@ class IndependentVialBasedCalibrator(Calibrator):
         )
         input_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
         output_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
-
-    def create_calibration_procedure(self, selected_hardware, resume, *args, **kwargs):
-        raise NotImplementedError
