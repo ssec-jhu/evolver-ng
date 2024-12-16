@@ -37,10 +37,11 @@ class CalibrationProcedure(BaseInterface, ABC):
             actions (list): The list of actions that can be executed in the calibration procedure.
                 All actions are added to this list in the create_calibration_procedure method.
                 Typically, a procedure is complete when all actions have been dispatched in sequence using the HTTP API.
-            state (dict): The state of the calibration procedure updated as actions are executed.
+            state (CalibrationStateModel): The state of the calibration procedure updated as actions are executed.
                 The state can be saved and reloaded to continue the calibration procedure if interrupted.
-                To save the state to the Calibrator.CalibrationData class, dispatch an action that calls .
+                To save the state to the Calibrator.CalibrationData class, decorate an action's execute method with the @save decorator.
                 Only state that is explicitly saved will be persisted, so it is important to save the state periodically.
+                The @save decorator persists the entire state of the procedure, after @save decorated action has been executed.
 
         Notes:
             Dispatching an action will update the state of the calibration procedure.
