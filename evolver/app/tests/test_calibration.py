@@ -46,7 +46,7 @@ class TestCalibration:
 
         response = client.get("/hardware/test/calibrator/procedure/state")
         assert response.status_code == 200
-        assert response.json() == {"completed_actions": []}
+        assert response.json() == {"completed_actions": [], "history": []}
 
 
 def test_temperature_calibration_procedure_actions():
@@ -95,8 +95,9 @@ def test_dispatch_temperature_calibration_raw_value_action():
 
     assert raw_dispatch_response.status_code == 200
     assert raw_dispatch_response.json() == {
-        "0": {"reference": [], "raw": [1.23]},
+        "0": {"raw": [1.23], "reference": []},
         "completed_actions": ["read_vial_0_raw_output"],
+        "history": [{"completed_actions": [], "history": []}],
     }
 
 
@@ -112,7 +113,7 @@ def test_reset_calibration_procedure():
 
     reset_response = client.post("/hardware/test/calibrator/procedure/start", json={"resume": False})
     assert reset_response.status_code == 200
-    assert reset_response.json() == {"completed_actions": []}
+    assert reset_response.json() == {"completed_actions": [], "history": []}
 
 
 def test_calibration_procedure_undo_action_utility():
@@ -127,7 +128,7 @@ def test_calibration_procedure_undo_action_utility():
 
     undo_response = client.post("/hardware/test/calibrator/procedure/undo")
     assert undo_response.status_code == 200
-    assert undo_response.json() == {"completed_actions": []}
+    assert undo_response.json() == {"completed_actions": [], "history": []}
 
 
 def test_dispatch_temperature_calibration_calculate_fit_action():
@@ -161,21 +162,32 @@ def test_get_calibration_data():
     dispatch_action(client, "test", "measure_vial_0_temperature", {"temperature": 25.0})
     dispatch_action(client, "test", "read_vial_0_raw_output")
     dispatch_action(client, "test", "calculate_vial_0_fit")
-    dispatch_action(client, "test", "save_calibration_procedure_state")
 
     calibration_data_response = client.get("/hardware/test/calibrator/data")
     assert calibration_data_response.status_code == 200
     calibration_data = calibration_data_response.json()
 
     assert calibration_data["measured"] == {
-        "0": {
-            "raw": [1.23],
-            "reference": [25.0],
-        },
-        "completed_actions": [
-            "measure_vial_0_temperature",
-            "read_vial_0_raw_output",
-            "calculate_vial_0_fit",
-            "save_calibration_procedure_state",
+        "0": {"raw": [1.23], "reference": [25.0]},
+        "completed_actions": ["measure_vial_0_temperature", "read_vial_0_raw_output", "calculate_vial_0_fit"],
+        "history": [
+            {"completed_actions": [], "history": []},
+            {
+                "0": {"raw": [], "reference": [25.0]},
+                "completed_actions": ["measure_vial_0_temperature"],
+                "history": [{"completed_actions": [], "history": []}],
+            },
+            {
+                "0": {"raw": [1.23], "reference": [25.0]},
+                "completed_actions": ["measure_vial_0_temperature", "read_vial_0_raw_output"],
+                "history": [
+                    {"completed_actions": [], "history": []},
+                    {
+                        "0": {"raw": [], "reference": [25.0]},
+                        "completed_actions": ["measure_vial_0_temperature"],
+                        "history": [{"completed_actions": [], "history": []}],
+                    },
+                ],
+            },
         ],
     }

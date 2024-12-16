@@ -7,7 +7,6 @@ from evolver.calibration.standard.actions.temperature import (
     CalculateFitAction,
     RawValueAction,
     ReferenceValueAction,
-    SaveProcedureStateAction,
 )
 from evolver.hardware.interface import HardwareDriver
 
@@ -69,13 +68,5 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
                     name=f"calculate_vial_{vial}_fit",
                 )
             )
-
-        calibration_procedure.add_action(
-            SaveProcedureStateAction(
-                hardware=selected_hardware,
-                description="Save the calibration procedure state",
-                name="save_calibration_procedure_state",
-            )
-        )
 
         self.calibration_procedure = calibration_procedure

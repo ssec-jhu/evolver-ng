@@ -15,6 +15,7 @@ from evolver.base import (
     TimeStamp,
     _BaseConfig,
 )
+from evolver.calibration.procedure import CalibrationStateModel
 from evolver.settings import settings
 
 if TYPE_CHECKING:
@@ -119,8 +120,8 @@ class Calibrator(BaseInterface):
         output_transformer: ConfigDescriptor | Transformer | None = None
         calibration_file: str | None = None
 
-    class CalibrationData(Transformer.Config):
-        """Stores calibration data, including the measured data from the CalibrationProcedure."""
+    class CalibrationData(Transformer.Config, CalibrationStateModel):
+        """Stores calibration data, including the completed_actions and the data they have collected from the CalibrationProcedure."""
 
     class Status(_BaseConfig):
         input_transformer: Status | None = None

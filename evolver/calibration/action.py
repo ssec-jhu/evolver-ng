@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from typing import Dict, Optional
+from functools import wraps
 
 from pydantic import BaseModel
 
@@ -57,10 +59,32 @@ class CalibrationAction(ABC):
         pass
 
 
+def complete(action):
+    @wraps(action)
+    def wrapper(self, state: Dict, *args, **kwargs):
+        previous_state = deepcopy(state)
+        updated_state = action(self, state, *args, **kwargs)
+        updated_state["completed_actions"].append(self.name)
+        updated_state["history"].append(previous_state)
+        return updated_state
+
+    return wrapper
+
+
+def save(action):
+    @wraps(action)
+    def wrapper(self, state: Dict, *args, **kwargs):
+        updated_state = action(self, state, *args, **kwargs)
+        self.hardware.calibrator.calibration_data.measured = updated_state
+        return updated_state
+
+    return wrapper
+
+
 class DisplayInstructionAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
+    @complete
     def execute(self, state: Dict, payload: Optional[FormModel] = None):
-        state.setdefault("completed_actions", []).append(self.name)
         return state.copy()
