@@ -59,12 +59,12 @@ class CalibrationAction(ABC):
         pass
 
 
-def complete(action):
-    @wraps(action)
-    def wrapper(self, state: Dict, *args, **kwargs):
-        previous_state = deepcopy(state)
-        updated_state = action(self, state, *args, **kwargs)
-        updated_state["completed_actions"].append(self.name)
+def undoable(dispatch):
+    @wraps(dispatch)
+    def wrapper(self, action: CalibrationAction, *args, **kwargs):
+        previous_state = deepcopy(self.state)
+        updated_state = dispatch(self, action, *args, **kwargs)
+        updated_state["completed_actions"].append(action.name)
         updated_state["history"].append(previous_state)
         return updated_state
 
@@ -85,6 +85,5 @@ class DisplayInstructionAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
-    @complete
     def execute(self, state: Dict, payload: Optional[FormModel] = None):
         return state.copy()

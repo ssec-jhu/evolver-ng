@@ -2,7 +2,7 @@ from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 
-from evolver.calibration.action import CalibrationAction, complete, save
+from evolver.calibration.action import CalibrationAction, save
 
 
 class ReferenceValueAction(CalibrationAction):
@@ -19,7 +19,6 @@ class ReferenceValueAction(CalibrationAction):
         self.hardware = hardware
         self.vial_idx = vial_idx
 
-    @complete
     def execute(self, state: Dict, payload: Optional[FormModel] = None):
         state.setdefault(self.vial_idx, {"reference": [], "raw": []})
         state[self.vial_idx]["reference"].append(payload.temperature)
@@ -35,7 +34,6 @@ class RawValueAction(CalibrationAction):
         self.hardware = hardware
         self.vial_idx = vial_idx
 
-    @complete
     def execute(self, state, payload: Optional[FormModel] = None):
         state.setdefault(self.vial_idx, {"reference": [], "raw": []})
         sensor_value = self.hardware.read()[self.vial_idx]
@@ -52,7 +50,6 @@ class CalculateFitAction(CalibrationAction):
         self.hardware = hardware
         self.vial_idx = vial_idx
 
-    @complete
     @save  # This action, when dispatched, will save the procedure state to the Calibrator.CalibrationData class
     def execute(self, state, payload: Optional[FormModel] = None):
         state.setdefault(self.vial_idx, {"reference": [], "raw": []})
