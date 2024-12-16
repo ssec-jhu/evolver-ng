@@ -33,8 +33,7 @@ def get_hardware_instance(request: Request, hardware_name: str) -> HardwareDrive
 
 @router.get("/")
 def get_all_hardware(request: Request):
-    evolver = request.app.state.evolver
-    if not evolver:
+    if not (evolver := request.app.state.evolver):
         raise EvolverNotFoundError
 
     hardware_outputs = {name: driver.get() for name, driver in evolver.hardware.items()}
@@ -138,8 +137,7 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
 @router.get("/{hardware_name}/calibrator/procedure/state")
 def get_calibrator_state(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
-    calibrator = hardware_instance.calibrator
-    if not calibrator:
+    if not (calibrator := hardware_instance.calibrator):
         raise CalibratorNotFoundError
     calibration_procedure = calibrator.calibration_procedure
     return calibration_procedure.get_state()
@@ -149,8 +147,8 @@ def get_calibrator_state(hardware_name: str, request: Request):
 @router.post("/{hardware_name}/calibrator/procedure/undo")
 def undo_calibration_procedure_action(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
-    calibrator = hardware_instance.calibrator
-    if not calibrator:
+
+    if not (calibrator := hardware_instance.calibrator):
         raise CalibratorNotFoundError
     calibration_procedure = calibrator.calibration_procedure
     return calibration_procedure.undo()
@@ -162,8 +160,7 @@ def undo_calibration_procedure_action(hardware_name: str, request: Request):
 def get_calibration_data(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
 
-    calibrator = hardware_instance.calibrator
-    if not calibrator:
+    if not (calibrator := hardware_instance.calibrator):
         raise CalibratorNotFoundError
     if not calibrator.calibration_data:
         raise CalibratorCalibrationDataNotFoundError
@@ -175,8 +172,7 @@ def get_calibration_data(hardware_name: str, request: Request):
 def get_calibration_output_transformer(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
 
-    calibrator = hardware_instance.calibrator
-    if not calibrator:
+    if not (calibrator := hardware_instance.calibrator):
         raise CalibratorNotFoundError
 
     if isinstance(calibrator.output_transformer, dict):
