@@ -1,5 +1,5 @@
 import datetime
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -14,6 +14,7 @@ from evolver.base import (
     TimeStamp,
     _BaseConfig,
 )
+from evolver.calibration.procedure import CalibrationStateModel
 from evolver.settings import settings
 
 if TYPE_CHECKING:
@@ -118,8 +119,9 @@ class Calibrator(BaseInterface):
         output_transformer: ConfigDescriptor | Transformer | None = None
         calibration_file: str | None = None
 
-    class CalibrationData(Transformer.Config):
-        """Stores calibration data, including the measured data from the CalibrationProcedure."""
+    class CalibrationData(Transformer.Config, CalibrationStateModel):
+        """Stores calibration data, including the completed_actions and the "measured" data the actions have collected
+        from the CalibrationProcedure."""
 
     class Status(_BaseConfig):
         input_transformer: Status | None = None
@@ -168,7 +170,7 @@ class Calibrator(BaseInterface):
         ...
 
     @abstractmethod
-    def create_calibration_procedure(self, selected_hardware, *args, **kwargs):
+    def create_calibration_procedure(self, selected_hardware, resume, *args, **kwargs):
         """This creates the calibration procedure, which is composed of a sequence of actions."""
         pass
 
@@ -179,7 +181,7 @@ class Calibrator(BaseInterface):
         return self.calibration_procedure.dispatch(action)
 
 
-class IndependentVialBasedCalibrator(Calibrator):
+class IndependentVialBasedCalibrator(Calibrator, ABC):
     class Config(Calibrator.Config):
         """Specify transformers for each vial independently. Whilst they may all use the same transformer class, each
         vial will mostly likely have different transformer config parameters and thus require their own transformer
@@ -192,6 +194,3 @@ class IndependentVialBasedCalibrator(Calibrator):
         )
         input_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
         output_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
-
-    def create_calibration_procedure(self, selected_hardware, *args, **kwargs):
-        raise NotImplementedError

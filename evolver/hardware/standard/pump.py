@@ -33,8 +33,8 @@ class GenericPumpCalibrator(IndependentVialBasedCalibrator):
         for vial, (time, volume) in calibration_data.measured.items():
             self.input_transformer[vial] = RateTransformer(rate=volume / time)
 
-    def run_calibration_procedure(self, *args, **kwargs):
-        pass
+    def create_calibration_procedure(self, selected_hardware, resume, *args, **kwargs):
+        raise NotImplementedError
 
 
 class GenericPump(EffectorDriver):

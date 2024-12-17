@@ -1,6 +1,7 @@
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Body, Path, Request
+from fastapi.params import Query
 from pydantic import BaseModel
 
 from evolver.app.exceptions import (
@@ -32,8 +33,7 @@ def get_hardware_instance(request: Request, hardware_name: str) -> HardwareDrive
 
 @router.get("/")
 def get_all_hardware(request: Request):
-    evolver = request.app.state.evolver
-    if not evolver:
+    if not (evolver := request.app.state.evolver):
         raise EvolverNotFoundError
 
     hardware_outputs = {name: driver.get() for name, driver in evolver.hardware.items()}
@@ -67,11 +67,15 @@ def hardware_commit(hardware_name: str, request: Request):
     hardware_instance.commit()
 
 
-# Start the calibration procedure for the selected hardware and vials
+# Start the calibration procedure for the selected hardware and vials,
+# resume will init the procedure with the CalibrationData from the Calibrator.
+# Where CalibrationData is the state of the procedure that has been persisted to the config file.
+# If resume is False, the procedure state will reset.
 @router.post("/{hardware_name}/calibrator/procedure/start")
 def start_calibration_procedure(
     hardware_name: str,
     request: Request,
+    resume: bool = Query(True),
 ):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
@@ -80,6 +84,7 @@ def start_calibration_procedure(
 
     calibrator.create_calibration_procedure(
         selected_hardware=hardware_instance,
+        resume=resume,
     )
 
     return calibrator.calibration_procedure.get_state()
@@ -132,19 +137,30 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
 @router.get("/{hardware_name}/calibrator/procedure/state")
 def get_calibrator_state(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
-    calibrator = hardware_instance.calibrator
-    if not calibrator:
+    if not (calibrator := hardware_instance.calibrator):
         raise CalibratorNotFoundError
     calibration_procedure = calibrator.calibration_procedure
     return calibration_procedure.get_state()
 
 
+# Undo the last calibration procedure action, reverting the state to the previous state
+@router.post("/{hardware_name}/calibrator/procedure/undo")
+def undo_calibration_procedure_action(hardware_name: str, request: Request):
+    hardware_instance = get_hardware_instance(request, hardware_name)
+
+    if not (calibrator := hardware_instance.calibrator):
+        raise CalibratorNotFoundError
+    calibration_procedure = calibrator.calibration_procedure
+    return calibration_procedure.undo()
+
+
+# Get the calibrator's CalibrationData, representing the state from the procedure that has been saved
+# This data will appear in the config file even if the procedure is interupted. And will be used as the initial state when the procedure is resumed.
 @router.get("/{hardware_name}/calibrator/data")
 def get_calibration_data(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
 
-    calibrator = hardware_instance.calibrator
-    if not calibrator:
+    if not (calibrator := hardware_instance.calibrator):
         raise CalibratorNotFoundError
     if not calibrator.calibration_data:
         raise CalibratorCalibrationDataNotFoundError
@@ -156,8 +172,7 @@ def get_calibration_data(hardware_name: str, request: Request):
 def get_calibration_output_transformer(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
 
-    calibrator = hardware_instance.calibrator
-    if not calibrator:
+    if not (calibrator := hardware_instance.calibrator):
         raise CalibratorNotFoundError
 
     if isinstance(calibrator.output_transformer, dict):

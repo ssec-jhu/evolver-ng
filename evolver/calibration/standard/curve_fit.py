@@ -40,5 +40,5 @@ class CurveFitTransformer(Transformer, ABC):
 
 
 class IndependentVialBasedCurveFitCalibrator(IndependentVialBasedCalibrator):
-    def run_calibration_procedure(self, *args, **kwargs):
+    def create_calibration_procedure(self, selected_hardware, resume, *args, **kwargs):
         raise NotImplementedError

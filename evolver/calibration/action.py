@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from functools import wraps
 from typing import Dict, Optional
 
 from pydantic import BaseModel
@@ -55,6 +56,16 @@ class CalibrationAction(ABC):
             or calling the Calibrator's Transformer's refit method to update the calibration model.
         """
         pass
+
+
+def save(action):
+    @wraps(action)
+    def wrapper(self, state: Dict, *args, **kwargs):
+        updated_state = action(self, state, *args, **kwargs)
+        self.hardware.calibrator.calibration_data.measured = updated_state
+        return updated_state
+
+    return wrapper
 
 
 class DisplayInstructionAction(CalibrationAction):

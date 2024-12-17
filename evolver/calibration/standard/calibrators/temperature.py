@@ -1,13 +1,12 @@
 from typing import Dict, List
 
 from evolver.calibration.action import DisplayInstructionAction
-from evolver.calibration.interface import IndependentVialBasedCalibrator, Transformer
+from evolver.calibration.interface import Calibrator, IndependentVialBasedCalibrator
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
     CalculateFitAction,
     RawValueAction,
     ReferenceValueAction,
-    SaveProcedureStateAction,
 )
 from evolver.hardware.interface import HardwareDriver
 
@@ -17,16 +16,27 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
     A calibrator for each vial's temperature sensor.
     """
 
-    class CalibrationData(Transformer.Config):
+    class CalibrationData(Calibrator.CalibrationData):
         measured: Dict[int, Dict[str, List[float]]] = {}  # {vial_index: {"reference": [], "raw": []}}
 
     def create_calibration_procedure(
         self,
         selected_hardware: HardwareDriver,
+        # Resume by default
+        resume: bool = True,
         *args,
         **kwargs,
     ):
-        calibration_procedure = CalibrationProcedure()
+        # Cherrypick data persisted to Calibrator.CalibrationData, to resume the CalibrationProcedure from the last saved state.
+        persisted_state = {
+            **self.calibration_data.measured,
+            "completed_actions": self.calibration_data.completed_actions,
+        }
+
+        calibration_procedure = (
+            CalibrationProcedure(persisted_state) if resume and persisted_state else CalibrationProcedure()
+        )
+
         calibration_procedure.add_action(
             DisplayInstructionAction(description="Fill each vial with 15ml water", name="fill_vials_instruction")
         )
@@ -57,13 +67,5 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
                     name=f"calculate_vial_{vial}_fit",
                 )
             )
-
-        calibration_procedure.add_action(
-            SaveProcedureStateAction(
-                hardware=selected_hardware,
-                description="Save the calibration procedure state",
-                name="save_calibration_procedure_state",
-            )
-        )
 
         self.calibration_procedure = calibration_procedure
