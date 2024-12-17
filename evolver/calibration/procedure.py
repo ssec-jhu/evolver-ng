@@ -1,10 +1,11 @@
 from abc import ABC
+from copy import deepcopy
 from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
 from evolver.base import BaseInterface
-from evolver.calibration.action import CalibrationAction, undoable
+from evolver.calibration.action import CalibrationAction
 
 
 class CalibrationStateModel(BaseModel):
@@ -73,16 +74,17 @@ class CalibrationProcedure(BaseInterface, ABC):
     def undo(self):
         """
         Undo the last action that was dispatched in the calibration procedure.
-        the dispatch method must use the @undoable decorator to be undoable.
         """
         if len(self.state["history"]) > 0:
             self.state = self.state["history"].pop()
         return self.state
 
-    @undoable
     def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):
         if payload is not None and action.FormModel.model_fields != {}:
             payload = action.FormModel(**payload)
+        previous_state = deepcopy(self.state)
         updated_state = action.execute(self.state, payload)
+        updated_state["completed_actions"].append(action.name)
+        updated_state["history"].append(previous_state)
         self.state = updated_state
         return self.state

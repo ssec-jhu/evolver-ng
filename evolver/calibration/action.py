@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from copy import deepcopy
 from functools import wraps
 from typing import Dict, Optional
 
@@ -57,18 +56,6 @@ class CalibrationAction(ABC):
             or calling the Calibrator's Transformer's refit method to update the calibration model.
         """
         pass
-
-
-def undoable(dispatch):
-    @wraps(dispatch)
-    def wrapper(self, action: CalibrationAction, *args, **kwargs):
-        previous_state = deepcopy(self.state)
-        updated_state = dispatch(self, action, *args, **kwargs)
-        updated_state["completed_actions"].append(action.name)
-        updated_state["history"].append(previous_state)
-        return updated_state
-
-    return wrapper
 
 
 def save(action):
