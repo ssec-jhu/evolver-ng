@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from evolver.calibration.action import DisplayInstructionAction
-from evolver.calibration.interface import IndependentVialBasedCalibrator, Transformer
+from evolver.calibration.interface import IndependentVialBasedCalibrator, Calibrator
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
     CalculateFitAction,
@@ -16,9 +16,8 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
     A calibrator for each vial's temperature sensor.
     """
 
-    class CalibrationData(Transformer.Config):
+    class CalibrationData(Calibrator.CalibrationData):
         measured: Dict[int, Dict[str, List[float]]] = {}  # {vial_index: {"reference": [], "raw": []}}
-        completed_actions: List[str] = []
 
     def create_calibration_procedure(
         self,

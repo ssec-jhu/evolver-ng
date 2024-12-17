@@ -17,7 +17,7 @@ class CalibrationStateModel(BaseModel):
 
     Attributes:
         completed_actions (List[str]): A list of actions that have been completed during the calibration procedure.
-        history: A list of previous states of the calibration procedure. Used to undo actions. Action's execute method must use the @complete decorator to be undoable.
+        history: A list of previous states of the calibration procedure. Used to undo actions.
     """
 
     class Config:

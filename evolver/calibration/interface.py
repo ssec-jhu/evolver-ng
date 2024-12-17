@@ -120,7 +120,8 @@ class Calibrator(BaseInterface):
         calibration_file: str | None = None
 
     class CalibrationData(Transformer.Config, CalibrationStateModel):
-        """Stores calibration data, including the completed_actions and the data they have collected from the CalibrationProcedure."""
+        """Stores calibration data, including the completed_actions and the "measured" data the actions have collected
+        from the CalibrationProcedure."""
 
     class Status(_BaseConfig):
         input_transformer: Status | None = None
