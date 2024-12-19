@@ -239,6 +239,23 @@ class TestApp:
         assert recorded_event.vial == 99
         assert recorded_event.data == {"message": "test_event_api", "key": "value", "vial": 99, "level": "EVENT"}
 
+    def test_state_endpoint_nan_data_becomes_null(self, app_client):
+        class NaNDataSensor(SensorDriver):
+            class Output(SensorDriver.Output):
+                x: float
+
+            def get(self):
+                return {0: self.Output(x=np.nan, vial=0)}
+
+            def read(self):
+                pass
+
+        app.state.evolver = Evolver(hardware={"test": NaNDataSensor()})
+        app.state.evolver.loop_once()
+        response = app_client.get("/state")
+        assert response.status_code == 200
+        assert response.json()["state"]["test"]["0"]["x"] is None
+
 
 def test_app_load_file(app_client):
     config = Evolver.Config(
