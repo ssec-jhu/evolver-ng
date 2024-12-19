@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from http import HTTPStatus
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, ORJSONResponse
 from pydantic import ValidationError
 
 import evolver.util
@@ -42,7 +42,7 @@ async def lifespan(app: FastAPI):
     ...
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, default_response_class=ORJSONResponse)
 app.state.evolver = None
 
 
