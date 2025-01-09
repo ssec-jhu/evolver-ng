@@ -6,11 +6,11 @@ from pydantic import BaseModel
 
 from evolver.app.exceptions import (
     CalibrationProcedureActionNotFoundError,
+    CalibrationProcedureNotFoundError,
     CalibratorCalibrationDataNotFoundError,
     CalibratorNotFoundError,
     EvolverNotFoundError,
     HardwareNotFoundError,
-    CalibrationProcedureNotFoundError,
 )
 from evolver.hardware.interface import HardwareDriver
 
