@@ -72,9 +72,9 @@ class TestBaseConfig:
         assert obj.a == 6
         assert obj.b == 7
 
-    def test_from_config_descriptor(self, mock_descriptor):
-        assert isinstance(mock_descriptor, evolver.base.ConfigDescriptor)
-        obj = ConcreteInterface.Config.model_validate(mock_descriptor)
+    @pytest.mark.parametrize("descriptor", ("mock_descriptor", "mock_descriptor_as_json"))
+    def test_from_config_descriptor(self, descriptor, request):
+        obj = ConcreteInterface.Config.model_validate(request.getfixturevalue(descriptor))
         assert isinstance(obj, ConcreteInterface.Config)
         assert obj.a == 11
         assert obj.b == 22
