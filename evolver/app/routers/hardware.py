@@ -10,6 +10,7 @@ from evolver.app.exceptions import (
     CalibratorNotFoundError,
     EvolverNotFoundError,
     HardwareNotFoundError,
+    CalibrationProcedureNotFoundError,
 )
 from evolver.hardware.interface import HardwareDriver
 
@@ -139,7 +140,9 @@ def get_calibrator_state(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
     if not (calibrator := hardware_instance.calibrator):
         raise CalibratorNotFoundError
-    calibration_procedure = calibrator.calibration_procedure
+    if not (calibration_procedure := calibrator.calibration_procedure):
+        raise CalibrationProcedureNotFoundError
+
     return calibration_procedure.get_state()
 
 
