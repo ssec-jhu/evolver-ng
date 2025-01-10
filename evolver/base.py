@@ -40,30 +40,12 @@ def require_all_fields(cls):
     return cls
 
 
-class _BaseConfig(pydantic.BaseModel):
-    model_config = pydantic.ConfigDict(extra="ignore", from_attributes=True)
+def _is_descriptor_dict(obj: Any) -> bool:
+    return isinstance(obj, dict) and (set(obj.keys()) == set(ConfigDescriptor.model_fields))
 
-    @classmethod
-    def model_validate(cls, obj, *, strict=None, from_attributes=None, context=None):
-        """Effectively the same as pydantic.BaseModel.model_validate() except that it automatically handles json, and
-        conversion from instances of ``BaseConfig`` and ``BaseInterface`
-        """
-        if obj is None:
-            return cls()
-        elif isinstance(obj, os.PathLike):
-            return cls.load(file_path=obj)
-        elif isinstance(obj, (str, bytes, bytearray)):
-            return cls.model_validate_json(obj, strict=strict, context=context)
-        elif isinstance(obj, ConfigDescriptor):
-            return super().model_validate(obj.config, strict=strict, from_attributes=from_attributes, context=context)
-        elif isinstance(obj, BaseInterface):
-            return super().model_validate(
-                obj.config,  # Objects are responsible for their own conversion to config.
-                strict=strict,
-                from_attributes=from_attributes,
-                context=context,
-            )
-        return super().model_validate(obj, strict=strict, from_attributes=from_attributes, context=context)
+
+class _BaseModel(pydantic.BaseModel):
+    model_config = pydantic.ConfigDict(extra="ignore", from_attributes=True)
 
     @classmethod
     def load(cls, file_path: Path, encoding: str | None = None):
@@ -92,6 +74,75 @@ class _BaseConfig(pydantic.BaseModel):
         """
         return dict(self)
 
+    @classmethod
+    def model_validate(cls, obj, *, strict=None, from_attributes=None, context=None):
+        """Effectively the same as pydantic.BaseModel.model_validate() except that it automatically handles json, and
+        PathLike objects. It explicitly does NOT handle conversion from instances of ``ConfigDescriptor``,
+        ``BaseConfig`` and ``BaseInterface` to avoid confuscated and circular logic.
+        """
+        if obj is None:
+            return cls()
+        elif isinstance(obj, os.PathLike):
+            return cls.load(file_path=obj)
+        elif isinstance(obj, (str, bytes, bytearray)):
+            return super().model_validate_json(obj, strict=strict, context=context)
+        else:
+            return super().model_validate(obj, strict=strict, from_attributes=from_attributes, context=context)
+
+
+class _BaseConfig(_BaseModel):
+    @classmethod
+    def get_classinfo(cls) -> str:
+        """The fully qualified classname for cls's container class (if one exists).
+        E.g., ``Evolver.Config.get_classinfo()`` returns ``"evolver.device.Evolver"``.
+        Raises `TypeError` if parent class is not derived from BaseInterface.
+        """
+        fqn = evolver.util.fully_qualified_name(cls)
+        containers = fqn.split(".")[:-1]
+        container = ".".join(containers)
+        container_class = evolver.util.import_string(container)
+        if issubclass(container_class, BaseInterface):
+            cls = container_class
+        return f"{cls.__module__}.{cls.__qualname__}"
+
+    @classmethod
+    def model_validate(cls, obj, *, strict=None, from_attributes=None, context=None):
+        """Automatically handles conversion from instances of ``ConfigDescriptor``, ``BaseConfig`` and ``BaseInterface`"""
+        if isinstance(obj, (str, bytes, bytearray)):
+            try:
+                # json str might be that for a ConfigDescriptor, so try that 1st.
+                descriptor = ConfigDescriptor.model_validate_json(obj, strict=strict, context=context)
+            except Exception:
+                # Ok, maybe it wasn't a ConfigDescriptor... (or was but was malformed)
+                # Explicitly call ``model_validate_json`` rather than ``super().model_validate()`` to declare explicit
+                # code logic.
+                return cls.model_validate_json(obj, strict=strict, context=context)
+            else:
+                # Cool, it was a ConfigDescriptor so validate from that. Remember ``ConfigDescriptor.config`` is just a
+                # dict.
+                return super().model_validate(
+                    descriptor.config, strict=strict, from_attributes=from_attributes, context=context
+                )
+        elif isinstance(obj, ConfigDescriptor):
+            # Remember ``ConfigDescriptor.config`` is just a dict.
+            return super().model_validate(obj.config, strict=strict, from_attributes=from_attributes, context=context)
+        elif _is_descriptor_dict(obj):
+            # i.e., ``{classinfo: "fqn", "config": {}}``.
+            # Let ``ConfigDescriptor`` be responsible for its own creation and validation so 1st create one.
+            descriptor = ConfigDescriptor.model_validate(obj)
+            # And then unpack back to just a ``Config``.
+            return super().model_validate(
+                descriptor.config, strict=strict, from_attributes=from_attributes, context=context
+            )
+        elif isinstance(obj, BaseInterface):
+            return super().model_validate(
+                obj.config_model,  # Objects are responsible for their own conversion to config.
+                strict=strict,
+                from_attributes=from_attributes,
+                context=context,
+            )
+        return super().model_validate(obj, strict=strict, from_attributes=from_attributes, context=context)
+
 
 class TimeStamp(_BaseConfig):
     created: pydantic.PastDatetime | None = CreatedTimestampField()
@@ -102,9 +153,16 @@ class BaseConfig(_BaseConfig):
     name: str | None = None
 
 
-class ConfigDescriptor(_BaseConfig):
+class ConfigDescriptor(_BaseModel):
     classinfo: ImportString
     config: dict = {}
+
+    @pydantic.field_validator("classinfo", mode="after")
+    @classmethod
+    def validate_classinfo(cls, v):
+        if not issubclass(v, BaseInterface):
+            raise ValueError(f"classinfo must represent a subclass of '{BaseInterface.__qualname__}'")
+        return v
 
     @classmethod
     def model_validate(cls, obj, *args, **kwargs):
@@ -124,21 +182,25 @@ class ConfigDescriptor(_BaseConfig):
         #  serializable. The very point of the pydantic framework is to solve this issue.
 
         if isinstance(obj, type) and issubclass(obj, BaseInterface):
-            return super().model_validate(
-                dict(classinfo=evolver.util.fully_qualified_name(obj), config=obj.Config().model_dump(mode="json")),
-                *args,
-                **kwargs,
+            # `obj` is a class not an instance, which means that it can't have a config other than the default,
+            # so we pass in obj.Config().
+            model = super().model_validate(
+                dict(classinfo=evolver.util.fully_qualified_name(obj), config=obj.Config().model_dump())
             )
-        elif isinstance(obj, BaseConfig) and (classinfo := obj.__pydantic_parent_namespace__.get("__qualname__")):
-            return super().model_validate(
-                dict(classinfo=f"{obj.__module__}.{classinfo}", config=obj.model_dump(mode="json")), *args, **kwargs
-            )
+        elif isinstance(obj, BaseConfig):
+            model = super().model_validate(dict(classinfo=obj.get_classinfo(), config=obj.model_dump()))
         elif isinstance(obj, BaseInterface):
-            return super().model_validate(dict(classinfo=obj.classinfo, config=obj.config), *args, **kwargs)
-        return super().model_validate(obj, *args, **kwargs)
+            model = super().model_validate(dict(classinfo=obj.classinfo, config=obj.config))
+        else:
+            model = super().model_validate(obj, *args, **kwargs)
+
+        # Validate config. The above validations are all supers, this then runs this class' validators.
+        model.classinfo.Config.model_validate(model.config)
+
+        return model
 
     def create(self, update: Dict[str, Any] | None = None, non_config_kwargs: Dict[str, Any] | None = None, **kwargs):
-        """Create an instance of classinfo from a config.
+        """Create an instance of classinfo from a descriptor.
 
         Args:
             update (:obj:`dict`): Key-value pairs used to override contents of ``self.config``. These get validated.
@@ -171,19 +233,6 @@ class ConfigDescriptor(_BaseConfig):
             else self.classinfo(**config.shallow_model_dump())
         )
 
-    @classmethod
-    def load(cls, file_path: Path, encoding: str | None = None):
-        """Loads the specified config file and return a new instance."""
-        with open(file_path, encoding=encoding) as f:
-            return cls.model_validate(yaml.safe_load(f))
-
-    def save(self, file_path: Path, encoding: str | None = None):
-        """Write out config as yaml file to specified file."""
-        file_path = Path(file_path)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(file_path, "w", encoding=encoding) as f:
-            yaml.dump(self.model_dump(mode="json"), f)
-
 
 class BaseInterface(ABC):
     """Base class for most classes.
@@ -215,35 +264,47 @@ class BaseInterface(ABC):
     class Config(BaseConfig): ...
 
     @classmethod
-    def create(cls, config: ConfigDescriptor | dict | str | None = None):
+    def create(cls, config: ConfigDescriptor | BaseConfig | dict | str | None = None):
         """Create an instance from a config."""
 
-        def validate_descriptor(descriptor: ConfigDescriptor):
-            if not issubclass(cls, descriptor.classinfo):
+        def validate_classinfo(classinfo: type | str):
+            classinfo = evolver.util.import_string(classinfo) if isinstance(classinfo, str) else classinfo
+            if not issubclass(classinfo, cls):  # TODO: don't allow polymorph?
                 raise TypeError(
-                    f"The given {ConfigDescriptor.__name__} for '{descriptor.classinfo}' is not compatible "
+                    f"The given {ConfigDescriptor.__name__} for '{classinfo}' is not compatible "
                     f"with this class '{cls.__qualname__}'"
                 )
-            return cls.Config.model_validate(descriptor, context=dict(extra="forbid"))
 
-        # We first try to create a valid Config instance and then from that create an instance of cls.
+        # We first create a validated Config instance and then use that to create an instance of cls.
         if config is None:
             # Empty config.
             config = cls.Config()
+        elif isinstance(config, _BaseConfig):
+            pass  # Already a config instances so do nothing.
         elif isinstance(config, ConfigDescriptor):
-            config = validate_descriptor(config)
+            validate_classinfo(config.classinfo)
+            config = config.config  # This has already been validated but is still just a dict.
+        elif _is_descriptor_dict(config):
+            validate_classinfo(config["classinfo"])
+            config = cls.Config.model_validate(config["config"])
+        elif isinstance(config, dict):
+            config = cls.Config.model_validate(config)
         else:
-            # Next handle dict | str, which could be that representing a Config or a ConfigDescriptor.
-            # First see if config is actually a descriptor by trying to create one, since it's only fields are limited
-            # to classinfo and config.
+            # Last is a str representing either a Config or ConfigDescriptor.
             try:
                 descriptor = ConfigDescriptor.model_validate(config, context=dict(extra="forbid"))
-                config = validate_descriptor(descriptor)
             except pydantic.ValidationError:
                 config = cls.Config.model_validate(config)
+            else:
+                validate_classinfo(descriptor.classinfo)
+                config = descriptor.config
+
+        # Some of the conversions above are already dictionaries, i.e., ``config = descriptor.config``, most aren't.
+        # Convert those that aren't so that they can be unpacked in the ``return`` statement below.
+        config_dict = config.shallow_model_dump() if isinstance(config, _BaseModel) else config
 
         # Instantiate cls from config.
-        return cls(**config.shallow_model_dump())
+        return cls(**config_dict)
 
     def __init__(self, *args, name: str = None, auto_config=True, auto_config_ignore_fields=None, **kwargs):
         self.name = name or self.__class__.__name__
