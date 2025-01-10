@@ -6,7 +6,6 @@ from pydantic import BaseModel
 
 from evolver.app.exceptions import (
     CalibrationProcedureActionNotFoundError,
-    CalibrationProcedureNotFoundError,
     CalibratorCalibrationDataNotFoundError,
     CalibratorNotFoundError,
     EvolverNotFoundError,
@@ -96,9 +95,12 @@ def start_calibration_procedure(
 def get_calibrator_actions(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
+
     if not calibrator:
         raise CalibratorNotFoundError
-    calibration_procedure = calibrator.calibration_procedure
+
+    if not (calibration_procedure := getattr(calibrator, "calibration_procedure", None)):
+        return {"started": False}
 
     actions = [
         {
@@ -108,7 +110,7 @@ def get_calibrator_actions(hardware_name: str, request: Request):
         }
         for action in calibration_procedure.get_actions()
     ]
-    return {"actions": actions}
+    return {"actions": actions, "started": True}
 
 
 # Dispatch an action to the calibration procedure
@@ -119,7 +121,8 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
     if not calibrator:
         raise CalibratorNotFoundError
 
-    calibration_procedure = calibrator.calibration_procedure
+    if not (calibration_procedure := getattr(calibrator, "calibration_procedure", None)):
+        return {"started": False}
 
     action_to_dispatch = None
     for a in calibration_procedure.get_actions():
@@ -131,7 +134,7 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
 
     payload = action.get("payload", {})
 
-    return calibration_procedure.dispatch(action_to_dispatch, payload)
+    return {**calibration_procedure.dispatch(action_to_dispatch, payload), "started": True}
 
 
 # Get the current state of the calibration procedure
@@ -140,10 +143,11 @@ def get_calibrator_state(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
     if not (calibrator := hardware_instance.calibrator):
         raise CalibratorNotFoundError
-    if not (calibration_procedure := calibrator.calibration_procedure):
-        raise CalibrationProcedureNotFoundError
 
-    return calibration_procedure.get_state()
+    if not (calibration_procedure := getattr(calibrator, "calibration_procedure", None)):
+        return {"started": False}
+
+    return {**calibration_procedure.get_state(), "started": True}
 
 
 # Undo the last calibration procedure action, reverting the state to the previous state
@@ -153,8 +157,11 @@ def undo_calibration_procedure_action(hardware_name: str, request: Request):
 
     if not (calibrator := hardware_instance.calibrator):
         raise CalibratorNotFoundError
-    calibration_procedure = calibrator.calibration_procedure
-    return calibration_procedure.undo()
+
+    if not (calibration_procedure := getattr(calibrator, "calibration_procedure", None)):
+        return {"started": False}
+
+    return {**calibration_procedure.undo(), "started": True}
 
 
 # Get the calibrator's CalibrationData, representing the state from the procedure that has been saved

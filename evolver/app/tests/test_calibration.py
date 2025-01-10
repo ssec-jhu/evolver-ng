@@ -46,7 +46,14 @@ class TestCalibration:
 
         response = client.get("/hardware/test/calibrator/procedure/state")
         assert response.status_code == 200
-        assert response.json() == {"completed_actions": [], "history": []}
+        assert response.json() == {"completed_actions": [], "history": [], "started": True}
+
+    def test_get_calibration_status_not_started(self):
+        _, client = setup_evolver_with_calibrator(NoOpCalibrator)
+
+        response = client.get("/hardware/test/calibrator/procedure/state")
+        assert response.status_code == 200
+        assert response.json() == {"started": False}
 
 
 def test_temperature_calibration_procedure_actions():
@@ -71,6 +78,14 @@ def test_temperature_calibration_procedure_actions():
     assert len(actual_actions) == len(expected_actions)
     for expected_action in expected_actions:
         assert expected_action in actual_actions
+
+
+def test_temperature_calibration_procedure_actions_not_started():
+    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
+
+    response = client.get("/hardware/test/calibrator/procedure/actions")
+    assert response.status_code == 200
+    assert response.json() == {"started": False}
 
 
 def test_dispatch_temperature_calibration_bad_reference_value_action():
@@ -98,6 +113,7 @@ def test_dispatch_temperature_calibration_raw_value_action():
         "0": {"raw": [1.23], "reference": []},
         "completed_actions": ["read_vial_0_raw_output"],
         "history": [{"completed_actions": [], "history": []}],
+        "started": True,
     }
 
 
@@ -128,7 +144,7 @@ def test_calibration_procedure_undo_action_utility():
 
     undo_response = client.post("/hardware/test/calibrator/procedure/undo")
     assert undo_response.status_code == 200
-    assert undo_response.json() == {"completed_actions": [], "history": []}
+    assert undo_response.json() == {"completed_actions": [], "history": [], "started": True}
 
 
 def test_dispatch_temperature_calibration_calculate_fit_action():
