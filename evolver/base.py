@@ -299,7 +299,9 @@ class BaseInterface(ABC):
                 validate_classinfo(descriptor.classinfo)
                 config = descriptor.config
 
-        config_dict = config.shallow_model_dump() if isinstance(config, _BaseConfig) else config
+        # Some of the conversions above are already dictionaries, i.e., ``config = descriptor.config``, most aren't.
+        # Convert those that aren't so that they can be unpacked in the ``return`` statement below.
+        config_dict = config.shallow_model_dump() if isinstance(config, _BaseModel) else config
 
         # Instantiate cls from config.
         return cls(**config_dict)
