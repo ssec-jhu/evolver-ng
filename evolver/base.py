@@ -8,7 +8,6 @@ from typing import Any, Dict
 import pydantic
 import pydantic_core
 import yaml
-from pydantic._internal._validators import import_string
 
 import evolver.util
 from evolver.settings import settings
@@ -101,7 +100,7 @@ class _BaseConfig(_BaseModel):
         fqn = evolver.util.fully_qualified_name(cls)
         containers = fqn.split(".")[:-1]
         container = ".".join(containers)
-        container_class = import_string(container)
+        container_class = evolver.util.import_string(container)
         if issubclass(container_class, BaseInterface):
             cls = container_class
         return f"{cls.__module__}.{cls.__qualname__}"
@@ -269,7 +268,7 @@ class BaseInterface(ABC):
         """Create an instance from a config."""
 
         def validate_classinfo(classinfo: type | str):
-            classinfo = import_string(classinfo) if isinstance(classinfo, str) else classinfo
+            classinfo = evolver.util.import_string(classinfo) if isinstance(classinfo, str) else classinfo
             if not issubclass(classinfo, cls):  # TODO: don't allow polymorph?
                 raise TypeError(
                     f"The given {ConfigDescriptor.__name__} for '{classinfo}' is not compatible "
