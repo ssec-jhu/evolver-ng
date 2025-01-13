@@ -31,15 +31,6 @@ class CalibratorCalibrationDataNotFoundError(HTTPException):
         )
 
 
-class CalibrationProcedureNotFoundError(HTTPException):
-    def __init__(self, **kwargs):
-        return super().__init__(
-            status_code=HTTPStatus.NOT_FOUND,
-            detail="Calibration procedure not found. Start a procedure before accessing its state or dispatching actions to it.",
-            **kwargs,
-        )
-
-
 class CalibrationProcedureActionNotFoundError(HTTPException):
     def __init__(self, action_name: str, **kwargs):
         return super().__init__(status_code=HTTPStatus.NOT_FOUND, detail=f"Action '{action_name}' not found", **kwargs)
