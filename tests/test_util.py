@@ -1,5 +1,5 @@
 from evolver import __project__, __version__
-from evolver.util import find_package_location, find_repo_location
+from evolver.util import find_package_location, find_repo_location, import_string
 
 
 def test_find_repo_location():
@@ -29,3 +29,12 @@ def test_version():
 
 def test_project():
     assert __project__
+
+
+def test_import_string():
+    import_type = import_string("evolver.device.Evolver")
+    assert isinstance(import_type, type)
+
+    from evolver.device import Evolver
+
+    assert import_type is Evolver
