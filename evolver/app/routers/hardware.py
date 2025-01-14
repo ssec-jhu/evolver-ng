@@ -76,18 +76,14 @@ def start_calibration_procedure(
     hardware_name: str,
     request: Request,
     resume: bool = Query(True),
+    file_path: str = str,
 ):
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
         raise CalibratorNotFoundError
 
-    print("RESUME IS++++++++++++++++++++++++++++++", resume)
-
-    calibrator.create_calibration_procedure(
-        selected_hardware=hardware_instance,
-        resume=resume,
-    )
+    calibrator.create_calibration_procedure(selected_hardware=hardware_instance, resume=resume, file_path=file_path)
 
     return calibrator.calibration_procedure.get_state()
 

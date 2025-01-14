@@ -170,7 +170,7 @@ class Calibrator(BaseInterface):
         ...
 
     @abstractmethod
-    def create_calibration_procedure(self, selected_hardware, resume, *args, **kwargs):
+    def create_calibration_procedure(self, selected_hardware, resume, file_path, *args, **kwargs):
         """This creates the calibration procedure, which is composed of a sequence of actions."""
         pass
 
