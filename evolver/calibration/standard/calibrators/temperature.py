@@ -32,13 +32,16 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
             **self.calibration_data.measured,
             "completed_actions": self.calibration_data.completed_actions,
         }
+        print("PERSISTED STATE IS++++++++++++++++++++++++++++++", persisted_state)
 
         calibration_procedure = (
             CalibrationProcedure(persisted_state) if resume and persisted_state else CalibrationProcedure()
         )
 
         calibration_procedure.add_action(
-            DisplayInstructionAction(description="Fill each vial with 15ml water", name="fill_vials_instruction")
+            DisplayInstructionAction(
+                hardware=selected_hardware, description="Fill each vial with 15ml water", name="fill_vials_instruction"
+            )
         )
         for vial in self.vials:
             calibration_procedure.add_action(

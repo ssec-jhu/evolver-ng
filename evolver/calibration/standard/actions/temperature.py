@@ -14,11 +14,11 @@ class ReferenceValueAction(CalibrationAction):
 
         temperature: float = Field(..., title="Temperature", description="Temperature in degrees Celsius")
 
-    def __init__(self, hardware, vial_idx: int, *args, **kwargs):
+    def __init__(self, vial_idx: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.hardware = hardware
         self.vial_idx = vial_idx
 
+    @save  # This action, when dispatched, will save the procedure state to the Calibrator.CalibrationData class, if resumed, the procedure will start from the last saved state.
     def execute(self, state: Dict, payload: Optional[FormModel] = None):
         state.setdefault(self.vial_idx, {"reference": [], "raw": []})
         state[self.vial_idx]["reference"].append(payload.temperature)
@@ -29,11 +29,11 @@ class RawValueAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
-    def __init__(self, hardware, vial_idx: int, *args, **kwargs):
+    def __init__(self, vial_idx: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.hardware = hardware
         self.vial_idx = vial_idx
 
+    @save  # This action, when dispatched, will save the procedure state to the Calibrator.CalibrationData class
     def execute(self, state, payload: Optional[FormModel] = None):
         state.setdefault(self.vial_idx, {"reference": [], "raw": []})
         sensor_value = self.hardware.read()[self.vial_idx]
@@ -45,9 +45,8 @@ class CalculateFitAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
-    def __init__(self, hardware, vial_idx: int, *args, **kwargs):
+    def __init__(self, vial_idx: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.hardware = hardware
         self.vial_idx = vial_idx
 
     @save  # This action, when dispatched, will save the procedure state to the Calibrator.CalibrationData class

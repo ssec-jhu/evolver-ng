@@ -79,6 +79,14 @@ class CalibrationProcedure(BaseInterface, ABC):
             self.state = self.state["history"].pop()
         return self.state
 
+    def save(self, file_path, *args, **kwargs):
+        """
+        Save the state of the calibration procedure to the Calibrator.CalibrationData class.
+        """
+        self.hardware.calibrator.calibration_data.measured = self.state
+        self.hardware.calibrator.calibration_data.save(file_path=file_path)
+        return self.state
+
     def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):
         if payload is not None and action.FormModel.model_fields != {}:
             payload = action.FormModel(**payload)
