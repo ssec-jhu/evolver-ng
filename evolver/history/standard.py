@@ -21,7 +21,7 @@ class HistoryServer(History):
 
     class Config(History.Config):
         name: str = "HistoryServer"
-        experiment: str | None = None
+        namespace: str | None = None
         partition_seconds: int = 3600
         buffer_partitions: int = 3
         default_window: int = 3600
@@ -30,8 +30,8 @@ class HistoryServer(History):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.history = defaultdict(list)
-        self._experiment = self.experiment or getattr(kwargs.get("evolver", None), "experiment", "unspecified")
-        self.history_dir = Path(settings.EXPERIMENT_FILE_STORAGE_PATH) / self._experiment / "history"
+        self._namespace = self.namespace or getattr(kwargs.get("evolver", None), "namespace", "unspecified")
+        self.history_dir = Path(settings.EXPERIMENT_FILE_STORAGE_PATH) / self._namespace / "history"
         self.json_hist_reader = f"""
             read_json('{self.history_dir}/*/history.json',
             format='newline_delimited',

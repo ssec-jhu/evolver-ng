@@ -80,9 +80,9 @@ def test_history_resume_history(sensor):
 
 
 def test_history_server_experiment_distinction(sensor):
-    ha = HistoryServer(experiment="A")
+    ha = HistoryServer(namespace="A")
     ha.put("test", "sensor", sensor.read())
-    hb = HistoryServer(experiment="B")
+    hb = HistoryServer(namespace="B")
     hb.put("test", "sensor", sensor.read())
     assert len(ha.get().data["test"]) == 1
     assert len(hb.get().data["test"]) == 1

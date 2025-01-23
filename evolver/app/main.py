@@ -20,7 +20,7 @@ from evolver.settings import app_settings, settings
 from evolver.types import ImportString
 
 # Import routers
-from .routers import hardware
+from .routers import experiment, hardware
 
 # Setup logging.
 evolver.util.setup_logging()
@@ -61,6 +61,7 @@ async def validation_error_handler(_, exc):
 
 
 app.include_router(hardware.router)
+app.include_router(experiment.router)
 
 
 @app.get("/", operation_id="describe")
