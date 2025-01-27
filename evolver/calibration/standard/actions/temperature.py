@@ -14,9 +14,8 @@ class ReferenceValueAction(CalibrationAction):
 
         temperature: float = Field(..., title="Temperature", description="Temperature in degrees Celsius")
 
-    def __init__(self, hardware, vial_idx: int, *args, **kwargs):
+    def __init__(self, vial_idx: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.hardware = hardware
         self.vial_idx = vial_idx
 
     def execute(self, state: Dict, payload: Optional[FormModel] = None):
@@ -29,9 +28,8 @@ class RawValueAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
-    def __init__(self, hardware, vial_idx: int, *args, **kwargs):
+    def __init__(self, vial_idx: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.hardware = hardware
         self.vial_idx = vial_idx
 
     def execute(self, state, payload: Optional[FormModel] = None):
@@ -45,9 +43,8 @@ class CalculateFitAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
-    def __init__(self, hardware, vial_idx: int, *args, **kwargs):
+    def __init__(self, vial_idx: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.hardware = hardware
         self.vial_idx = vial_idx
 
     @save  # This action, when dispatched, will save the procedure state to the Calibrator.CalibrationData class
