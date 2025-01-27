@@ -44,7 +44,7 @@ class TestCalibration:
     def test_get_calibration_status(self):
         _, client = setup_evolver_with_calibrator(NoOpCalibrator)
 
-        response = client.post("/hardware/test/calibrator/procedure/start")
+        response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
         assert response.status_code == 200
 
         response = client.get("/hardware/test/calibrator/procedure/state")
@@ -62,7 +62,7 @@ class TestCalibration:
 def test_temperature_calibration_procedure_actions():
     temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
-    response = client.post("/hardware/test/calibrator/procedure/start")
+    response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
     assert response.status_code == 200
 
     actions_response = client.get("/hardware/test/calibrator/procedure/actions")
@@ -94,7 +94,7 @@ def test_temperature_calibration_procedure_actions_not_started():
 def test_dispatch_temperature_calibration_bad_reference_value_action():
     _, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
-    client.post("/hardware/test/calibrator/procedure/start")
+    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
 
     action_payload = {"action_name": "measure_vial_0_temperature", "payload": {"this_should_not_work": 25.0}}
     dispatch_response = dispatch_action(client, "test", "measure_vial_0_temperature", action_payload["payload"])
@@ -107,7 +107,7 @@ def test_dispatch_temperature_calibration_raw_value_action():
 
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    client.post("/hardware/test/calibrator/procedure/start")
+    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
 
     raw_dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
 
@@ -125,14 +125,14 @@ def test_reset_calibration_procedure():
 
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    client.post("/hardware/test/calibrator/procedure/start")
+    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
 
     raw_dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
     assert raw_dispatch_response.status_code == 200
 
-    reset_response = client.post("/hardware/test/calibrator/procedure/start", json={"resume": False})
+    reset_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
     assert reset_response.status_code == 200
-    assert reset_response.json() == {"completed_actions": [], "history": []}
+    assert reset_response.json() == {"completed_actions": [], "history": [], "started": True}
 
 
 def test_calibration_procedure_undo_action_utility():
@@ -140,7 +140,7 @@ def test_calibration_procedure_undo_action_utility():
 
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    client.post("/hardware/test/calibrator/procedure/start")
+    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
 
     dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
     assert dispatch_response.status_code == 200
@@ -159,7 +159,7 @@ def test_calibration_procedure_save(tmp_path):
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
     # Start procedure
-    client.post("/hardware/test/calibrator/procedure/start")
+    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
 
     # Dispatch an action to have something to save
     dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
@@ -191,12 +191,42 @@ def test_calibration_procedure_save(tmp_path):
     assert error_response.status_code == 500
 
 
+def test_calibration_procedure_resume(tmp_path):
+    # Setup fs for save
+    cal_file = tmp_path / "calibrationXXX.yml"
+    cal_file.touch()
+
+    # Initial setup and procedure
+    _, client = setup_evolver_with_calibrator(TemperatureCalibrator, calibration_file=str(cal_file))
+    app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
+
+    # Start and perform initial procedure actions
+    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
+    assert dispatch_response.status_code == 200
+
+    # Save procedure state
+    save_response = client.post("/hardware/test/calibrator/procedure/save")
+    assert save_response.status_code == 200
+    saved_state = save_response.json()
+
+    # Create new client to simulate fresh start
+    _, new_client = setup_evolver_with_calibrator(TemperatureCalibrator, calibration_file=str(cal_file))
+
+    # Resume procedure
+    resume_response = new_client.post("/hardware/test/calibrator/procedure/start", params={"resume": True})
+    assert resume_response.status_code == 200
+
+    # Verify resumed state matches saved state
+    assert resume_response.json() == saved_state
+
+
 def test_dispatch_temperature_calibration_calculate_fit_action():
     temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    client.post("/hardware/test/calibrator/procedure/start")
+    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
 
     reference_dispatch_response = dispatch_action(client, "test", "measure_vial_0_temperature", {"temperature": 25.0})
     assert reference_dispatch_response.status_code == 200
@@ -221,7 +251,7 @@ def test_get_calibration_data(tmp_path):
 
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    client.post("/hardware/test/calibrator/procedure/start")
+    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
 
     dispatch_action(client, "test", "measure_vial_0_temperature", {"temperature": 25.0})
     dispatch_action(client, "test", "read_vial_0_raw_output")
@@ -235,7 +265,7 @@ def test_get_calibration_data(tmp_path):
     assert calibration_data_response.status_code == 200
     calibration_data = calibration_data_response.json()
 
-    assert calibration_data["measured"] == {
+    assert calibration_data["procedure_state"] == {
         "0": {"raw": [1.23], "reference": [25.0]},
         "completed_actions": ["measure_vial_0_temperature", "read_vial_0_raw_output", "calculate_vial_0_fit"],
         "history": [
