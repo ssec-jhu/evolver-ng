@@ -66,14 +66,9 @@ class Evolver(BaseInterface):
     def __init__(self, *args, **kwargs):
         self.last_read = defaultdict(lambda: int(-1))
         super().__init__(*args, evolver=self, **kwargs)
-        # Probably not correct, but...
-        #
         # We have to turn experiment controllers passed in as configdescriptors
-        # to objects while passing in self
-        #
-        # In testing this works as expected (at least with the test fixture that
-        # configures from the dict). In real application run from yaml file, the
-        # controllers end up as Config objects, not ConfigDescriptors...
+        # to objects while passing in self so controllers can consume hardware
+        # and read from history, etc.
         for experiment in self.experiments.values():
             for i in range(len(experiment.controllers)):
                 elem = experiment.controllers[i]
