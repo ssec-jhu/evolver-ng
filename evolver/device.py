@@ -1,6 +1,9 @@
 import logging
 import time
 from collections import defaultdict
+from math import prod
+
+from pydantic import Field, ValidationInfo, field_validator
 
 from evolver.base import BaseInterface, ConfigDescriptor
 from evolver.connection.interface import Connection
@@ -20,6 +23,12 @@ class Evolver(BaseInterface):
     class Config(BaseInterface.Config):
         name: str = "Evolver"
         experiment: str = "unspecified"
+        vial_layout: list[int] = Field(
+            default=settings.DEFAULT_VIAL_LAYOUT,
+            description="The layout of the vials in 2 or 3 dimensions. Always left-to-right bottom-top-top order.",
+            min_length=2,
+            max_length=3,
+        )
         vials: list = list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
         hardware: dict[str, ConfigDescriptor | HardwareDriver] = {}
         controllers: list[ConfigDescriptor | Controller] = []
@@ -32,6 +41,14 @@ class Evolver(BaseInterface):
         abort_on_commit_errors: bool = False
         skip_control_on_read_failure: bool = True
         log_level: int = EVENT
+
+        @field_validator("vials", mode="after")
+        @classmethod
+        def validate_vials(cls, value: list[int], info: ValidationInfo):
+            total_slots = prod(info.data["vial_layout"])
+            if len(value) > total_slots or max(value) >= total_slots:
+                raise ValueError(f"Vials configured exceed total available slots from layout {total_slots}")
+            return value
 
     def __init__(self, *args, **kwargs):
         self.last_read = defaultdict(lambda: int(-1))

@@ -215,3 +215,10 @@ class TestEvolver:
         assert not demo_evolver.enable_control
         assert demo_evolver.hardware["testeffector"].aborted
         assert not demo_evolver.enable_control
+
+    def test_vials_layout_validation(self):
+        with pytest.raises(ValueError, match="Vials configured exceed total available slots"):
+            Evolver.Config(vials=[0, 1, 2, 3, 4], vial_layout=[2, 2])
+        with pytest.raises(ValueError, match="Vials configured exceed total available slots"):
+            Evolver.Config(vials=[0, 1, 2, 8], vial_layout=[2, 2])
+        Evolver.Config(vials=[0, 1, 2, 3], vial_layout=[2, 2])
