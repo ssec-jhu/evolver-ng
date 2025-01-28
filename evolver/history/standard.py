@@ -107,6 +107,7 @@ class HistoryServer(History):
     def get(
         self,
         name: str = None,
+        names: list[str] = None,
         kinds: list[str] = None,
         t_start: float = None,
         t_stop: float = None,
@@ -137,6 +138,9 @@ class HistoryServer(History):
             res = res.filter(f"vial in ({vials_filter})")
         if name:
             res = res.filter(f"name='{name}'")
+        elif names:
+            names_filter = ",".join([f"'{n}'" for n in names])
+            res = res.filter(f"name in ({names_filter})")
         if t_start:
             start_part = self._get_part(t_start)
             res = res.filter(f"time_part>={start_part}").filter(f"timestamp>={t_start}")

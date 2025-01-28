@@ -20,6 +20,7 @@ class InMemoryHistoryServer(History):
     def get(
         self,
         name: str = None,
+        names: list[str] = None,
         kinds: list[str] = None,
         t_start: float = None,
         t_stop: float = None,
@@ -27,11 +28,13 @@ class InMemoryHistoryServer(History):
         properties: list[str] | None = None,
         n_max: int = None,
     ):
-        names = self.history.keys()
+        query_names = self.history.keys()
         if name is not None:
-            names = [n for n in names if n == name]
+            query_names = [n for n in query_names if n == name]
+        elif names is not None:
+            query_names = [n for n in query_names if n in names]
         data = {}
-        for n in names:
+        for n in query_names:
             history = list(self.history[n])[:n_max]
             try:
                 history = [filter_data_properties(d, properties) for d in history]

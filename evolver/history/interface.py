@@ -36,6 +36,7 @@ class History(BaseInterface):
     def get(
         self,
         name: str = None,
+        names: list[str] = None,
         kinds: list[str] = None,
         t_start: float = None,
         t_stop: float = None,
@@ -51,6 +52,9 @@ class History(BaseInterface):
         Args:
             name: The name of hardware component to retrieve data for. If None,
                 return all data.
+            names: A list of names of hardware components to retrieve data for.
+                Should be Mutually exclusive with the name parameter, where the
+                name parameter would take precedence if supplied.
             t_start: The start time of the data to retrieve in floating point unix
                 epoch seconds. If not specified, either n_max or an
                 implementation-defined number of data points will be returned,

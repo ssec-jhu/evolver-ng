@@ -13,8 +13,14 @@ def get_experiments(request: Request) -> dict[str, Experiment]:
 @router.get("/{experiment_name}/logs")
 def get_experiment_logs(request: Request, experiment_name: str):
     evolver = request.app.state.evolver
-    history = []
-    for controller in evolver.experiments[experiment_name].controllers:
-        if controller.name:
-            history.append(evolver.history.get(name=controller.name, kinds=["log", "event"]))
-    return history
+    controllers = evolver.experiments[experiment_name].controllers
+    names = [c.name for c in controllers if c.name]
+    return evolver.history.get(names=names, kinds=["log", "event"])
+
+
+@router.get("/{experiment_name}")
+def get_experiment_overview(request: Request, experiment_name: str):
+    return {
+        "spec": request.app.state.evolver.experiments[experiment_name],
+        "logs": get_experiment_logs(request, experiment_name),
+    }

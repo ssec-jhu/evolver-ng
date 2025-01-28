@@ -260,19 +260,45 @@ class TestApp:
         response = app_client.get("/experiment/")
         assert response.status_code == 200
         assert response.json() == {}
-        app.state.evolver = Evolver(experiments={"test": Experiment(controllers=[ConfigDescriptor(classinfo="evolver.controller.demo.NoOpController")])})
+        app.state.evolver = Evolver(
+            experiments={
+                "test": Experiment(controllers=[ConfigDescriptor(classinfo="evolver.controller.demo.NoOpController")])
+            }
+        )
         response = app_client.get("/experiment/")
         assert response.status_code == 200
         assert response.json() == {
-            "test": { "controllers": [
-                {
-                "classinfo": "evolver.controller.demo.NoOpController", "config": {"name": "NoOpController"}
-                }],
+            "test": {
+                "controllers": [
+                    {"classinfo": "evolver.controller.demo.NoOpController", "config": {"name": "NoOpController"}}
+                ],
                 "enabled": True,
                 "name": None,
             }
         }
 
+    def test_experiment_log_endpoint(self, app_client):
+        app.state.evolver = Evolver(
+            experiments={
+                "test": Experiment(
+                    controllers=[
+                        ConfigDescriptor(
+                            classinfo="evolver.controller.demo.NoOpController", config={"name": "NoOpController1"}
+                        ),
+                        ConfigDescriptor(
+                            classinfo="evolver.controller.demo.NoOpController", config={"name": "NoOpController2"}
+                        ),
+                    ]
+                )
+            }
+        )
+        response = app_client.get("/experiment/test/logs")
+        assert response.status_code == 200
+        assert response.json() == {"data": {}}
+        app.state.evolver.loop_once()
+        response = app_client.get("/experiment/test/logs")
+        assert len(response.json()["data"]["NoOpController1"]) == 1
+        assert len(response.json()["data"]["NoOpController2"]) == 1
 
 
 def test_app_load_file(app_client):

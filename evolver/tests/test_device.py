@@ -26,11 +26,16 @@ def conf_with_driver():
             "testeffector": {"classinfo": "evolver.hardware.demo.NoOpEffectorDriver", "config": {}},
         },
         "experiments": {
-            "test": {
+            "testA": {
                 "controllers": [
                     {"classinfo": "evolver.controller.demo.NoOpController", "config": {}},
                 ]
-            }
+            },
+            "testB": {
+                "controllers": [
+                    {"classinfo": "evolver.controller.demo.NoOpController", "config": {}},
+                ]
+            },
         },
         "serial": {"classinfo": "evolver.serial.EvolverSerialUARTEmulator"},
         "history": {"classinfo": "evolver.history.demo.InMemoryHistoryServer"},
@@ -124,6 +129,24 @@ class TestEvolver:
         demo_evolver.enable_control = enable_control
         demo_evolver.loop_once()
         assert demo_evolver.active_controllers[0].ncalls == (1 if enable_control else 0)
+
+    def test_experiment_enable_switch_and_active_controllers(self, demo_evolver):
+        # We don't otherwise make any guarantees of the order of experiments,
+        # however we do expect the deserialization and python dict to preserve
+        # order, so "testA" + "testB" is at least somewhat intentional (as
+        # opposed to using sorted)
+        assert (
+            demo_evolver.active_controllers
+            == demo_evolver.experiments["testA"].controllers + demo_evolver.experiments["testB"].controllers
+        )
+        demo_evolver.loop_once()
+        assert demo_evolver.experiments["testA"].controllers[0].ncalls == 1
+        assert demo_evolver.experiments["testB"].controllers[0].ncalls == 1
+        demo_evolver.experiments["testA"].enabled = False
+        assert demo_evolver.active_controllers == demo_evolver.experiments["testB"].controllers
+        demo_evolver.loop_once()
+        assert demo_evolver.experiments["testA"].controllers[0].ncalls == 1
+        assert demo_evolver.experiments["testB"].controllers[0].ncalls == 2
 
     @pytest.mark.parametrize("spec", [SensorDriver, EffectorDriver, Controller])
     def test_loop_exception_option(self, demo_evolver, spec):
