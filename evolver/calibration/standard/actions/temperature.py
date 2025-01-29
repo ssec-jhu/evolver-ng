@@ -52,6 +52,6 @@ class CalculateFitAction(CalibrationAction):
         vial_data = state[self.vial_idx]
         # Side effect: refit the output transformer with the new data, store refit in another class.
         # The result of the refit is stored in the output_transformer, accessible via hardware.calibrator.output_transformer
-        # TODO: make fit a method of the procedure (like undo and save), not the action, so that the procedure actions are all idempotent.
+        # TODO: mak fit a method of the procedure (like undo and save), not the action, so that the procedure actions are all idempotent.
         self.hardware.calibrator.output_transformer[self.vial_idx].refit(vial_data["reference"], vial_data["raw"])
         return state

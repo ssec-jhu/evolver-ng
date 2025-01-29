@@ -44,6 +44,15 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
                 description="Fill each vial with 15ml water", name="fill_vials_instruction", hardware=selected_hardware
             )
         )
+
+        calibration_procedure.add_action(
+            DisplayInstructionAction(
+                description="Wait 25 mins for equilibrium",
+                name="wait_for_equilibrium_instruction",
+                hardware=selected_hardware,
+            )
+        )
+
         for vial in self.vials:
             calibration_procedure.add_action(
                 ReferenceValueAction(
