@@ -10,6 +10,7 @@ from evolver.app.exceptions import (
     CalibratorNotFoundError,
     EvolverNotFoundError,
     HardwareNotFoundError,
+    CalibratorProcedureSaveError,
 )
 from evolver.hardware.interface import HardwareDriver
 
@@ -162,6 +163,23 @@ def undo_calibration_procedure_action(hardware_name: str, request: Request):
         return {"started": False}
 
     return {**calibration_procedure.undo(), "started": True}
+
+
+@router.post("/{hardware_name}/calibrator/procedure/save")
+def save_calibration_procedure(hardware_name: str, request: Request):
+    hardware_instance = get_hardware_instance(request, hardware_name)
+
+    if not (calibrator := hardware_instance.calibrator):
+        raise CalibratorNotFoundError
+
+    if not (calibration_procedure := getattr(calibrator, "calibration_procedure", None)):
+        return {"started": False}
+    try:
+        calibration_procedure.save()
+    except Exception:
+        raise CalibratorProcedureSaveError
+
+    return {**calibration_procedure.get_state(), "started": True}
 
 
 # Get the calibrator's CalibrationData, representing the state from the procedure that has been saved

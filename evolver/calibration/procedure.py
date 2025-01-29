@@ -30,7 +30,7 @@ class CalibrationStateModel(BaseModel):
 class CalibrationProcedure(BaseInterface, ABC):
     class Config(BaseInterface.Config): ...
 
-    def __init__(self, state=None, *args, **kwargs):
+    def __init__(self, hardware, state=None, *args, **kwargs):
         """
         Initialize the CalibrationProcedure.
 
@@ -42,7 +42,7 @@ class CalibrationProcedure(BaseInterface, ABC):
                 The state can be saved and reloaded to continue the calibration procedure if interrupted.
                 To save the state to the Calibrator.CalibrationData class, decorate an action's execute method with the @save decorator.
                 Only state that is explicitly saved will be persisted, so it is important to save the state periodically.
-                The @save decorator persists the entire state of the procedure, after @save decorated action has been executed.
+            hardware (HardwareDriver): The hardware that the calibration procedure will interact with.
 
         Notes:
             Dispatching an action will update the state of the calibration procedure.
@@ -56,6 +56,7 @@ class CalibrationProcedure(BaseInterface, ABC):
         super().__init__(*args, **kwargs)
         self.actions = []
         self.state = CalibrationStateModel(**(state or {})).model_dump()
+        self.hardware = hardware
 
     def add_action(self, action: CalibrationAction):
         if any(existing_action.name == action.name for existing_action in self.actions):
@@ -74,9 +75,23 @@ class CalibrationProcedure(BaseInterface, ABC):
     def undo(self):
         """
         Undo the last action that was dispatched in the calibration procedure.
+        Note, if you dispatch an action decorated with the @save decorator, and then undo it, the saved representation of the procedure state will not reflect the undone action.
         """
         if len(self.state["history"]) > 0:
             self.state = self.state["history"].pop()
+        return self.state
+
+    def save(self):
+        """
+        Save the current state of the calibration procedure, to a file.
+        The CalibrationData class, because it inherits from the Transformer class has a save method that saves its state to a file.
+        NOTE: Currently this is everything in CalibrationData, maybe it should just be the "measured" attribute.
+        """
+        file_path = self.hardware.calibrator.calibration_file
+        # calibration_file maybe none, in which case the save operation must fail with an error message.
+        if file_path is None:
+            raise ValueError("calibration_file attribute is not set on the Calibrator config.")
+        self.hardware.calibrator.calibration_data.save(file_path)
         return self.state
 
     def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):

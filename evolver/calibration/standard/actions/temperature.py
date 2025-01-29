@@ -2,7 +2,7 @@ from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 
-from evolver.calibration.action import CalibrationAction, save
+from evolver.calibration.action import CalibrationAction
 
 
 class ReferenceValueAction(CalibrationAction):
@@ -47,11 +47,11 @@ class CalculateFitAction(CalibrationAction):
         super().__init__(*args, **kwargs)
         self.vial_idx = vial_idx
 
-    @save  # This action, when dispatched, will save the procedure state to the Calibrator.CalibrationData class
     def execute(self, state, payload: Optional[FormModel] = None):
         state.setdefault(self.vial_idx, {"reference": [], "raw": []})
         vial_data = state[self.vial_idx]
         # Side effect: refit the output transformer with the new data, store refit in another class.
         # The result of the refit is stored in the output_transformer, accessible via hardware.calibrator.output_transformer
+        # TODO: make fit a method of the procedure (like undo and save), not the action, so that the procedure actions are all idempotent.
         self.hardware.calibrator.output_transformer[self.vial_idx].refit(vial_data["reference"], vial_data["raw"])
         return state

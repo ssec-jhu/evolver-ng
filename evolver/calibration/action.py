@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from functools import wraps
 from typing import Dict, Optional
 
 from pydantic import BaseModel
@@ -56,17 +55,6 @@ class CalibrationAction(ABC):
         pass
 
 
-def save(action):
-    @wraps(action)
-    def wrapper(self, state: Dict, *args, **kwargs):
-        updated_state = action(self, state, *args, **kwargs)
-        self.hardware.calibrator.calibration_data.measured = updated_state
-        self.hardware.calibrator.calibration_data.save()
-        return updated_state
-
-    return wrapper
-
-
 class DisplayInstructionAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
@@ -74,6 +62,5 @@ class DisplayInstructionAction(CalibrationAction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    @save  # This action, when dispatched, will save the procedure state to the Calibrator.CalibrationData class
     def execute(self, state: Dict, payload: Optional[FormModel] = None):
         return state.copy()

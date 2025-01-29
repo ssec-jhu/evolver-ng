@@ -34,7 +34,9 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
         }
 
         calibration_procedure = (
-            CalibrationProcedure(persisted_state) if resume and persisted_state else CalibrationProcedure()
+            CalibrationProcedure(state=persisted_state, hardware=selected_hardware)
+            if resume and persisted_state
+            else CalibrationProcedure(hardware=selected_hardware)
         )
 
         calibration_procedure.add_action(
