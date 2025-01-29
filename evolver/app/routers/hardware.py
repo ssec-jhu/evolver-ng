@@ -183,7 +183,7 @@ def save_calibration_procedure(hardware_name: str, request: Request):
 
 
 # Get the calibrator's CalibrationData, representing the state from the procedure that has been saved
-# This data will appear in the config file even if the procedure is interupted. And will be used as the initial state when the procedure is resumed.
+# This data will appear in the config file even if the procedure is interrupted. And will be used as the initial state when the procedure is resumed.
 @router.get("/{hardware_name}/calibrator/data")
 def get_calibration_data(hardware_name: str, request: Request):
     hardware_instance = get_hardware_instance(request, hardware_name)
@@ -193,6 +193,7 @@ def get_calibration_data(hardware_name: str, request: Request):
     if not calibrator.calibration_data:
         raise CalibratorCalibrationDataNotFoundError
 
+    foo = calibrator.calibration_data
     return calibrator.calibration_data
 
 

@@ -60,9 +60,13 @@ class Transformer(BaseInterface):
 
         def save(
             self,
-            file_path: Path,
+            file_path: Path = None,
             encoding: str | None = None,
         ):
+            if file_path is None:
+                file_path = Path(f"{self.name}_{self.created.strftime(settings.DATETIME_PATH_FORMAT)}").with_suffix(
+                    ".yml"
+                )
             return super().save(file_path=self.dir / file_path, encoding=encoding)
 
     @abstractmethod

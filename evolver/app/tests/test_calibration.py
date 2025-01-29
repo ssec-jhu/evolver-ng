@@ -151,7 +151,7 @@ def test_calibration_procedure_undo_action_utility():
 
 
 def test_calibration_procedure_save(tmp_path):
-    # Setup
+    # Setup fs for save.
     cal_file = tmp_path / "calibration.yml"
     cal_file.touch()
 
@@ -212,8 +212,12 @@ def test_dispatch_temperature_calibration_calculate_fit_action():
     assert output_transformer_response.json()["0"]["parameters"] == [0.6149999999999997, 0.024599999999999997]
 
 
-def test_get_calibration_data():
-    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
+def test_get_calibration_data(tmp_path):
+    # Setup fs for save.
+    cal_file = tmp_path / "calibration.yml"
+    cal_file.touch()
+
+    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator, calibration_file=str(cal_file))
 
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
@@ -222,6 +226,10 @@ def test_get_calibration_data():
     dispatch_action(client, "test", "measure_vial_0_temperature", {"temperature": 25.0})
     dispatch_action(client, "test", "read_vial_0_raw_output")
     dispatch_action(client, "test", "calculate_vial_0_fit")
+
+    # save the calibration data, this pops the data up into the calibrator's CalibrationData class.
+    save_response = client.post("/hardware/test/calibrator/procedure/save")
+    assert save_response.status_code == 200
 
     calibration_data_response = client.get("/hardware/test/calibrator/data")
     assert calibration_data_response.status_code == 200

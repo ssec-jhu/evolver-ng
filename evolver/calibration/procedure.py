@@ -91,6 +91,7 @@ class CalibrationProcedure(BaseInterface, ABC):
         # calibration_file maybe none, in which case the save operation must fail with an error message.
         if file_path is None:
             raise ValueError("calibration_file attribute is not set on the Calibrator config.")
+        self.hardware.calibrator.calibration_data.measured = self.state
         self.hardware.calibrator.calibration_data.save(file_path)
         return self.state
 
