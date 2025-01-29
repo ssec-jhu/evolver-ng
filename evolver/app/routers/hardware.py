@@ -193,7 +193,6 @@ def get_calibration_data(hardware_name: str, request: Request):
     if not calibrator.calibration_data:
         raise CalibratorCalibrationDataNotFoundError
 
-    foo = calibrator.calibration_data
     return calibrator.calibration_data
 
 
