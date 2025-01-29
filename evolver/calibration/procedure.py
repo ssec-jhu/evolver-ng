@@ -40,7 +40,6 @@ class CalibrationProcedure(BaseInterface, ABC):
                 Typically, a procedure is complete when all actions have been dispatched in sequence using the HTTP API.
             state (CalibrationStateModel): The state of the calibration procedure updated as actions are executed.
                 The state can be saved and reloaded to continue the calibration procedure if interrupted.
-                To save the state to the Calibrator.CalibrationData class, decorate an action's execute method with the @save decorator.
                 Only state that is explicitly saved will be persisted, so it is important to save the state periodically.
             hardware (HardwareDriver): The hardware that the calibration procedure will interact with.
 
@@ -75,7 +74,6 @@ class CalibrationProcedure(BaseInterface, ABC):
     def undo(self):
         """
         Undo the last action that was dispatched in the calibration procedure.
-        Note, if you dispatch an action decorated with the @save decorator, and then undo it, the saved representation of the procedure state will not reflect the undone action.
         """
         if len(self.state["history"]) > 0:
             self.state = self.state["history"].pop()
@@ -85,7 +83,6 @@ class CalibrationProcedure(BaseInterface, ABC):
         """
         Save the current state of the calibration procedure, to a file.
         The CalibrationData class, because it inherits from the Transformer class has a save method that saves its state to a file.
-        NOTE: Currently this is everything in CalibrationData, maybe it should just be the "measured" attribute.
         """
         file_path = self.hardware.calibrator.calibration_file
         # calibration_file maybe none, in which case the save operation must fail with an error message.
