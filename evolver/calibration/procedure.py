@@ -10,10 +10,9 @@ from evolver.calibration.action import CalibrationAction
 
 class CalibrationStateModel(BaseModel):
     """
-    Model to represent the state of a calibration procedure. All procedures record their completed actions in this model.
-    Along with the completed actions, the state of the calibration procedure (i.e. the data the actions have gathered) can be stored.
-    The shape of this additional data is not fixed and therefore is not included in the model here.
-    When considering adding attributes, note this model is shared by the Calibrator.CalibrationData class.
+    Model to represent the state of a calibration procedure. All procedures record their completed actions, and history of actions in this model.
+    The data collected by the calibration procedure (i.e. the data the actions have gathered, that's used as input to the Hardware.input/outputTransformer methods) is also stored here.
+    The shape of this additional data, sometimes referred to a "measured" is not fixed and therefore is not included in the model here.
 
     Attributes:
         completed_actions (List[str]): A list of actions that have been completed during the calibration procedure.
@@ -88,7 +87,11 @@ class CalibrationProcedure(BaseInterface, ABC):
         # calibration_file maybe none, in which case the save operation must fail with an error message.
         if file_path is None:
             raise ValueError("calibration_file attribute is not set on the Calibrator config.")
-        self.hardware.calibrator.calibration_data.measured = self.state
+        self.hardware.calibrator.calibration_data.procedure_state = {**self.state}
+        """
+        self.hardware.calibrator.calibration_data.history = self.state.get("history", [])
+        self.hardware.calibrator.calibration_data.completed_actions = self.state.get("completed_actions", [])
+        """
         self.hardware.calibrator.calibration_data.save(file_path)
         return self.state
 

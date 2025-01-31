@@ -78,6 +78,10 @@ def start_calibration_procedure(
     request: Request,
     resume: bool = Query(True),
 ):
+    # TODO: if resume is false, require a file name to save the procedure state to. and update the calibration_file attribute in the Calibrator config accordingly.
+    # Otherwise, starting a procedure with resume to false risks destroying the state of the procedure (if any in the exisiting calibration_file).
+    # For now we will just raise an error if resume is false and no calibration_file is provided.
+    # normally the calibration_file will be empty of any procedure state and so resuming by default is fine.
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
@@ -88,7 +92,7 @@ def start_calibration_procedure(
         resume=resume,
     )
 
-    return calibrator.calibration_procedure.get_state()
+    return {**calibrator.calibration_procedure.get_state(), "started": True}
 
 
 # Get available actions for the calibration procedure

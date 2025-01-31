@@ -191,6 +191,36 @@ def test_calibration_procedure_save(tmp_path):
     assert error_response.status_code == 500
 
 
+def test_calibration_procedure_resume(tmp_path):
+    # Setup fs for save
+    cal_file = tmp_path / "calibrationXXX.yml"
+    cal_file.touch()
+
+    # Initial setup and procedure
+    _, client = setup_evolver_with_calibrator(TemperatureCalibrator, calibration_file=str(cal_file))
+    app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
+
+    # Start and perform initial procedure actions
+    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
+    assert dispatch_response.status_code == 200
+
+    # Save procedure state
+    save_response = client.post("/hardware/test/calibrator/procedure/save")
+    assert save_response.status_code == 200
+    saved_state = save_response.json()
+
+    # Create new client to simulate fresh start
+    _, new_client = setup_evolver_with_calibrator(TemperatureCalibrator, calibration_file=str(cal_file))
+
+    # Resume procedure
+    resume_response = new_client.post("/hardware/test/calibrator/procedure/start", params={"resume": True})
+    assert resume_response.status_code == 200
+
+    # Verify resumed state matches saved state
+    assert resume_response.json() == saved_state
+
+
 def test_dispatch_temperature_calibration_calculate_fit_action():
     temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
