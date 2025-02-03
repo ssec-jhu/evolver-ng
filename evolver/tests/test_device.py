@@ -125,25 +125,25 @@ class TestEvolver:
 
     @pytest.mark.parametrize("enable_control", [True, False])
     def test_controller_control_in_loop_if_configured(self, demo_evolver, enable_control):
-        assert demo_evolver.active_controllers[0].ncalls == 0
+        assert demo_evolver.enabled_controllers[0].ncalls == 0
         demo_evolver.enable_control = enable_control
         demo_evolver.loop_once()
-        assert demo_evolver.active_controllers[0].ncalls == (1 if enable_control else 0)
+        assert demo_evolver.enabled_controllers[0].ncalls == (1 if enable_control else 0)
 
-    def test_experiment_enable_switch_and_active_controllers(self, demo_evolver):
+    def test_experiment_enable_switch_and_enabled_controllers(self, demo_evolver):
         # We don't otherwise make any guarantees of the order of experiments,
         # however we do expect the deserialization and python dict to preserve
         # order, so "testA" + "testB" is at least somewhat intentional (as
         # opposed to using sorted)
         assert (
-            demo_evolver.active_controllers
+            demo_evolver.enabled_controllers
             == demo_evolver.experiments["testA"].controllers + demo_evolver.experiments["testB"].controllers
         )
         demo_evolver.loop_once()
         assert demo_evolver.experiments["testA"].controllers[0].ncalls == 1
         assert demo_evolver.experiments["testB"].controllers[0].ncalls == 1
         demo_evolver.experiments["testA"].enabled = False
-        assert demo_evolver.active_controllers == demo_evolver.experiments["testB"].controllers
+        assert demo_evolver.enabled_controllers == demo_evolver.experiments["testB"].controllers
         demo_evolver.loop_once()
         assert demo_evolver.experiments["testA"].controllers[0].ncalls == 1
         assert demo_evolver.experiments["testB"].controllers[0].ncalls == 2

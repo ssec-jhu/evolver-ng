@@ -98,7 +98,7 @@ class Evolver(BaseInterface):
         return {k: v for k, v in self.hardware.items() if isinstance(v, EffectorDriver)}
 
     @property
-    def active_controllers(self):
+    def enabled_controllers(self):
         return [c for exp in self.experiments.values() for c in exp.controllers if exp.enabled]
 
     @property
@@ -154,7 +154,7 @@ class Evolver(BaseInterface):
         return read_errors
 
     def evaluate_controllers(self):
-        return [self._loop_exception_wrapper(c.run, f"updating controller {c}") for c in self.active_controllers]
+        return [self._loop_exception_wrapper(c.run, f"updating controller {c}") for c in self.enabled_controllers]
 
     def commit_proposals(self):
         return [
