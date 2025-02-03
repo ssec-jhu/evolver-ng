@@ -185,9 +185,9 @@ class TestApp:
         ("query_params", "body"),
         [
             ({}, {}),
-            ({"n_max": 1},{}),
+            ({"n_max": 1}, {}),
             ({}, {"names": ["nonexistent"]}),
-            ({ "t_start": 0, "t_stop": 1, "n_max": 1}, {"names": ["test"]}),
+            ({"t_start": 0, "t_stop": 1, "n_max": 1}, {"names": ["test"]}),
             ({}, {"names": ["test"], "vials": [0, 1]}),
             ({}, {"names": ["test"], "properties": ["value"]}),
         ],
@@ -282,23 +282,23 @@ class TestApp:
             history=InMemoryHistoryServer(),
             experiments={
                 "test": Experiment(controllers=[ConfigDescriptor(classinfo="evolver.controller.demo.NoOpController")])
-            }
+            },
         )
         app.state.evolver.loop_once()
         response = app_client.get("/experiment/test")
         assert response.status_code == 200
         assert response.json()["config"] == {
             "controllers": [
-                    {"classinfo": "evolver.controller.demo.NoOpController", "config": {"name": "NoOpController"}}
-                ],
-                "enabled": True,
-                "name": None,
-            }
+                {"classinfo": "evolver.controller.demo.NoOpController", "config": {"name": "NoOpController"}}
+            ],
+            "enabled": True,
+            "name": None,
+        }
         assert len(response.json()["logs"]["data"]["NoOpController"]) == 1
 
     def test_experiment_log_endpoint(self, app_client):
         app.state.evolver = Evolver(
-            history= InMemoryHistoryServer(),
+            history=InMemoryHistoryServer(),
             experiments={
                 "test": Experiment(
                     controllers=[
@@ -310,7 +310,7 @@ class TestApp:
                         ),
                     ]
                 )
-            }
+            },
         )
         response = app_client.get("/experiment/test/logs")
         assert response.status_code == 200
