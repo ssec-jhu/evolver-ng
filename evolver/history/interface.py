@@ -50,8 +50,6 @@ class History(BaseInterface):
         according to the input parameters, as listed below.
 
         Args:
-            name: The name of hardware component to retrieve data for. If None,
-                return all data.
             names: A list of names of hardware components to retrieve data for.
                 Should be Mutually exclusive with the name parameter, where the
                 name parameter would take precedence if supplied.

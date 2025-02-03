@@ -29,34 +29,41 @@ def test_history_server(history_server, sensor):
     t0 = time.time()
     sensor_read = sensor.read()
     history_server.put("test", "sensor", sensor_read[0], vial=0)
-    result = history_server.get(name="test")
+    result = history_server.get(names=["test"])
     assert "test" in result.data
     assert result.data["test"][0].timestamp >= t0
     assert result.data["test"][0].data == sensor_read[0].model_dump()
-    result = history_server.get(name="test", t_stop=t0)
+    result = history_server.get(names=["test"], t_stop=t0)
     assert result == HistoryResult(data={})
     # Add another record in order to test t_start parameter assuring we skip the first record
     t1 = time.time()
     history_server.put("test", "sensor", sensor_read[1], vial=1)
-    result = history_server.get(name="test")
-    # first sanity check that we have populated multiple records
+    history_server.put("test2", "sensor", sensor_read[1], vial=2)
+    result = history_server.get(names=["test"])
+    # first sanity check that we have populated multiple records and that they
+    # are not polluted by name
     assert len(result.data["test"]) == 2
-    result = history_server.get(name="test", kinds=["sensor"], t_start=t1)
+    # now we should have an extra record, namely one from test2
+    result = history_server.get(names=["test", "test2"])
+    assert len(result.data["test"]) == 2
+    assert len(result.data["test2"]) == 1
+    # times query
+    result = history_server.get(names=["test"], kinds=["sensor"], t_start=t1)
     assert len(result.data["test"]) == 1
     assert result.data["test"][0].timestamp >= t1
     # filter by vial and property
-    result = history_server.get(name="test", vials=[1], properties=["value"])
+    result = history_server.get(names=["test"], vials=[1], properties=["value"])
     assert result.data["test"][0].data == {"value": sensor_read[1].value}
     # filter by vial and property, but no match
-    result = history_server.get(name="test", vials=[100])
+    result = history_server.get(names=["test"], vials=[100])
     assert result == HistoryResult(data={})
     # kinds we don't have
-    assert history_server.get(name="test", kinds=["nonexistent"]) == HistoryResult(data={})
+    assert history_server.get(names=["test"], kinds=["nonexistent"]) == HistoryResult(data={})
 
 
 def test_history_server_nonexistent_empty_result(history_server, sensor):
     history_server.put("test", "sensor", sensor.read())
-    assert history_server.get(name="nonexistent") == HistoryResult(data={})
+    assert history_server.get(names=["nonexistent"]) == HistoryResult(data={})
 
 
 def test_history_server_empty_history_empty_result(history_server):
@@ -65,7 +72,7 @@ def test_history_server_empty_history_empty_result(history_server):
 
 def test_history_server_non_json_ok(history_server):
     history_server.put("test", "sensor", "not json")
-    result = history_server.get(name="test")
+    result = history_server.get(names=["test"])
     assert result.data["test"][0].data == "not json"
 
 
@@ -76,7 +83,7 @@ def test_history_resume_history(sensor):
     # partition_seconds to 0 ensures we can't cycle during test)
     history = HistoryServer(partition_seconds=0)
     history.put("test", "sensor", sensor.read())
-    assert len(history.get(name="test").data["test"]) == 2
+    assert len(history.get(names=["test"]).data["test"]) == 2
 
 
 def test_history_server_experiment_distinction(sensor):

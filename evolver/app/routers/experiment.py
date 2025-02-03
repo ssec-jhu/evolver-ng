@@ -21,6 +21,6 @@ def get_experiment_logs(request: Request, experiment_name: str):
 @router.get("/{experiment_name}")
 def get_experiment_overview(request: Request, experiment_name: str):
     return {
-        "spec": request.app.state.evolver.experiments[experiment_name],
+        "config": request.app.state.evolver.experiments[experiment_name],
         "logs": get_experiment_logs(request, experiment_name),
     }

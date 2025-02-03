@@ -106,7 +106,6 @@ class HistoryServer(History):
 
     def get(
         self,
-        name: str = None,
         names: list[str] = None,
         kinds: list[str] = None,
         t_start: float = None,
@@ -136,9 +135,7 @@ class HistoryServer(History):
         if vials:
             vials_filter = ",".join([str(v) for v in vials])
             res = res.filter(f"vial in ({vials_filter})")
-        if name:
-            res = res.filter(f"name='{name}'")
-        elif names:
+        if names:
             names_filter = ",".join([f"'{n}'" for n in names])
             res = res.filter(f"name in ({names_filter})")
         if t_start:

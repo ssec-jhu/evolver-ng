@@ -19,7 +19,6 @@ class InMemoryHistoryServer(History):
 
     def get(
         self,
-        name: str = None,
         names: list[str] = None,
         kinds: list[str] = None,
         t_start: float = None,
@@ -29,9 +28,7 @@ class InMemoryHistoryServer(History):
         n_max: int = None,
     ):
         query_names = self.history.keys()
-        if name is not None:
-            query_names = [n for n in query_names if n == name]
-        elif names is not None:
+        if names is not None:
             query_names = [n for n in query_names if n in names]
         data = {}
         for n in query_names:
