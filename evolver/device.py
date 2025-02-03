@@ -15,6 +15,7 @@ from evolver.logutils import EVENT, LogHistoryCaptureHandler
 from evolver.serial import EvolverSerialUART
 from evolver.settings import settings
 
+
 DEFAULT_SERIAL = EvolverSerialUART
 DEFAULT_HISTORY = HistoryServer
 
