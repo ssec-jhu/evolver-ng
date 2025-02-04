@@ -20,7 +20,7 @@ from evolver.settings import app_settings, settings
 from evolver.types import ImportString
 
 # Import routers
-from .routers import hardware
+from .routers import experiment, hardware
 
 # Setup logging.
 evolver.util.setup_logging()
@@ -61,6 +61,7 @@ async def validation_error_handler(_, exc):
 
 
 app.include_router(hardware.router)
+app.include_router(experiment.router)
 
 
 @app.get("/", operation_id="describe")
@@ -93,7 +94,7 @@ async def get_schema(classinfo: ImportString | None = evolver.util.fully_qualifi
 
 @app.post("/history/", operation_id="history")
 async def get_history(
-    name: str = None,
+    names: list[str] = None,
     kinds: list[str] | None = ["sensor"],
     t_start: float = None,
     t_stop: float = None,
@@ -102,7 +103,7 @@ async def get_history(
     n_max: int = None,
 ) -> HistoryResult:
     return app.state.evolver.history.get(
-        name=name, kinds=kinds, t_start=t_start, t_stop=t_stop, vials=vials, properties=properties, n_max=n_max
+        names=names, kinds=kinds, t_start=t_start, t_stop=t_stop, vials=vials, properties=properties, n_max=n_max
     )
 
 

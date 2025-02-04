@@ -7,7 +7,7 @@ import evolver.base
 from evolver.calibration.interface import Calibrator, Status
 from evolver.connection.interface import Connection
 from evolver.controller.interface import Controller
-from evolver.device import DEFAULT_HISTORY, DEFAULT_SERIAL, Evolver
+from evolver.device import DEFAULT_HISTORY, DEFAULT_SERIAL, Evolver, Experiment
 from evolver.hardware.demo import NoOpEffectorDriver, NoOpSensorDriver
 from evolver.hardware.interface import EffectorDriver, HardwareDriver, SensorDriver
 from evolver.history.interface import History
@@ -25,9 +25,18 @@ def conf_with_driver():
             },
             "testeffector": {"classinfo": "evolver.hardware.demo.NoOpEffectorDriver", "config": {}},
         },
-        "controllers": [
-            {"classinfo": "evolver.controller.demo.NoOpController", "config": {}},
-        ],
+        "experiments": {
+            "testA": {
+                "controllers": [
+                    {"classinfo": "evolver.controller.demo.NoOpController", "config": {}},
+                ]
+            },
+            "testB": {
+                "controllers": [
+                    {"classinfo": "evolver.controller.demo.NoOpController", "config": {}},
+                ]
+            },
+        },
         "serial": {"classinfo": "evolver.serial.EvolverSerialUARTEmulator"},
         "history": {"classinfo": "evolver.history.demo.InMemoryHistoryServer"},
     }
@@ -62,13 +71,13 @@ class TestEvolver:
         assert isinstance(obj.serial, Connection)
         assert isinstance(obj.hardware, dict)
         assert isinstance(obj.vials, list)
-        assert isinstance(obj.controllers, list)
+        assert isinstance(obj.experiments, dict)
 
         for v in obj.hardware.values():
             assert isinstance(v, HardwareDriver)
 
-        for item in obj.controllers:
-            assert isinstance(item, Controller)
+        for item in obj.experiments.values():
+            assert isinstance(item, Experiment)
 
     def test_descriptor_serialization(self, conf_with_driver):
         obj = Evolver.create(conf_with_driver)
@@ -116,17 +125,35 @@ class TestEvolver:
 
     @pytest.mark.parametrize("enable_control", [True, False])
     def test_controller_control_in_loop_if_configured(self, demo_evolver, enable_control):
-        assert demo_evolver.controllers[0].ncalls == 0
+        assert demo_evolver.enabled_controllers[0].ncalls == 0
         demo_evolver.enable_control = enable_control
         demo_evolver.loop_once()
-        assert demo_evolver.controllers[0].ncalls == (1 if enable_control else 0)
+        assert demo_evolver.enabled_controllers[0].ncalls == (1 if enable_control else 0)
+
+    def test_experiment_enable_switch_and_enabled_controllers(self, demo_evolver):
+        # We don't otherwise make any guarantees of the order of experiments,
+        # however we do expect the deserialization and python dict to preserve
+        # order, so "testA" + "testB" is at least somewhat intentional (as
+        # opposed to using sorted)
+        assert (
+            demo_evolver.enabled_controllers
+            == demo_evolver.experiments["testA"].controllers + demo_evolver.experiments["testB"].controllers
+        )
+        demo_evolver.loop_once()
+        assert demo_evolver.experiments["testA"].controllers[0].ncalls == 1
+        assert demo_evolver.experiments["testB"].controllers[0].ncalls == 1
+        demo_evolver.experiments["testA"].enabled = False
+        assert demo_evolver.enabled_controllers == demo_evolver.experiments["testB"].controllers
+        demo_evolver.loop_once()
+        assert demo_evolver.experiments["testA"].controllers[0].ncalls == 1
+        assert demo_evolver.experiments["testB"].controllers[0].ncalls == 2
 
     @pytest.mark.parametrize("spec", [SensorDriver, EffectorDriver, Controller])
     def test_loop_exception_option(self, demo_evolver, spec):
         demo_evolver.raise_loop_exceptions = True
         raises_mock_component = MagicMock(spec=spec)
         if spec == Controller:
-            demo_evolver.controllers = [raises_mock_component]
+            demo_evolver.experiments = {"test": MagicMock(enabled=True, controllers=[raises_mock_component])}
             raises_mock_component.run = MagicMock(side_effect=Exception("test control"))
         else:
             demo_evolver.hardware["testsensor"] = raises_mock_component
@@ -141,7 +168,7 @@ class TestEvolver:
         demo_evolver.skip_control_on_read_failure = True
         demo_evolver.hardware["testsensor"].read = MagicMock(side_effect=Exception("test read"))
         mock_controller = MagicMock(spec=Controller)
-        demo_evolver.controllers.append(mock_controller)
+        demo_evolver.experiments = {"test": MagicMock(controllers=[mock_controller])}
         demo_evolver.loop_once()
         mock_controller.run.assert_not_called()
         demo_evolver.skip_control_on_read_failure = False
@@ -152,7 +179,7 @@ class TestEvolver:
         demo_evolver.abort_on_control_errors = True
         mock_controller = MagicMock(spec=Controller)
         mock_controller.run = MagicMock(side_effect=Exception("test control"))
-        demo_evolver.controllers.append(mock_controller)
+        demo_evolver.experiments = {"test": MagicMock(controllers=[mock_controller])}
         mock_hardware = MagicMock(spec=EffectorDriver)
         demo_evolver.hardware["testsensor"] = mock_hardware
         assert demo_evolver.enable_control
