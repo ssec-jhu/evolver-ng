@@ -1,8 +1,8 @@
-fastapi==0.115.6
-numpy==2.2.1
+fastapi==0.115.8
+numpy==2.2.2
 duckdb==1.1.3
 pydantic==2.7.4
 pydantic-settings==2.7.1
 pyserial==3.5
 uvicorn[standard]==0.34.0
-scipy==1.15.0
+scipy==1.15.1
