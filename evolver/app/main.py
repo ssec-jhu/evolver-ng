@@ -12,15 +12,13 @@ from evolver import __project__, __version__
 from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError, OperationNotSupportedError
 from evolver.app.html_routes import html_app
 from evolver.app.models import EventInfo, SchemaResponse
+from evolver.app.routers import experiment, hardware
 from evolver.base import require_all_fields
 from evolver.device import Evolver
 from evolver.history.interface import HistoryResult
 from evolver.logutils import EVENT, LogInfo
 from evolver.settings import app_settings, settings
 from evolver.types import ImportString
-
-# Import routers
-from .routers import experiment, hardware
 
 # Setup logging.
 evolver.util.setup_logging()
