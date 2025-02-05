@@ -84,7 +84,7 @@ class GenericPump(EffectorDriver):
                 hz_a = [float(input.volume)] * 3
                 for solenoid, hz in enumerate(hz_a):
                     # solenoid is 1-indexed on hardware
-                    cmd[pump * 3 + solenoid] = f"{hz}|{pump}|{solenoid+1}"
+                    cmd[pump * 3 + solenoid] = f"{hz}|{pump}|{solenoid + 1}"
             elif any(pump - i < 3 for i in self.ipp_pumps):
                 raise ValueError(f"pump slot {pump} reserved for IPP pump, cannot address as standard")
             else:
@@ -99,7 +99,7 @@ class GenericPump(EffectorDriver):
         cmd = [b"0"] * self.slots
         for pump in self.ipp_pumps:
             for solenoid in range(3):
-                cmd[pump * 3 + solenoid] = f"0|{pump}|{solenoid+1}".encode()
+                cmd[pump * 3 + solenoid] = f"0|{pump}|{solenoid + 1}".encode()
         with self.serial as comm:
             comm.communicate(SerialData(addr=self.addr, data=cmd))
 
