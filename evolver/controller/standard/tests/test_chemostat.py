@@ -77,12 +77,16 @@ def test_chemostat_standard_operation(mock_hardware, window, min_od, stir_rate):
 
 def test_evolver_based_setup():  # test to ensure evolver pluggability via config/loop
     config = {
-        "controllers": [
-            {
-                "classinfo": "evolver.controller.standard.Chemostat",
-                "config": {"od_sensor": "od", "pump": "pump", "stirrer": "stirrer", "vials": [0, 1]},
+        "experiments": {
+            "test": {
+                "controllers": [
+                    {
+                        "classinfo": "evolver.controller.standard.Chemostat",
+                        "config": {"od_sensor": "od", "pump": "pump", "stirrer": "stirrer", "vials": [0, 1]},
+                    }
+                ],
             }
-        ],
+        },
         "raise_loop_exceptions": True,
     }
     evolver = Evolver.create(config)

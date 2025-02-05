@@ -3,7 +3,7 @@ import time
 from collections import defaultdict
 from math import prod
 
-from pydantic import Field, ValidationInfo, field_validator
+from pydantic import Field, ValidationInfo, field_serializer, field_validator
 
 from evolver.base import BaseInterface, ConfigDescriptor
 from evolver.connection.interface import Connection
@@ -19,10 +19,23 @@ DEFAULT_SERIAL = EvolverSerialUART
 DEFAULT_HISTORY = HistoryServer
 
 
+class Experiment(BaseInterface.Config):
+    enabled: bool = True
+    controllers: list[ConfigDescriptor | Controller] = []
+
+    # this seemed to have been required for the tests of config symmetry.
+    # Without it there is pydantic error about unkown type (the underlying
+    # Controller class) - so seemed to be kind of bypassing the evolver
+    # BaseModel hookups?
+    @field_serializer("controllers")
+    def serialize_controllers(self, data):
+        return [ConfigDescriptor.model_validate(c) for c in data]
+
+
 class Evolver(BaseInterface):
     class Config(BaseInterface.Config):
         name: str = "Evolver"
-        experiment: str = "unspecified"
+        namespace: str = "unspecified"
         vial_layout: list[int] = Field(
             default=settings.DEFAULT_VIAL_LAYOUT,
             description="The layout of the vials in 2 or 3 dimensions. Always left-to-right bottom-top-top order.",
@@ -31,7 +44,7 @@ class Evolver(BaseInterface):
         )
         vials: list = list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
         hardware: dict[str, ConfigDescriptor | HardwareDriver] = {}
-        controllers: list[ConfigDescriptor | Controller] = []
+        experiments: dict[str, Experiment] = {}
         serial: ConfigDescriptor | Connection = ConfigDescriptor.model_validate(DEFAULT_SERIAL)
         history: ConfigDescriptor | History = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
         enable_control: bool = True
@@ -53,6 +66,14 @@ class Evolver(BaseInterface):
     def __init__(self, *args, **kwargs):
         self.last_read = defaultdict(lambda: int(-1))
         super().__init__(*args, evolver=self, **kwargs)
+        # We have to turn experiment controllers passed in as configdescriptors
+        # to objects while passing in self so controllers can consume hardware
+        # and read from history, etc.
+        for experiment in self.experiments.values():
+            for i in range(len(experiment.controllers)):
+                elem = experiment.controllers[i]
+                if isinstance(elem, ConfigDescriptor):
+                    experiment.controllers[i] = elem.create(non_config_kwargs={"evolver": self})
         self._setup_log_capture()
 
     def _setup_log_capture(self):
@@ -75,6 +96,10 @@ class Evolver(BaseInterface):
     @property
     def effectors(self):
         return {k: v for k, v in self.hardware.items() if isinstance(v, EffectorDriver)}
+
+    @property
+    def enabled_controllers(self):
+        return [c for exp in self.experiments.values() for c in exp.controllers if exp.enabled]
 
     @property
     def calibration_status(self):
@@ -129,7 +154,7 @@ class Evolver(BaseInterface):
         return read_errors
 
     def evaluate_controllers(self):
-        return [self._loop_exception_wrapper(c.run, f"updating controller {c}") for c in self.controllers]
+        return [self._loop_exception_wrapper(c.run, f"updating controller {c}") for c in self.enabled_controllers]
 
     def commit_proposals(self):
         return [

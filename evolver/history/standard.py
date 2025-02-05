@@ -21,7 +21,7 @@ class HistoryServer(History):
 
     class Config(History.Config):
         name: str = "HistoryServer"
-        experiment: str | None = None
+        namespace: str | None = None
         partition_seconds: int = 3600
         buffer_partitions: int = 3
         default_window: int = 3600
@@ -30,8 +30,8 @@ class HistoryServer(History):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.history = defaultdict(list)
-        self._experiment = self.experiment or getattr(kwargs.get("evolver", None), "experiment", "unspecified")
-        self.history_dir = Path(settings.EXPERIMENT_FILE_STORAGE_PATH) / self._experiment / "history"
+        self._namespace = self.namespace or getattr(kwargs.get("evolver", None), "namespace", "unspecified")
+        self.history_dir = Path(settings.EXPERIMENT_FILE_STORAGE_PATH) / self._namespace / "history"
         self.json_hist_reader = f"""
             read_json('{self.history_dir}/*/history.json',
             format='newline_delimited',
@@ -106,7 +106,7 @@ class HistoryServer(History):
 
     def get(
         self,
-        name: str = None,
+        names: list[str] = None,
         kinds: list[str] = None,
         t_start: float = None,
         t_stop: float = None,
@@ -135,8 +135,9 @@ class HistoryServer(History):
         if vials:
             vials_filter = ",".join([str(v) for v in vials])
             res = res.filter(f"vial in ({vials_filter})")
-        if name:
-            res = res.filter(f"name='{name}'")
+        if names:
+            names_filter = ",".join([f"'{n}'" for n in names])
+            res = res.filter(f"name in ({names_filter})")
         if t_start:
             start_part = self._get_part(t_start)
             res = res.filter(f"time_part>={start_part}").filter(f"timestamp>={t_start}")

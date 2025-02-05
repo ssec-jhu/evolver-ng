@@ -1,16 +1,11 @@
 from abc import ABC, abstractmethod
-from functools import wraps
 from typing import Dict, Optional
 
 from pydantic import BaseModel
 
 
 class CalibrationAction(ABC):
-    def __init__(
-        self,
-        name: str,
-        description: str,
-    ):
+    def __init__(self, name: str, description: str, hardware):
         """
         Initialize a CalibrationAction.
 
@@ -20,9 +15,11 @@ class CalibrationAction(ABC):
                 Must be unique within a procedure.
             description (str): A short description of the action's purpose.
                 Useful for documentation or display of instructions to the person performing a calibration procedure action.
+            hardware (HardwareDriver): The hardware that the action will interact with, especially Hardware.CalibrationData
         """
         self.name = name
         self.description = description
+        self.hardware = hardware
 
     class FormModel(BaseModel):
         """
@@ -58,19 +55,12 @@ class CalibrationAction(ABC):
         pass
 
 
-def save(action):
-    @wraps(action)
-    def wrapper(self, state: Dict, *args, **kwargs):
-        updated_state = action(self, state, *args, **kwargs)
-        self.hardware.calibrator.calibration_data.measured = updated_state
-        return updated_state
-
-    return wrapper
-
-
 class DisplayInstructionAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def execute(self, state: Dict, payload: Optional[FormModel] = None):
         return state.copy()

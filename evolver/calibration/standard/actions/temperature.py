@@ -2,7 +2,7 @@ from typing import Dict, Optional
 
 from pydantic import BaseModel, Field
 
-from evolver.calibration.action import CalibrationAction, save
+from evolver.calibration.action import CalibrationAction
 
 
 class ReferenceValueAction(CalibrationAction):
@@ -14,9 +14,8 @@ class ReferenceValueAction(CalibrationAction):
 
         temperature: float = Field(..., title="Temperature", description="Temperature in degrees Celsius")
 
-    def __init__(self, hardware, vial_idx: int, *args, **kwargs):
+    def __init__(self, vial_idx: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.hardware = hardware
         self.vial_idx = vial_idx
 
     def execute(self, state: Dict, payload: Optional[FormModel] = None):
@@ -29,9 +28,8 @@ class RawValueAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
-    def __init__(self, hardware, vial_idx: int, *args, **kwargs):
+    def __init__(self, vial_idx: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.hardware = hardware
         self.vial_idx = vial_idx
 
     def execute(self, state, payload: Optional[FormModel] = None):
@@ -45,16 +43,15 @@ class CalculateFitAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
-    def __init__(self, hardware, vial_idx: int, *args, **kwargs):
+    def __init__(self, vial_idx: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.hardware = hardware
         self.vial_idx = vial_idx
 
-    @save  # This action, when dispatched, will save the procedure state to the Calibrator.CalibrationData class
     def execute(self, state, payload: Optional[FormModel] = None):
         state.setdefault(self.vial_idx, {"reference": [], "raw": []})
         vial_data = state[self.vial_idx]
         # Side effect: refit the output transformer with the new data, store refit in another class.
         # The result of the refit is stored in the output_transformer, accessible via hardware.calibrator.output_transformer
+        # TODO: mak fit a method of the procedure (like undo and save), not the action, so that the procedure actions are all idempotent.
         self.hardware.calibrator.output_transformer[self.vial_idx].refit(vial_data["reference"], vial_data["raw"])
         return state
