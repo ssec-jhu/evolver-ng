@@ -12,7 +12,7 @@ class CalibrationStateModel(BaseModel):
         started (bool): A flag to indicate if the calibration procedure has been initialized, used by the front end to determine procedure controls to display.
         completed_actions (List[str]): A list of actions that have been completed during the calibration procedure.
         history: A list of previous states of the calibration procedure. Used to undo actions.
-        measured (Dict[str, Any]): A dictionary of data collected by the calibration procedure. This data is used by the Transformer class to fit a model to the data. For example, a temperature calibrator might collect raw and reference temperature data for each vial.
+        measured (Dict[Any, Any]): A dictionary of data collected by the calibration procedure. This data is used by the Transformer class to fit a model to the data. For example, a temperature calibrator might collect raw and reference temperature data for each vial.
     """
 
     class Config:
