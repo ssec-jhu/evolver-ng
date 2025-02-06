@@ -25,14 +25,10 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
         *args,
         **kwargs,
     ):
-        procedure_state = self.calibration_data.procedure_state
-        if resume and procedure_state == {}:
-            procedure_state = None
-        else:
-            # resume procedure state from the data stored at the calibrator.dir/calibrator.calibration_file location defined in config
-            procedure_state = procedure_state.model_dump() if resume else None
-
-        calibration_procedure = CalibrationProcedure(state=procedure_state, hardware=selected_hardware)
+        procedure_state = self.calibration_data.procedure_state if resume else None
+        calibration_procedure = CalibrationProcedure(
+            state=procedure_state.model_dump() if procedure_state else None, hardware=selected_hardware
+        )
 
         calibration_procedure.add_action(
             DisplayInstructionAction(
