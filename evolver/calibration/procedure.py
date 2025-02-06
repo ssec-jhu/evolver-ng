@@ -1,7 +1,6 @@
 from abc import ABC
 from typing import Any, Dict
 
-
 from evolver.base import BaseInterface
 from evolver.calibration.action import CalibrationAction
 from evolver.calibration.state import CalibrationStateModel
