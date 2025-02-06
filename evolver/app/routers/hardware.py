@@ -78,8 +78,11 @@ def start_calibration_procedure(
     request: Request,
     resume: bool = Query(True),
 ):
-    # TODO: if resume is false, require a file name to save the procedure state to. and update the calibration_file attribute in the Calibrator config accordingly.
-    # Otherwise, starting a procedure with resume to false risks destroying the state of the procedure (if any in the existing calibration_file).
+    # TODO: flesh out the flow if resume is false.
+    # Currently - starting a procedure with resume to false risks destroying the state of the procedure (if any in the existing calibration_file).
+    # One solution - when resume param is false require another param - "filename" to save the procedure state to and update the calibration_file attribute in the Calibrator config accordingly.
+    # Alternative solution - if resume is false, add a warning that extant procedure state if any will be lost.
+    # This touches on the issue described here: https://github.com/ssec-jhu/evolver-ui/issues/28
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
