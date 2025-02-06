@@ -93,7 +93,7 @@ def start_calibration_procedure(
         resume=resume,
     )
 
-    return {**calibrator.calibration_procedure.get_state(), "started": True}
+    return calibrator.calibration_procedure.get_state()
 
 
 # Get available actions for the calibration procedure
@@ -116,7 +116,7 @@ def get_calibrator_actions(hardware_name: str, request: Request):
         }
         for action in calibration_procedure.get_actions()
     ]
-    return {"actions": actions, "started": True}
+    return {"actions": actions, "started": calibration_procedure.get_state()["started"]}
 
 
 # Dispatch an action to the calibration procedure
@@ -140,7 +140,7 @@ def dispatch_calibrator_action(request: Request, hardware_name: str = Path(...),
 
     payload = action.get("payload", {})
 
-    return {**calibration_procedure.dispatch(action_to_dispatch, payload), "started": True}
+    return calibration_procedure.dispatch(action_to_dispatch, payload)
 
 
 # Get the current state of the calibration procedure
@@ -153,7 +153,7 @@ def get_calibrator_state(hardware_name: str, request: Request):
     if not (calibration_procedure := getattr(calibrator, "calibration_procedure", None)):
         return {"started": False}
 
-    return {**calibration_procedure.get_state(), "started": True}
+    return calibration_procedure.get_state()
 
 
 # Undo the last calibration procedure action, reverting the state to the previous state
@@ -167,7 +167,7 @@ def undo_calibration_procedure_action(hardware_name: str, request: Request):
     if not (calibration_procedure := getattr(calibrator, "calibration_procedure", None)):
         return {"started": False}
 
-    return {**calibration_procedure.undo(), "started": True}
+    return calibration_procedure.undo()
 
 
 @router.post("/{hardware_name}/calibrator/procedure/save")
@@ -184,7 +184,7 @@ def save_calibration_procedure(hardware_name: str, request: Request):
     except Exception:
         raise CalibratorProcedureSaveError
 
-    return {**calibration_procedure.get_state(), "started": True}
+    return calibration_procedure.get_state()
 
 
 # Get the calibrator's CalibrationData, representing the state from the procedure that has been saved

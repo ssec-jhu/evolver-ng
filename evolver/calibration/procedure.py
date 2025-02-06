@@ -15,6 +15,7 @@ class CalibrationStateModel(BaseModel):
     The shape of this additional data, sometimes referred to a "measured" is not fixed and therefore is not included in the model here.
 
     Attributes:
+        started (bool): A flag to indicate if the calibration procedure has been initialized, used by the front end to determine procedure controls to display.
         completed_actions (List[str]): A list of actions that have been completed during the calibration procedure.
         history: A list of previous states of the calibration procedure. Used to undo actions.
     """
@@ -24,6 +25,7 @@ class CalibrationStateModel(BaseModel):
 
     completed_actions: List[str] = Field(default_factory=list)
     history: List["CalibrationStateModel"] = Field(default_factory=list)
+    started: bool = False
 
 
 class CalibrationProcedure(BaseInterface, ABC):
@@ -54,6 +56,7 @@ class CalibrationProcedure(BaseInterface, ABC):
         super().__init__(*args, **kwargs)
         self.actions = []
         self.state = CalibrationStateModel(**(state or {})).model_dump()
+        self.state["started"] = True
         self.hardware = hardware
 
     def add_action(self, action: CalibrationAction):

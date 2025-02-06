@@ -115,7 +115,7 @@ def test_dispatch_temperature_calibration_raw_value_action():
     assert raw_dispatch_response.json() == {
         "0": {"raw": [1.23], "reference": []},
         "completed_actions": ["read_vial_0_raw_output"],
-        "history": [{"completed_actions": [], "history": []}],
+        "history": [{"completed_actions": [], "history": [], "started": True}],
         "started": True,
     }
 
@@ -171,7 +171,7 @@ def test_calibration_procedure_save(tmp_path):
     assert save_response.json() == {
         "0": {"raw": [1.23], "reference": []},
         "completed_actions": ["read_vial_0_raw_output"],
-        "history": [{"completed_actions": [], "history": []}],
+        "history": [{"completed_actions": [], "history": [], "started": True}],
         "started": True,
     }
 
@@ -269,23 +269,27 @@ def test_get_calibration_data(tmp_path):
         "0": {"raw": [1.23], "reference": [25.0]},
         "completed_actions": ["measure_vial_0_temperature", "read_vial_0_raw_output", "calculate_vial_0_fit"],
         "history": [
-            {"completed_actions": [], "history": []},
+            {"completed_actions": [], "history": [], "started": True},
             {
                 "0": {"raw": [], "reference": [25.0]},
                 "completed_actions": ["measure_vial_0_temperature"],
-                "history": [{"completed_actions": [], "history": []}],
+                "history": [{"completed_actions": [], "history": [], "started": True}],
+                "started": True,
             },
             {
                 "0": {"raw": [1.23], "reference": [25.0]},
                 "completed_actions": ["measure_vial_0_temperature", "read_vial_0_raw_output"],
                 "history": [
-                    {"completed_actions": [], "history": []},
+                    {"completed_actions": [], "history": [], "started": True},
                     {
                         "0": {"raw": [], "reference": [25.0]},
                         "completed_actions": ["measure_vial_0_temperature"],
-                        "history": [{"completed_actions": [], "history": []}],
+                        "history": [{"completed_actions": [], "history": [], "started": True}],
+                        "started": True,
                     },
                 ],
+                "started": True,
             },
         ],
+        "started": True,
     }
