@@ -116,7 +116,7 @@ def get_calibrator_actions(hardware_name: str, request: Request):
         }
         for action in calibration_procedure.get_actions()
     ]
-    return {"actions": actions, "started": calibration_procedure.get_state()["started"]}
+    return {"actions": actions, "started": calibration_procedure.get_state().started}
 
 
 # Dispatch an action to the calibration procedure

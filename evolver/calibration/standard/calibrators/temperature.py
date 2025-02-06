@@ -1,11 +1,12 @@
 from evolver.calibration.action import DisplayInstructionAction
 from evolver.calibration.interface import Calibrator, IndependentVialBasedCalibrator
-from evolver.calibration.procedure import CalibrationProcedure, CalibrationStateModel
+from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
     CalculateFitAction,
     RawValueAction,
     ReferenceValueAction,
 )
+from evolver.calibration.state import CalibrationStateModel
 from evolver.hardware.interface import HardwareDriver
 
 

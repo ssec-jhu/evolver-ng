@@ -1,8 +1,7 @@
-from typing import Dict, Optional
-
+from typing import Optional
 from pydantic import BaseModel, Field
-
 from evolver.calibration.action import CalibrationAction
+from evolver.calibration.state import CalibrationStateModel
 
 
 class ReferenceValueAction(CalibrationAction):
@@ -13,10 +12,12 @@ class ReferenceValueAction(CalibrationAction):
         super().__init__(*args, **kwargs)
         self.vial_idx = vial_idx
 
-    def execute(self, state: Dict, payload: Optional[FormModel] = None):
-        state["measured"] = state.get("measured", {})
-        state["measured"].setdefault(self.vial_idx, {"reference": [], "raw": []})
-        state["measured"][self.vial_idx]["reference"].append(payload.temperature)
+    def execute(self, state: CalibrationStateModel, payload: Optional[FormModel] = None):
+        if not state.measured:
+            state.measured = {}
+        if self.vial_idx not in state.measured:
+            state.measured[self.vial_idx] = {"reference": [], "raw": []}
+        state.measured[self.vial_idx]["reference"].append(payload.temperature)
         return state
 
 
@@ -28,11 +29,13 @@ class RawValueAction(CalibrationAction):
         super().__init__(*args, **kwargs)
         self.vial_idx = vial_idx
 
-    def execute(self, state, payload: Optional[FormModel] = None):
+    def execute(self, state: CalibrationStateModel, payload: Optional[FormModel] = None):
         sensor_value = self.hardware.read()[self.vial_idx]
-        state["measured"] = state.get("measured", {})
-        state["measured"].setdefault(self.vial_idx, {"reference": [], "raw": []})
-        state["measured"][self.vial_idx]["raw"].append(sensor_value)
+        if not state.measured:
+            state.measured = {}
+        if self.vial_idx not in state.measured:
+            state.measured[self.vial_idx] = {"reference": [], "raw": []}
+        state.measured[self.vial_idx]["raw"].append(sensor_value)
         return state
 
 
@@ -44,7 +47,7 @@ class CalculateFitAction(CalibrationAction):
         super().__init__(*args, **kwargs)
         self.vial_idx = vial_idx
 
-    def execute(self, state, payload: Optional[FormModel] = None):
-        vial_data = state["measured"][self.vial_idx]
+    def execute(self, state: CalibrationStateModel, payload: Optional[FormModel] = None):
+        vial_data = state.measured[self.vial_idx]
         self.hardware.calibrator.output_transformer[self.vial_idx].refit(vial_data["reference"], vial_data["raw"])
         return state
