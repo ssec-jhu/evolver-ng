@@ -82,16 +82,13 @@ class CalibrationProcedure(BaseInterface, ABC):
         """
         Save the current state of the calibration procedure, to a file.
         The CalibrationData class, because it inherits from the Transformer class has a save method that saves its state to a file.
+        The file the state is saved to is defined in the Calibrator's config, specifically calibrator.dir/calibrator.calibration_file.
         """
         file_path = self.hardware.calibrator.calibration_file
         # calibration_file maybe none, in which case the save operation must fail with an error message.
         if file_path is None:
             raise ValueError("calibration_file attribute is not set on the Calibrator config.")
         self.hardware.calibrator.calibration_data.procedure_state = {**self.state}
-        """
-        self.hardware.calibrator.calibration_data.history = self.state.get("history", [])
-        self.hardware.calibrator.calibration_data.completed_actions = self.state.get("completed_actions", [])
-        """
         self.hardware.calibrator.calibration_data.save(file_path)
         return self.state
 
