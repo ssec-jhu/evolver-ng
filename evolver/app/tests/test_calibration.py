@@ -49,7 +49,7 @@ class TestCalibration:
 
         response = client.get("/hardware/test/calibrator/procedure/state")
         assert response.status_code == 200
-        assert response.json() == {"completed_actions": [], "history": [], "started": True}
+        assert response.json() == {"completed_actions": [], "history": [], "started": True, "measured": {}}
 
     def test_get_calibration_status_not_started(self):
         _, client = setup_evolver_with_calibrator(NoOpCalibrator)
@@ -113,9 +113,9 @@ def test_dispatch_temperature_calibration_raw_value_action():
 
     assert raw_dispatch_response.status_code == 200
     assert raw_dispatch_response.json() == {
-        "0": {"raw": [1.23], "reference": []},
         "completed_actions": ["read_vial_0_raw_output"],
-        "history": [{"completed_actions": [], "history": [], "started": True}],
+        "history": [{"completed_actions": [], "history": [], "measured": {}, "started": True}],
+        "measured": {"0": {"raw": [1.23], "reference": []}},
         "started": True,
     }
 
@@ -132,7 +132,7 @@ def test_reset_calibration_procedure():
 
     reset_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
     assert reset_response.status_code == 200
-    assert reset_response.json() == {"completed_actions": [], "history": [], "started": True}
+    assert reset_response.json() == {"completed_actions": [], "history": [], "started": True, "measured": {}}
 
 
 def test_calibration_procedure_undo_action_utility():
@@ -147,7 +147,7 @@ def test_calibration_procedure_undo_action_utility():
 
     undo_response = client.post("/hardware/test/calibrator/procedure/undo")
     assert undo_response.status_code == 200
-    assert undo_response.json() == {"completed_actions": [], "history": [], "started": True}
+    assert undo_response.json() == {"completed_actions": [], "history": [], "started": True, "measured": {}}
 
 
 def test_calibration_procedure_save(tmp_path):
@@ -169,9 +169,9 @@ def test_calibration_procedure_save(tmp_path):
     save_response = client.post("/hardware/test/calibrator/procedure/save")
     assert save_response.status_code == 200
     assert save_response.json() == {
-        "0": {"raw": [1.23], "reference": []},
         "completed_actions": ["read_vial_0_raw_output"],
-        "history": [{"completed_actions": [], "history": [], "started": True}],
+        "history": [{"completed_actions": [], "history": [], "measured": {}, "started": True}],
+        "measured": {"0": {"raw": [1.23], "reference": []}},
         "started": True,
     }
 
@@ -266,30 +266,30 @@ def test_get_calibration_data(tmp_path):
     calibration_data = calibration_data_response.json()
 
     assert calibration_data["procedure_state"] == {
-        "0": {"raw": [1.23], "reference": [25.0]},
         "completed_actions": ["measure_vial_0_temperature", "read_vial_0_raw_output", "calculate_vial_0_fit"],
         "history": [
-            {"completed_actions": [], "history": [], "started": True},
+            {"completed_actions": [], "history": [], "measured": {}, "started": True},
             {
-                "0": {"raw": [], "reference": [25.0]},
                 "completed_actions": ["measure_vial_0_temperature"],
-                "history": [{"completed_actions": [], "history": [], "started": True}],
+                "history": [{"completed_actions": [], "history": [], "measured": {}, "started": True}],
+                "measured": {"0": {"raw": [], "reference": [25.0]}},
                 "started": True,
             },
             {
-                "0": {"raw": [1.23], "reference": [25.0]},
                 "completed_actions": ["measure_vial_0_temperature", "read_vial_0_raw_output"],
                 "history": [
-                    {"completed_actions": [], "history": [], "started": True},
+                    {"completed_actions": [], "history": [], "measured": {}, "started": True},
                     {
-                        "0": {"raw": [], "reference": [25.0]},
                         "completed_actions": ["measure_vial_0_temperature"],
-                        "history": [{"completed_actions": [], "history": [], "started": True}],
+                        "history": [{"completed_actions": [], "history": [], "measured": {}, "started": True}],
+                        "measured": {"0": {"raw": [], "reference": [25.0]}},
                         "started": True,
                     },
                 ],
+                "measured": {"0": {"raw": [1.23], "reference": [25.0]}},
                 "started": True,
             },
         ],
+        "measured": {"0": {"raw": [1.23], "reference": [25.0]}},
         "started": True,
     }

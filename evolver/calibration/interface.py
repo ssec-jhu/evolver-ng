@@ -14,6 +14,7 @@ from evolver.base import (
     TimeStamp,
     _BaseConfig,
 )
+from evolver.calibration.procedure import CalibrationStateModel
 from evolver.settings import settings
 
 if TYPE_CHECKING:
@@ -119,7 +120,12 @@ class Calibrator(BaseInterface):
         calibration_file: str | None = None
 
     class CalibrationData(Transformer.Config):
-        """Stores calibration data, inculding the procedure_state from the calibration_procedure."""
+        """Stores calibration data, including the procedure_state from the calibration_procedure."""
+
+        procedure_state: CalibrationStateModel = Field(
+            {},
+            description="The calibraton procedure state, including the measured data that the procedure gathers.",
+        )
 
     class Status(_BaseConfig):
         input_transformer: Status | None = None
