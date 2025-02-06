@@ -20,7 +20,6 @@ from evolver.logutils import EVENT, LogInfo
 from evolver.settings import app_settings, settings
 from evolver.types import ImportString
 
-
 # Setup logging.
 evolver.util.setup_logging()
 
