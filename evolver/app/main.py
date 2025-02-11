@@ -12,7 +12,7 @@ from evolver import __project__, __version__
 from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError, OperationNotSupportedError
 from evolver.app.html_routes import html_app
 from evolver.app.models import EventInfo, SchemaResponse
-from evolver.app.routers import experiment, hardware
+from evolver.app.routers import experiment, hardware, dev
 from evolver.base import require_all_fields
 from evolver.device import Evolver
 from evolver.history.interface import HistoryResult
@@ -60,6 +60,8 @@ async def validation_error_handler(_, exc):
 
 app.include_router(hardware.router)
 app.include_router(experiment.router)
+
+app.include_router(dev.router)
 
 
 @app.get("/", operation_id="describe")
