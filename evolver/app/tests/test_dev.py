@@ -2,8 +2,8 @@ from evolver.app.main import app
 from evolver.base import ConfigDescriptor
 from evolver.device import Evolver, Experiment
 from evolver.history.demo import InMemoryHistoryServer
-from evolver.tests.conftest import tmp_calibration_dir  # noqa: F401
 from evolver.settings import app_settings
+from evolver.tests.conftest import tmp_calibration_dir  # noqa: F401
 
 
 class TestDev:
