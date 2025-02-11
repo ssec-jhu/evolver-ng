@@ -1,12 +1,11 @@
 from evolver.calibration.action import DisplayInstructionAction
-from evolver.calibration.interface import Calibrator, IndependentVialBasedCalibrator
+from evolver.calibration.interface import IndependentVialBasedCalibrator
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
     CalculateFitAction,
     RawValueAction,
     ReferenceValueAction,
 )
-from evolver.calibration.state import CalibrationStateModel
 from evolver.hardware.interface import HardwareDriver
 
 
@@ -14,9 +13,6 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
     """
     A calibrator for each vial's temperature sensor.
     """
-
-    class CalibrationData(Calibrator.CalibrationData):
-        procedure_state: CalibrationStateModel = {}
 
     def create_calibration_procedure(
         self,

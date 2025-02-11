@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 from evolver.base import BaseInterface
 from evolver.calibration.action import CalibrationAction
-from evolver.calibration.state import CalibrationStateModel
+from evolver.calibration.interface import CalibrationStateModel
 
 
 class CalibrationProcedure(BaseInterface, ABC):
@@ -32,8 +32,10 @@ class CalibrationProcedure(BaseInterface, ABC):
             This can be done by defining a SaveProcedureState action in the procedure and dispatching it.
         """
         super().__init__(*args, **kwargs)
+        if state is None:
+            state = {}
         self.actions = []
-        self.state = CalibrationStateModel(**(state or {}))
+        self.state = CalibrationStateModel.model_validate(state)
         self.state.started = True
         self.hardware = hardware
 

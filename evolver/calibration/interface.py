@@ -1,7 +1,7 @@
 import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, List, Dict
 
 from pydantic import Field, PastDatetime
 
@@ -14,7 +14,6 @@ from evolver.base import (
     TimeStamp,
     _BaseConfig,
 )
-from evolver.calibration.procedure import CalibrationStateModel
 from evolver.settings import settings
 
 if TYPE_CHECKING:
@@ -108,6 +107,29 @@ class Transformer(BaseInterface):
         return new_config
 
 
+class CalibrationStateModel(Transformer.Config):
+    """
+    Model to represent the state of a calibration procedure. All procedures record their completed actions, and history of actions in this model.
+    The data collected by the calibration procedure (i.e. the data the actions have gathered, that's used as input to the Hardware.input/outputTransformer methods) is also stored here.
+
+    Attributes:
+        started (bool): A flag to indicate if the calibration procedure has been initialized, used by the front end to determine procedure controls to display.
+        completed_actions (List[str]): A list of actions that have been completed during the calibration procedure.
+        history: A list of previous states of the calibration procedure. Used to undo actions.
+        measured (Dict[Any, Any]): A dictionary of data collected by the calibration procedure.
+            This data is used by the Transformer class to fit a model to the data.
+            For example, a temperature calibrator might collect raw and reference temperature data for each vial.
+    """
+
+    class Config:
+        extra = "allow"
+
+    completed_actions: List[str] = Field(default_factory=list)
+    history: List["CalibrationStateModel"] = Field(default_factory=list)
+    started: bool = False
+    measured: Dict[Any, Any] = {}
+
+
 class Calibrator(BaseInterface):
     """Base Interface class for all calibration implementations.
 
@@ -118,14 +140,6 @@ class Calibrator(BaseInterface):
         input_transformer: ConfigDescriptor | Transformer | None = None
         output_transformer: ConfigDescriptor | Transformer | None = None
         calibration_file: str | None = None
-
-    class CalibrationData(Transformer.Config):
-        """Stores calibration data, including the procedure_state from the calibration_procedure."""
-
-        procedure_state: CalibrationStateModel = Field(
-            {},
-            description="The calibraton procedure state, including the measured data that the procedure gathers.",
-        )
 
     class Status(_BaseConfig):
         input_transformer: Status | None = None
@@ -148,7 +162,11 @@ class Calibrator(BaseInterface):
             self.calibration_file = calibration_file
             self.load_calibration_file(calibration_file)
         else:
-            self.calibration_data = self.CalibrationData()
+            if self.calibration_file:
+                self.calibration_data = CalibrationStateModel.load(file_path=self.calibration_file)
+            else:
+                self.calibration_data = CalibrationStateModel()
+            ### self.calibration_data = CalibrationStateModel.load(file_path=self.calibration_file)
 
     @property
     def status(self) -> Status:
@@ -161,15 +179,15 @@ class Calibrator(BaseInterface):
         if not Path(calibration_file).is_absolute():
             calibration_file = self.dir / calibration_file
         if calibration_file is not None:
-            self.load_calibration(self.CalibrationData.load(calibration_file))
+            self.load_calibration(CalibrationStateModel.load(calibration_file))
         else:
             raise ValueError("no calibration file provided")
 
-    def load_calibration(self, calibration_data: CalibrationData):
+    def load_calibration(self, calibration_data: CalibrationStateModel):
         self.calibration_data = calibration_data
         self.init_transformers(calibration_data)
 
-    def init_transformers(self, calibration_data: CalibrationData):
+    def init_transformers(self, calibration_data: CalibrationStateModel):
         """Initialize transformers from calibration data."""
         ...
 

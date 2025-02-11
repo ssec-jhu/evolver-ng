@@ -3,7 +3,7 @@ from typing import Dict, Optional
 
 from pydantic import BaseModel
 
-from evolver.calibration.state import CalibrationStateModel
+from evolver.calibration.interface import CalibrationStateModel
 
 
 class CalibrationAction(ABC):
