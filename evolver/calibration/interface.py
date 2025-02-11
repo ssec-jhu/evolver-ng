@@ -1,7 +1,7 @@
 import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Dict
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from pydantic import Field, PastDatetime
 
