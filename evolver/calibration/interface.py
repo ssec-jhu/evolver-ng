@@ -166,7 +166,6 @@ class Calibrator(BaseInterface):
                 self.calibration_data = CalibrationStateModel.load(file_path=self.calibration_file)
             else:
                 self.calibration_data = CalibrationStateModel()
-            ### self.calibration_data = CalibrationStateModel.load(file_path=self.calibration_file)
 
     @property
     def status(self) -> Status:

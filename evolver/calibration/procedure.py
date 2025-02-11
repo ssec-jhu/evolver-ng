@@ -64,14 +64,14 @@ class CalibrationProcedure(BaseInterface, ABC):
     def save(self):
         """
         Save the current state of the calibration procedure, to a file.
-        The CalibrationData class, because it inherits from the Transformer class has a save method that saves its state to a file.
+        The calibration_data attribute on the Calibrator, because it is a CalibrationStateModel, it inherits from the Transformer class has a save method that saves its state to a file.
         The file the state is saved to is defined in the Calibrator's config, specifically calibrator.dir/calibrator.calibration_file.
         """
         file_path = self.hardware.calibrator.calibration_file
         # calibration_file maybe none, in which case the save operation must fail with an error message.
         if file_path is None:
             raise ValueError("calibration_file attribute is not set on the Calibrator config.")
-        self.hardware.calibrator.calibration_data.procedure_state = self.state
+        self.hardware.calibrator.calibration_data = self.state
         self.hardware.calibrator.calibration_data.save(file_path)
         return self.state
 

@@ -315,7 +315,7 @@ def test_get_calibration_data(tmp_path):
     calibration_data = calibration_data_response.json()
 
     # Extract only the stable fields we want to compare
-    actual_state = get_stable_state_subset(calibration_data["procedure_state"])
+    actual_state = get_stable_state_subset(calibration_data)
 
     expected_state = {
         "completed_actions": ["measure_vial_0_temperature", "read_vial_0_raw_output", "calculate_vial_0_fit"],
