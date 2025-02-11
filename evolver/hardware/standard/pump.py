@@ -25,10 +25,7 @@ class GenericPumpCalibrator(IndependentVialBasedCalibrator):
         time_to_pump_fast: float = 10.0
         time_to_pump_slow: float = 100.0
 
-    class CalibrationData(Transformer.Config):
-        measured: dict[int, tuple[float, float]] = {}  # (pump time, pumped volume)
-
-    def init_transformers(self, calibration_data: Calibrator.CalibrationData):
+    def init_transformers(self, calibration_data):
         self.input_transformer = {}
         for vial, (time, volume) in calibration_data.measured.items():
             self.input_transformer[vial] = RateTransformer(rate=volume / time)

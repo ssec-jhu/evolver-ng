@@ -3,6 +3,8 @@ from typing import Dict, Optional
 
 from pydantic import BaseModel
 
+from evolver.calibration.interface import CalibrationStateModel
+
 
 class CalibrationAction(ABC):
     def __init__(self, name: str, description: str, hardware):
@@ -62,5 +64,5 @@ class DisplayInstructionAction(CalibrationAction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def execute(self, state: Dict, payload: Optional[FormModel] = None):
-        return state.copy()
+    def execute(self, state: CalibrationStateModel, payload: Optional[FormModel] = None):
+        return state
