@@ -40,6 +40,7 @@ class AppSettings(BaseSettings):
     LOAD_FROM_CONFIG_ON_STARTUP: bool = True
     HOST: str = "127.0.0.1"
     PORT: int = 8080
+    DEV_MODE: bool = False
 
 
 settings = Settings()

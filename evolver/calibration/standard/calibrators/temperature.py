@@ -1,7 +1,5 @@
-from typing import Dict, List
-
 from evolver.calibration.action import DisplayInstructionAction
-from evolver.calibration.interface import Calibrator, IndependentVialBasedCalibrator
+from evolver.calibration.interface import IndependentVialBasedCalibrator
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
     CalculateFitAction,
@@ -16,9 +14,6 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
     A calibrator for each vial's temperature sensor.
     """
 
-    class CalibrationData(Calibrator.CalibrationData):
-        measured: Dict[int, Dict[str, List[float]]] = {}  # {vial_index: {"reference": [], "raw": []}}
-
     def create_calibration_procedure(
         self,
         selected_hardware: HardwareDriver,
@@ -27,16 +22,9 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
         *args,
         **kwargs,
     ):
-        # Cherrypick data persisted to Calibrator.CalibrationData, to resume the CalibrationProcedure from the last saved state.
-        persisted_state = {
-            **self.calibration_data.measured,
-            "completed_actions": self.calibration_data.completed_actions,
-        }
-
-        calibration_procedure = (
-            CalibrationProcedure(state=persisted_state, hardware=selected_hardware)
-            if resume and persisted_state
-            else CalibrationProcedure(hardware=selected_hardware)
+        procedure_state = self.calibration_data if resume else None
+        calibration_procedure = CalibrationProcedure(
+            state=procedure_state.model_dump() if procedure_state else None, hardware=selected_hardware
         )
 
         calibration_procedure.add_action(
