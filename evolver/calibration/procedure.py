@@ -32,8 +32,6 @@ class CalibrationProcedure(BaseInterface, ABC):
             This can be done by defining a SaveProcedureState action in the procedure and dispatching it.
         """
         super().__init__(*args, **kwargs)
-        if state is None:
-            state = {}
         self.actions = []
         self.state = CalibrationStateModel.model_validate(state)
         self.state.started = True
