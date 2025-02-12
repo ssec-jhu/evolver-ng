@@ -1,30 +1,9 @@
 from abc import ABC
-from copy import deepcopy
-from typing import Any, Dict, List
-
-from pydantic import BaseModel, Field
+from typing import Any, Dict
 
 from evolver.base import BaseInterface
 from evolver.calibration.action import CalibrationAction
-
-
-class CalibrationStateModel(BaseModel):
-    """
-    Model to represent the state of a calibration procedure. All procedures record their completed actions in this model.
-    Along with the completed actions, the state of the calibration procedure (i.e. the data the actions have gathered) can be stored.
-    The shape of this additional data is not fixed and therefore is not included in the model here.
-    When considering adding attributes, note this model is shared by the Calibrator.CalibrationData class.
-
-    Attributes:
-        completed_actions (List[str]): A list of actions that have been completed during the calibration procedure.
-        history: A list of previous states of the calibration procedure. Used to undo actions.
-    """
-
-    class Config:
-        extra = "allow"
-
-    completed_actions: List[str] = Field(default_factory=list)
-    history: List["CalibrationStateModel"] = Field(default_factory=list)
+from evolver.calibration.interface import CalibrationStateModel
 
 
 class CalibrationProcedure(BaseInterface, ABC):
@@ -54,7 +33,8 @@ class CalibrationProcedure(BaseInterface, ABC):
         """
         super().__init__(*args, **kwargs)
         self.actions = []
-        self.state = CalibrationStateModel(**(state or {})).model_dump()
+        self.state = CalibrationStateModel.model_validate(state)
+        self.state.started = True
         self.hardware = hardware
 
     def add_action(self, action: CalibrationAction):
@@ -75,29 +55,31 @@ class CalibrationProcedure(BaseInterface, ABC):
         """
         Undo the last action that was dispatched in the calibration procedure.
         """
-        if len(self.state["history"]) > 0:
-            self.state = self.state["history"].pop()
+        if len(self.state.history) > 0:
+            self.state = self.state.history.pop()
         return self.state
 
     def save(self):
         """
         Save the current state of the calibration procedure, to a file.
-        The CalibrationData class, because it inherits from the Transformer class has a save method that saves its state to a file.
+        The calibration_data attribute on the Calibrator, because it is a CalibrationStateModel, it inherits from the Transformer class has a save method that saves its state to a file.
+        The file the state is saved to is defined in the Calibrator's config, specifically calibrator.dir/calibrator.calibration_file.
         """
         file_path = self.hardware.calibrator.calibration_file
         # calibration_file maybe none, in which case the save operation must fail with an error message.
         if file_path is None:
             raise ValueError("calibration_file attribute is not set on the Calibrator config.")
-        self.hardware.calibrator.calibration_data.measured = self.state
+        self.hardware.calibrator.calibration_data = self.state
         self.hardware.calibrator.calibration_data.save(file_path)
         return self.state
 
     def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):
         if payload is not None and action.FormModel.model_fields != {}:
             payload = action.FormModel(**payload)
-        previous_state = deepcopy(self.state)
+        previous_state = self.state.model_dump()
         updated_state = action.execute(self.state, payload)
-        updated_state["completed_actions"].append(action.name)
-        updated_state["history"].append(previous_state)
+        updated_state.completed_actions.append(action.name)
+        # Convert previous state to model before appending
+        updated_state.history.append(CalibrationStateModel.model_validate(previous_state))
         self.state = updated_state
         return self.state
