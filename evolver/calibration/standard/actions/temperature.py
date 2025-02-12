@@ -1,4 +1,5 @@
 from typing import Optional
+from collections import defaultdict
 
 from pydantic import BaseModel, Field
 
@@ -15,10 +16,7 @@ class ReferenceValueAction(CalibrationAction):
         self.vial_idx = vial_idx
 
     def execute(self, state: CalibrationStateModel, payload: Optional[FormModel] = None):
-        if not state.measured:
-            state.measured = {}
-        if self.vial_idx not in state.measured:
-            state.measured[self.vial_idx] = {"reference": [], "raw": []}
+        state.measured = state.measured or defaultdict(lambda: {"reference": [], "raw": []})
         state.measured[self.vial_idx]["reference"].append(payload.temperature)
         return state
 
@@ -33,10 +31,7 @@ class RawValueAction(CalibrationAction):
 
     def execute(self, state: CalibrationStateModel, payload: Optional[FormModel] = None):
         sensor_value = self.hardware.read()[self.vial_idx]
-        if not state.measured:
-            state.measured = {}
-        if self.vial_idx not in state.measured:
-            state.measured[self.vial_idx] = {"reference": [], "raw": []}
+        state.measured = state.measured or defaultdict(lambda: {"reference": [], "raw": []})
         state.measured[self.vial_idx]["raw"].append(sensor_value)
         return state
 
