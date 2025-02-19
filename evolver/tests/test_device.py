@@ -97,7 +97,7 @@ class TestEvolver:
     def test_empty_config_property_equivalence(self):
         obj1 = Evolver.create()
         obj2 = Evolver.Config()
-        assert obj1.config == obj2.model_dump(mode="json")
+        assert obj1.config == obj2.model_dump(mode="json")["config"]
 
     def test_config_symmetry(self):
         obj1 = Evolver.create()
