@@ -1,0 +1,87 @@
+Installation
+============
+
+This guide is for installing the server on the Raspberry Pi mounted within the
+eVolver hardware platform connected via serial to the physical hardware (see
+:doc:`quick-start` for running the server locally with dummy hardware).
+
+Requirements
+------------
+
+The application depends on python 3.11 or later, so ensure the Raspberry Pi os
+is up to date and has at least this version of python installed. We recommend
+using the debian based systems, such as bookworm
+(see https://www.raspberrypi.com/software/operating-systems/).
+
+If you are using the standard eVolver hardware, the Raspberry Pi should also be
+setup to use the UART serial port available at ttyAMA0, which requires custom
+bootflags in order to disable bluetooth and enable the serial port. This can be
+done by adding the following to the /boot/firmware/config.txt file::
+
+    [all]
+    enable_uart=1
+    dtoverlay=pi3-disable-bt
+
+Install and setup service
+-------------------------
+
+* Install the package::
+
+    pip install git+https://github.com/ssec-jhu/evolver-ng
+
+* Setup the service to run on boot. Create a file at
+  `/etc/systemd/system/evolver.service` with the following contents
+
+    [Service]
+    Environment=EVOLVER_HOST=0.0.0.0 EVOLVER_CONFIG_FILE=/etc/evolver.yml
+    ExecStart=python -m evolver.app.main
+    Restart=on-failure
+    Type=exec
+
+
+    [Install]
+    WantedBy=multi-user.target
+
+* Enable and start the service::
+
+    sudo systemctl enable evolver
+    sudo systemctl start evolver
+
+The service should now be running and API listening at port 8080 for remote
+connections. You can confirm this by navigating to the openapi documentation
+interface at http://<raspberry-pi-ip>:8080/docs.
+
+Configuration
+-------------
+
+The evolver server needs to be configured with the hardware drivers that are
+available on the system. This can be done either by creating or obtaining the
+appropriate configuration file prior to server start. Alternatively the API/UI
+can be used to update the configuration for a server that is already online.
+
+.. note::
+    There will be example configurations included in the evolver-ng package for
+    many standard setups. The below advice may only be required in case of
+    custom hardware.
+
+Specifically, the `hardware` section should contain a map of the hardware on
+box, where each element is a `ConfigDescriptor` that describes the hardware,
+which contains a reference to the python class that implements the hardware
+driver and the configuration for that driver. For example::
+
+    hardware:
+      OD90:
+        classinfo: "evolver.hardware.standard.od_sensor.ODSensor"
+        config:
+          addr: "od90"
+          integrations: 500
+
+Note that since this references a python class, it is important that the package
+in which that class is defined is installed in the python environment that runs
+the server. For standard hardware, this is included in the evolver-ng package as
+seen above. For custom hardware, maintainers should give instructions for
+installing the package, and example configurations to simplify setup for
+end-users. See :doc:`development/index` for more information on creating
+extensions.
+
+
