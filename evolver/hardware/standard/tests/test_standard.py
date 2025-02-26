@@ -1,5 +1,6 @@
 import pytest
 
+from evolver.calibration.demo import NoOpCalibrator
 from evolver.calibration.interface import Calibrator, Transformer
 from evolver.hardware.standard.led import LED
 from evolver.hardware.standard.od_sensor import OD90, ODSensor
@@ -135,12 +136,12 @@ class TestStir(SerialVialEffectorHardwareTestSuite):
     "config_params, values, serial_out",
     [
         (
-            {"addr": "pump", "slots": 2},
+            {"addr": "pump", "slots": 2, "calibrator": NoOpCalibrator()},
             [[VialIEPump.Input(vial=0, influx_volume=1, efflux_volume=2)]],
             [b"pumpr,1.0|0,--,2.0|0,--,--,--,_!"],
         ),
         (
-            {"addr": "pump", "slots": 2},
+            {"addr": "pump", "slots": 2, "calibrator": NoOpCalibrator()},
             [
                 [
                     VialIEPump.Input(vial=0, influx_volume=1, influx_rate=2, efflux_volume=3, efflux_rate=4),
@@ -150,7 +151,14 @@ class TestStir(SerialVialEffectorHardwareTestSuite):
             [b"pumpr,1.0|1800,1.0|1800,3.0|900,3.0|900,--,--,_!"],
         ),
         (
-            {"addr": "pump", "ipp_pumps": [0, 1], "slots": 2, "influx_map": {0: 0}, "efflux_map": {0: 1}},
+            {
+                "addr": "pump",
+                "ipp_pumps": [0, 1],
+                "slots": 2,
+                "influx_map": {0: 0},
+                "efflux_map": {0: 1},
+                "calibrator": NoOpCalibrator(),
+            },
             [[VialIEPump.Input(vial=0, influx_volume=1, efflux_volume=2)]],
             [b"pumpr,1.0|0|1,1.0|0|2,1.0|0|3,2.0|1|1,2.0|1|2,2.0|1|3,_!"],
         ),
