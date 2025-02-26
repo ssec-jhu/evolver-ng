@@ -14,7 +14,7 @@ configuration or api calls.
 
     python -m evolver.app.main
 
-* Navigate to the web interface at http://localhost:8080
+* Navigate to the web interface of the openapi docs at http://localhost:8080/docs
 
 From the source code
 --------------------
