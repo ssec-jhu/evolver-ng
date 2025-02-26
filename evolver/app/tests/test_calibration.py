@@ -11,7 +11,7 @@ from evolver.hardware.demo import NoOpSensorDriver
 from evolver.tests.conftest import tmp_calibration_dir  # noqa: F401
 
 
-def setup_evolver_with_calibrator(calibrator_class, hardware_name="test", vials=[0, 1, 2], calibration_file=None):
+def setup_evolver_with_calibrator(calibrator_class, hardware_name="test", vials=[0, 1, 2], procedure_file=None):
     calibrator = calibrator_class(
         input_transformer={
             0: LinearTransformer("Test Transformer"),
@@ -23,7 +23,7 @@ def setup_evolver_with_calibrator(calibrator_class, hardware_name="test", vials=
             1: LinearTransformer(),
             2: LinearTransformer(),
         },
-        calibration_file=calibration_file,
+        procedure_file=procedure_file,
     )
     evolver_instance = Evolver(
         hardware={hardware_name: NoOpSensorDriver(name=hardware_name, calibrator=calibrator, vials=vials)}
@@ -175,9 +175,8 @@ def test_calibration_procedure_undo_action_utility():
 def test_calibration_procedure_save(tmp_path):
     # Setup fs for save.
     cal_file = tmp_path / "calibration.yml"
-    cal_file.touch()
 
-    _, client = setup_evolver_with_calibrator(TemperatureCalibrator, calibration_file=str(cal_file))
+    _, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(cal_file))
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
     # Start procedure
@@ -220,10 +219,9 @@ def test_calibration_procedure_save(tmp_path):
 def test_calibration_procedure_resume(tmp_path):
     # Setup fs for save
     cal_file = tmp_path / "calibrationXXX.yml"
-    cal_file.touch()
 
     # Initial setup and procedure
-    _, client = setup_evolver_with_calibrator(TemperatureCalibrator, calibration_file=str(cal_file))
+    _, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(cal_file))
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
     # Start and perform initial procedure actions
@@ -237,7 +235,7 @@ def test_calibration_procedure_resume(tmp_path):
     saved_state = save_response.json()
 
     # Create new client to simulate fresh start
-    _, new_client = setup_evolver_with_calibrator(TemperatureCalibrator, calibration_file=str(cal_file))
+    _, new_client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(cal_file))
 
     # Resume procedure
     resume_response = new_client.post("/hardware/test/calibrator/procedure/start", params={"resume": True})
@@ -296,7 +294,7 @@ def test_get_calibration_data(tmp_path):
     cal_file = tmp_path / "calibration.yml"
     cal_file.touch()
 
-    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator, calibration_file=str(cal_file))
+    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(cal_file))
 
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 

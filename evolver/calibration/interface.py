@@ -139,7 +139,10 @@ class Calibrator(BaseInterface):
     class Config(Transformer.Config):
         input_transformer: ConfigDescriptor | Transformer | None = None
         output_transformer: ConfigDescriptor | Transformer | None = None
-        calibration_file: str | None = None
+        calibration_file: str | None = Field(None, description="Completed calibration file to use for transformations")
+        procedure_file: str | None = Field(
+            None, description="Working calibration file for currently active (or next) procedure"
+        )
 
     class Status(_BaseConfig):
         input_transformer: Status | None = None
