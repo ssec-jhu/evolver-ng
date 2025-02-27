@@ -1,5 +1,6 @@
 import datetime
 from abc import ABC, abstractmethod
+from copy import copy
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List
 
@@ -128,6 +129,7 @@ class CalibrationStateModel(Transformer.Config):
     history: List["CalibrationStateModel"] = Field(default_factory=list)
     started: bool = False
     measured: Dict[Any, Any] = {}
+    fitted_calibrator: ConfigDescriptor | None = None
 
 
 class Calibrator(BaseInterface):
@@ -139,6 +141,7 @@ class Calibrator(BaseInterface):
     class Config(Transformer.Config):
         input_transformer: ConfigDescriptor | Transformer | None = None
         output_transformer: ConfigDescriptor | Transformer | None = None
+        no_refit: bool = Field(False, description="If True, use only cached fitted transfomers from calibration_file")
         calibration_file: str | None = Field(None, description="Completed calibration file to use for transformations")
         procedure_file: str | None = Field(
             None, description="Working calibration file for currently active (or next) procedure"
@@ -184,10 +187,25 @@ class Calibrator(BaseInterface):
 
     def load_calibration(self, calibration_data: CalibrationStateModel):
         self.calibration_data = calibration_data
-        self.init_transformers(calibration_data)
+        # If calibration data is provided, there are two choices that make
+        # sense: either we want to refit from measured data using the configured
+        # transformer classes, or we use the cached fitted ones. No measurements
+        # means we must use the cached fitted ones.
+        if self.no_refit or not self.calibration_data.measured:
+            fitted_calibrator = self.calibration_data.fitted_calibrator.create()
+            self.input_transformer = fitted_calibrator.input_transformer
+            self.output_transformer = fitted_calibrator.output_transformer
+        else:
+            self.init_transformers(calibration_data)
 
     def init_transformers(self, calibration_data: CalibrationStateModel):
-        """Initialize transformers from calibration data."""
+        """Initialize transformers from calibration procedure measured data.
+
+        The shape of measurement data specific to the calibrator, so this method
+        must likewise be overridden by a subclass to refit transformers as
+        needed based on measured data. It should set self.input_transformer and
+        self.output_transformer.
+        """
         ...
 
     @abstractmethod
@@ -213,5 +231,15 @@ class IndependentVialBasedCalibrator(Calibrator, ABC):
             list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX)),
             description="The vials that this calibrator is for.",
         )
+        default_input_transformer: ConfigDescriptor | Transformer | None = None
+        default_output_transformer: ConfigDescriptor | Transformer | None = None
         input_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
         output_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
+
+    def get_input_transformer(self, vial):
+        """Get the input transformer for a given vial."""
+        return self.input_transformer.setdefault(vial, copy(self.default_input_transformer))
+
+    def get_output_transformer(self, vial):
+        """Get the output transformer for a given vial."""
+        return self.output_transformer.setdefault(vial, copy(self.default_output_transformer))

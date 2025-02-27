@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
+from unittest.mock import MagicMock
 
 from evolver.calibration.demo import NoOpCalibrator, NoOpTransformer
-from evolver.calibration.interface import Status
+from evolver.calibration.interface import CalibrationStateModel, Status
 from evolver.hardware.demo import NoOpSensorDriver
 from evolver.settings import settings
 
@@ -59,3 +60,28 @@ class TestCalibrator:
         for _, device in hardware.items():
             for transformer in ("input_transformer", "output_transformer"):
                 assert t0 < getattr(device.calibrator, transformer).created
+
+    def test_calibrator_load_from_file_actions(self, tmp_path, monkeypatch):
+        calibrator = NoOpCalibrator()
+        # ensure that the parameter value is changed from default
+        calibrator.output_transformer.param1 += 1.0
+        cal_file = tmp_path / "calibration_state.yaml"
+
+        # save without measurements, default would be to load cached
+        CalibrationStateModel(fitted_calibrator=calibrator).save(cal_file)
+        new_calibrator = NoOpCalibrator(calibration_file=cal_file)
+        assert new_calibrator.output_transformer.param1 == calibrator.output_transformer.param1
+
+        # save with measurements, should not load cached but instead call init_transformers
+        CalibrationStateModel(fitted_calibrator=calibrator, measured={0: {"reference": [1.0], "raw": [2.0]}}).save(
+            cal_file
+        )
+        with monkeypatch.context() as m:
+            m.setattr(NoOpCalibrator, "init_transformers", MagicMock())
+            new_calibrator = NoOpCalibrator(calibration_file=cal_file)
+            assert new_calibrator.output_transformer.param1 != calibrator.output_transformer.param1
+            assert new_calibrator.init_transformers.called
+
+        # same as above, but set the no_refit flag
+        new_calibrator = NoOpCalibrator(calibration_file=cal_file, no_refit=True)
+        assert new_calibrator.output_transformer.param1 == calibrator.output_transformer.param1
