@@ -238,8 +238,8 @@ class IndependentVialBasedCalibrator(Calibrator, ABC):
 
     def get_input_transformer(self, vial):
         """Get the input transformer for a given vial."""
-        return self.input_transformer.setdefault(vial, copy(self.default_input_transformer))
+        return self.input_transformer.setdefault(int(vial), copy(self.default_input_transformer))
 
     def get_output_transformer(self, vial):
         """Get the output transformer for a given vial."""
-        return self.output_transformer.setdefault(vial, copy(self.default_output_transformer))
+        return self.output_transformer.setdefault(int(vial), copy(self.default_output_transformer))
