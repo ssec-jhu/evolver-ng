@@ -292,7 +292,6 @@ def get_stable_state_subset(state):
 def test_get_calibration_data(tmp_path):
     # Setup fs for save.
     cal_file = tmp_path / "calibration.yml"
-    cal_file.touch()
 
     temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(cal_file))
 
