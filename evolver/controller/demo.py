@@ -12,7 +12,7 @@ class NoOpController(Controller):
         bolus_volume: float = Field(2.0, description="Volume of bolus in mL")
         dilution_rate: float = Field(0.1, description="In vial_volume per hour")
         stir_rate: float = Field(8, description="Stir rate")
-    
+
     ncalls = 0
 
     def control(self, *args, **kwargs):
