@@ -270,7 +270,18 @@ class TestApp:
         assert response.json() == {
             "test": {
                 "controllers": [
-                    {"classinfo": "evolver.controller.demo.NoOpController", "config": {"name": "NoOpController"}}
+                    {
+                        "classinfo": "evolver.controller.demo.NoOpController",
+                        "config": {
+                            "bolus_volume": 2.0,
+                            "dilution_rate": 0.1,
+                            "min_od": 0.5,
+                            "name": "NoOpController",
+                            "start_delay": 1,
+                            "stir_rate": 8.0,
+                            "vial_volume": 20.0,
+                        },
+                    }
                 ],
                 "enabled": True,
                 "name": None,
@@ -287,14 +298,26 @@ class TestApp:
         app.state.evolver.loop_once()
         response = app_client.get("/experiment/test")
         assert response.status_code == 200
+
+        assert len(response.json()["logs"]["data"]["NoOpController"]) == 1
         assert response.json()["config"] == {
             "controllers": [
-                {"classinfo": "evolver.controller.demo.NoOpController", "config": {"name": "NoOpController"}}
+                {
+                    "classinfo": "evolver.controller.demo.NoOpController",
+                    "config": {
+                        "bolus_volume": 2.0,
+                        "dilution_rate": 0.1,
+                        "min_od": 0.5,
+                        "name": "NoOpController",
+                        "start_delay": 1,
+                        "stir_rate": 8.0,
+                        "vial_volume": 20.0,
+                    },
+                }
             ],
             "enabled": True,
             "name": None,
         }
-        assert len(response.json()["logs"]["data"]["NoOpController"]) == 1
 
     def test_experiment_log_endpoint(self, app_client):
         app.state.evolver = Evolver(
