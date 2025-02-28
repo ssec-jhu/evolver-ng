@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from unittest.mock import MagicMock
 
 from evolver.calibration.demo import NoOpCalibrator, NoOpTransformer
-from evolver.calibration.interface import CalibrationStateModel, Status
+from evolver.calibration.interface import CalibrationStateModel, IndependentVialBasedCalibrator, Status
 from evolver.hardware.demo import NoOpSensorDriver
 from evolver.settings import settings
 
@@ -85,3 +85,19 @@ class TestCalibrator:
         # same as above, but set the no_refit flag
         new_calibrator = NoOpCalibrator(calibration_file=cal_file, no_refit=True)
         assert new_calibrator.output_transformer.param1 == calibrator.output_transformer.param1
+
+    def test_default_transformer(self):
+        class TestCalibrator(IndependentVialBasedCalibrator):
+            def create_calibration_procedure(self, *args, **kwargs):
+                pass
+
+        obj = TestCalibrator(
+            default_input_transformer=NoOpTransformer(param1=1.0),
+            input_transformer={
+                0: NoOpTransformer(param1=2.0),
+            },
+        )
+        assert obj.get_input_transformer("0").param1 == 2.0
+        assert obj.get_input_transformer(0).param1 == 2.0
+        assert obj.get_input_transformer("1").param1 == 1.0
+        assert obj.get_input_transformer(1).param1 == 1.0
