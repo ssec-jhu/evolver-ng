@@ -23,18 +23,7 @@ def get_experiment_overview(request: Request, experiment_name: str):
     evolver = request.app.state.evolver
     experiment = evolver.experiments[experiment_name]
 
-    # Extract controller configs and current states
-    controller_data = []
-    for controller in experiment.controllers:
-        controller_info = {
-            "name": controller.name,
-            "type": controller.__class__.__name__,
-            "config": controller.config_model.model_dump(),
-        }
-        controller_data.append(controller_info)
-
     return {
         "config": experiment,
         "logs": get_experiment_logs(request, experiment_name),
-        "controllers": controller_data,
     }
