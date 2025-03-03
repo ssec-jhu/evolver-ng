@@ -14,6 +14,10 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
     A calibrator for each vial's temperature sensor.
     """
 
+    def init_transformers(self, calibration_data: CalibrationStateModel):
+        for vial, data in calibration_data.measured.items():
+            self.get_output_transformer(vial).refit(data["reference"], data["raw"])
+
     def create_calibration_procedure(
         self,
         selected_hardware: HardwareDriver,

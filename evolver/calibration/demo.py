@@ -7,8 +7,15 @@ from evolver.hardware.interface import HardwareDriver
 
 
 class NoOpTransformer(Transformer):
+    class Config(Transformer.Config):
+        param1: float = Field(default=1.0)
+
     def convert_to(self, data, *args, **kwargs):
         return data
+
+    def refit(self, *args, **kwargs):
+        self._refit_args = args
+        self._refit_kwargs = kwargs
 
     convert_from = convert_to
 

@@ -47,4 +47,5 @@ class CalculateFitAction(CalibrationAction):
     def execute(self, state: CalibrationStateModel, payload: Optional[FormModel] = None):
         vial_data = state.measured[self.vial_idx]
         self.hardware.calibrator.output_transformer[self.vial_idx].refit(vial_data["reference"], vial_data["raw"])
+        state.fitted_calibrator = self.hardware.calibrator.descriptor
         return state
