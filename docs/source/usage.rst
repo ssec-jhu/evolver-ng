@@ -65,8 +65,57 @@ your custom driver.
 Calibration
 ===========
 
+Each hardware component can have attached to it a
+:py:class:`Calibrator<evolver.calibration.interface.Calibrator>`, which is both
+used to transform raw sensor values into their respective physical units (via a
+:py:class:`Transformers<evolver.calibration.interface.Transformer>`), and to
+perform the procedure which results in the data necessary to configure these
+transformers.
+
+As a user, you will primarily be interacting with the calibration via either
+configuring the calibrator with desired behavior via configuration parameters
+(see above), and/or running a procedure via the web interface.
+
+The calibration system is designed to be self-described, enabling developers to
+add procedures with no requirement to modify the core system. Procedures will
+proceed with the following flow, where at each step instructions and required
+user inputs will be provided:
+
+* Select a file to save the calibration state to during the procedure. This is
+  configured on the calibrator via the `procedure_file` parameter.
+* Start or resume the procedure. Via the UI select the "hardware" tab, find the
+  desired hardware and click on the "calibrate" button, then select "start" or
+  "resume" as appropriate.
+* Follow each step (action) and input data as required.
+* Save the procedure. This writes the calibration state to the file specified
+  in the first step.
+* Apply the calibration. When the procedure is complete, we can apply it by
+  setting the `calibration_file` parameter on the calibrator to the
+  `procedure_file`.
+
+For more information on the calibration system, see the :doc:`development/calibrators`
+
 Configure experiments
 =====================
+
+Experiments are configured in the same manner as other components in the system,
+such as hardware described above. The eVolver has a set of named experiments,
+which in turn are made up of one or more
+:py:class:`Controllers<evolver.controller.interface.Controller>`. Each
+controller is a descriptor object that has a config section, for example::
+
+    experiments:
+      growth:
+        enabled: true
+        controllers:
+        - classinfo: evolver.controller.standard.growth.GrowthController
+          config:
+            target: 0.5
+            duration: 3600
+            interval: 60
+
+Where "growth" as a key in the above refers to the name of the experiment within
+the system.
 
 Monitoring and starting/stopping experiments
 ============================================
@@ -74,3 +123,22 @@ Monitoring and starting/stopping experiments
 Aborting
 ========
 
+In general, once started, the eVolver will continuously run the experiment loop
+(see :ref:`experiment_loop`) until stopped. When there are experiments
+configured on the system, this means that physical actuation of some devices on
+the system may be carried out, and in cases where feedback about certain
+conditions in the environment (for example, the liquid volume in a vial),
+unintended physical conditions may ensue.
+
+In such a case, there is a global abort endpoint that can be used to immediately
+stop all control activity regardless of experiment. In the UI this button is
+available in all contexts, and via the API it can be accessed via a POST request
+to `/abort`.
+
+.. note::
+  In all cases this will issue a stop to all hardware configured on the system,
+  however note that this may not result termination of the electric supply to
+  any hardware. Failure in communication to a hardware during abort may result
+  in failure to mitigate physical conditions.
+
+There is a `/start` endpoint to reverse the effect of `/abort`.
