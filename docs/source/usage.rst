@@ -120,6 +120,31 @@ the system.
 Monitoring and starting/stopping experiments
 ============================================
 
+During the lifetime of an experiment run, users can monitor all activities and
+hardware readouts via the built-in history server. The server records data on
+a per-vial level (as applicable) with the following properties:
+
+* **Kind**: The kind of recording, one of:
+   * "sensor": A sensor reading.
+   * "log": A log message that is otherwise not categorized as an "event".
+   * "event": An event, such as a calibration or experiment start/stop, or
+     arbitrary events emitted by controllers. Events are a special case of a log
+     message for use in e.g. drawing lines on graphs.
+* **Name**: The name of the entity, such as the hardware name for a sensor type or
+  the controller for an event. This is a discriminator for each entity within
+  the system.
+* **Vial**: The vial number, if applicable.
+* **Time**: The time of the recording.
+* **Data**: Recorded data, as a JSON object.
+
+History is visible in several places in the UI, including in the sensor plots
+under the "hardware" tab (included event data as vertical lines), and in the log
+interfaces, for example in the "experiment" tab, in addition to error messages
+surfaced.
+
+See the web api `/history` endpoint for details on query parameters and returned
+data.
+
 Aborting
 ========
 
