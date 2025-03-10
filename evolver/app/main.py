@@ -11,7 +11,7 @@ import evolver.util
 from evolver import __project__, __version__
 from evolver.app.exceptions import CalibratorNotFoundError, HardwareNotFoundError, OperationNotSupportedError
 from evolver.app.html_routes import html_app
-from evolver.app.models import EventInfo, SchemaResponse
+from evolver.app.models import EventInfo, EvolverState, EvolverStateWithConfig, SchemaResponse
 from evolver.app.routers import experiment, hardware
 from evolver.base import require_all_fields
 from evolver.device import Evolver
@@ -63,30 +63,74 @@ app.include_router(experiment.router)
 
 
 @app.get("/", operation_id="describe")
-async def describe_evolver():
-    return {
-        "config": app.state.evolver.config_model,
-        **await get_state(),
-    }
+async def describe_evolver() -> EvolverStateWithConfig:
+    """Return the current applied configuration and state of the evolver.
+
+    The state contains the latest readings from sensors, last read times and
+    flag indicating if the evolver is currently active. The config returned by
+    this endpoint can be used in a POST request to update the configuration.
+
+    See also the `/state` endpoint which provides the current state of the
+    evolver without the config.
+    """
+    return EvolverStateWithConfig(config=app.state.evolver.config_model, **(await get_state()).model_dump())
 
 
 @app.get("/state", operation_id="state")
-async def get_state():
-    return {
-        "state": app.state.evolver.state,
-        "last_read": app.state.evolver.last_read,
-        "active": app.state.evolver.enable_control,
-    }
+async def get_state() -> EvolverState:
+    """Return the current state of the eVolver.
+
+    The state refers to the sensor readings. This will be a dictionary mapping
+    the hardware name, and within that typically will be a mapping of vial
+    number to the sensor Output model (which is specific to the particular
+    hardware being reported).
+
+    This endpoint also contains a map of hardware name to the last read time of
+    the hardware, which can be used to determine the freshness of the data.
+    Additionally a flag `active` which is `True` if the control loop is enabled,
+    meaning physical actuation may be performed.
+    """
+    return EvolverState(
+        state=app.state.evolver.state,
+        last_read=app.state.evolver.last_read,
+        active=app.state.evolver.enable_control,
+    )
 
 
 @app.post("/", operation_id="update")
 async def update_evolver(config: EvolverConfigWithoutDefaults):
+    """Update the configuration of the eVolver.
+
+    This endpoint requires all fields in the configuration to be explicitly
+    provided, so does not support partial updates. To make a partial update,
+    first obtain the full configuration using the `/` endpoint, modify the
+    fields of interest, then POST the modified configuration back to this
+    endpoint.
+
+    note:
+      Applying the configuration will replace the current eVolver in-memory
+      object with a new one. Experiments will continue as normal, but any
+      in-memory buffers within controllers will be lost. History will be
+      preserved via the built-in history server, so typically this will not
+      impact operations.
+    """
     app.state.evolver = Evolver.create(config)
     app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
 
 
 @app.get("/schema/", response_model=SchemaResponse, operation_id="schema")
 async def get_schema(classinfo: ImportString | None = evolver.util.fully_qualified_name(Evolver)) -> SchemaResponse:
+    """Return json schema for the `Config` of given fully qualified class.
+
+    If no class is provided, the json schema for the `Config` of the `Evolver`
+    class is described (that which is returned in the `/` describe endpoint).
+
+    This endpoint can be used when a client needs to know what fields to set on
+    a particular hardware or controller when it is added to the system,
+    particularly when fields are required. Given the class name of the
+    component, this will return schema with the fields available to configure on
+    that component.
+    """
     return SchemaResponse(classinfo=classinfo)
 
 
@@ -100,6 +144,14 @@ async def get_history(
     properties: list[str] | None = None,
     n_max: int = None,
 ) -> HistoryResult:
+    """Get history data for the specified system components.
+
+    The arguments herein are directly passed to the history server `get` method,
+    see docs for `evolver.history.interface.History.get` for more information.
+
+    The returned value is a `HistoryResult`, see
+    `evolver.history.interface.HistoryResult` for more information.
+    """
     return app.state.evolver.history.get(
         names=names, kinds=kinds, t_start=t_start, t_stop=t_stop, vials=vials, properties=properties, n_max=n_max
     )
@@ -107,6 +159,15 @@ async def get_history(
 
 @app.post("/event")
 async def post_event(info: EventInfo):
+    """Add an event to the history server.
+
+    This puts a "event" kind with provided info into the history server. The
+    info should contain a name, message and optionally a vial number it refers
+    to and any auxiliary data to be stored with the event.
+
+    These events can be subsequently retrieved using the `/history` endpoint,
+    where they can be adding to plots or other visualizations.
+    """
     full_name = f"{settings.DEFAULT_LOGGER}.{info.name}"
     logging.getLogger(full_name).log(EVENT, info.message, extra=LogInfo(vial=info.vial, **info.data))
 
@@ -127,6 +188,15 @@ async def evolver_async_loop():
 
 @app.get("/calibration_status/")
 async def calibration_status(name: str = None):
+    """Return the status of calibration on the specified hardware.
+
+    If no name is provided, the status of calibration on all hardware is
+    returned as a map of hardware name to calibration status, where status is
+    None if a calibrator doesn't exist on that hardware.
+
+    If a name is provided and a calibrator does not exist, this returns a
+    CalibratorNotFoundError.
+    """
     if not name:
         return app.state.evolver.calibration_status
 
@@ -153,6 +223,22 @@ async def calibrate(name: str, data: dict = None):
 
 @app.post("/abort")
 async def abort():
+    """Abort the evolver.
+
+    This will stop the control loop, thus preventing any further physical
+    actuation of the system. The endpoint also calls the `abort` method of the
+    eVolver manager, which in turn calls the `off` method of all hardware, to
+    attempt to perform a clean shutdown.
+
+    Abort does not stop sensor reads, so the state of the system can still be
+    inquired to help ensure it arrived to a safe state.
+
+    note:
+        Shutting off hardware requires a command to be sent and acknowledged by
+        the hardware, and thus it cannot be guaranteed that all hardware will
+        successfully shut down. Physical intervention in the lab may be
+        required.
+    """
     app.state.evolver.abort()
     # Disable control/commit also in persistent config in case application needs to restart
     config = Evolver.Config.load(app_settings.CONFIG_FILE)
@@ -162,6 +248,11 @@ async def abort():
 
 @app.post("/start")
 async def start():
+    """Start the control loop after abort.
+
+    This will re-enable the control loop, allowing the system to resume normal
+    operation including physical actuation of the system.
+    """
     config = Evolver.Config.load(app_settings.CONFIG_FILE)
     config.enable_control = True
     await update_evolver(config)
