@@ -3,6 +3,7 @@ from typing import Any
 import pydantic
 
 from evolver.base import BaseConfig, BaseInterface
+from evolver.device import Evolver
 from evolver.types import ImportString
 
 
@@ -30,3 +31,13 @@ class EventInfo(pydantic.BaseModel):
     message: str
     vial: int | None = None
     data: dict = {}
+
+
+class EvolverState(pydantic.BaseModel):
+    state: dict
+    last_read: dict
+    active: bool
+
+
+class EvolverStateWithConfig(EvolverState):
+    config: Evolver.Config
