@@ -192,6 +192,8 @@ class Calibrator(BaseInterface):
         # transformer classes, or we use the cached fitted ones. No measurements
         # means we must use the cached fitted ones.
         if self.no_refit or not self.calibration_data.measured:
+            if self.calibration_data.fitted_calibrator is None:
+                raise ValueError("Calibration data must have a fitted calibrator in case of no_refit or no measured")
             fitted_calibrator = self.calibration_data.fitted_calibrator.create()
             self.input_transformer = fitted_calibrator.input_transformer
             self.output_transformer = fitted_calibrator.output_transformer
