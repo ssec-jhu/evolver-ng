@@ -84,7 +84,8 @@ class Evolver(BaseInterface):
         logger.setLevel(self.log_level)
 
     def __del__(self):
-        logging.getLogger(settings.DEFAULT_LOGGER).removeHandler(self._log_capture_handler)
+        if handler := getattr(self, "_log_capture_handler", None):
+            logging.getLogger(settings.DEFAULT_LOGGER).removeHandler(handler)
 
     def get_hardware(self, name):
         return self.hardware[name]
