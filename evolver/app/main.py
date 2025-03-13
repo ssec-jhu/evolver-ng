@@ -113,7 +113,11 @@ async def post_event(info: EventInfo):
 
 @app.get("/healthz", operation_id="healthcheck")
 async def healthz():
-    return {"message": f"Running '{__project__}' ver: '{__version__}'", "active": app.state.evolver.enable_control}
+    return {
+        "message": f"Running '{__project__}' ver: '{__version__}'",
+        "active": app.state.evolver.enable_control,
+        "name": app.state.evolver.name,
+    }
 
 
 async def evolver_async_loop():
