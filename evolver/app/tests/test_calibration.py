@@ -353,17 +353,6 @@ def test_calibration_procedure_apply(tmp_path):
     temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(cal_file))
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    # Mock the init_transformers method to verify it gets called
-    original_init_transformers = temp_calibrator.init_transformers
-    called_with = []
-
-    def mock_init_transformers(cal_data):
-        called_with.append(cal_data)
-        # Still call the original method to maintain behavior
-        return original_init_transformers(cal_data)
-
-    temp_calibrator.init_transformers = mock_init_transformers
-
     # Start procedure
     client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
 
@@ -376,11 +365,13 @@ def test_calibration_procedure_apply(tmp_path):
     apply_response = client.post("/hardware/test/calibrator/procedure/apply")
     assert apply_response.status_code == 200
 
-    # Verify init_transformers was called with the current state
-    assert len(called_with) == 1
-    # The key might be represented as int in one and string in the other
-    assert str(list(called_with[0].measured.keys())[0]) == "0"
-    measured_data = called_with[0].measured[list(called_with[0].measured.keys())[0]]
+    # Verify that the calibration_file was updated and procedure_file was cleared
+    assert temp_calibrator.calibration_file == str(cal_file)
+    assert temp_calibrator.procedure_file is None
+
+    # Verify the correct state was set on the calibrator
+    assert "0" in temp_calibrator.calibration_data.measured or 0 in temp_calibrator.calibration_data.measured
+    measured_data = temp_calibrator.calibration_data.measured.get("0", temp_calibrator.calibration_data.measured.get(0))
     assert measured_data["raw"] == [1.23]
     assert measured_data["reference"] == [25.0]
 
@@ -393,8 +384,15 @@ def test_calibration_procedure_apply(tmp_path):
     no_procedure_response = client.post("/hardware/test/calibrator/procedure/apply")
     assert no_procedure_response.json() == {"started": False}
 
-    # Test apply failure
+    # Test apply failure with missing procedure_file
     app.state.evolver.hardware["test"].calibrator.calibration_procedure = MagicMock()
+    app.state.evolver.hardware["test"].calibrator.calibration_procedure.apply.side_effect = ValueError(
+        "procedure_file attribute is not set"
+    )
+    error_response = client.post("/hardware/test/calibrator/procedure/apply")
+    assert error_response.status_code == 500
+
+    # Test apply with general exception
     app.state.evolver.hardware["test"].calibrator.calibration_procedure.apply.side_effect = Exception
     error_response = client.post("/hardware/test/calibrator/procedure/apply")
     assert error_response.status_code == 500

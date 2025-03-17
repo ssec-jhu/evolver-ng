@@ -39,10 +39,8 @@ class CalibratorProcedureSaveError(HTTPException):
 
 
 class CalibratorProcedureApplyError(HTTPException):
-    def __init__(self, **kwargs):
-        return super().__init__(
-            status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail="Unable to apply calibration procedure", **kwargs
-        )
+    def __init__(self, detail: str = "Unable to apply calibration procedure", **kwargs):
+        return super().__init__(status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail=detail, **kwargs)
 
 
 class CalibrationProcedureActionNotFoundError(HTTPException):

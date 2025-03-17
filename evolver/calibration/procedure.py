@@ -75,11 +75,23 @@ class CalibrationProcedure(BaseInterface, ABC):
 
     def apply(self):
         """
-        Apply the calibration by calling the parent Calibrator's init_transformers method.
-        This initializes transformers from the calibration procedure's measured data.
+        Apply the calibration by updating the calibrator configuration.
+
+        This sets the calibration_file to the value of procedure_file and clears procedure_file.
+        Since updating configuration re-initializes the evolver object, this will result in
+        loading the calibration state data and calling init_transformers through the standard mechanisms.
         """
+        procedure_file = self.hardware.calibrator.procedure_file
+        if procedure_file is None:
+            raise ValueError("procedure_file attribute is not set on the Calibrator config.")
+
+        # Update the calibrator's configuration
+        self.hardware.calibrator.calibration_file = procedure_file
+        self.hardware.calibrator.procedure_file = None
+
+        # Ensure calibration data is updated
         self.hardware.calibrator.calibration_data = self.state
-        self.hardware.calibrator.init_transformers(self.state)
+
         return self.state
 
     def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):

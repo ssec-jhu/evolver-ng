@@ -14,6 +14,7 @@ from evolver.app.exceptions import (
     HardwareNotFoundError,
 )
 from evolver.hardware.interface import HardwareDriver
+from evolver.settings import app_settings
 
 router = APIRouter(prefix="/hardware", tags=["hardware"], responses={404: {"description": "Not found"}})
 
@@ -190,6 +191,16 @@ def save_calibration_procedure(hardware_name: str, request: Request):
 
 @router.post("/{hardware_name}/calibrator/procedure/apply")
 def apply_calibration_procedure(hardware_name: str, request: Request):
+    """Apply the calibration procedure to update the calibrator configuration.
+
+    This endpoint:
+    1. Sets the calibration_file to the value of procedure_file
+    2. Clears the procedure_file
+    3. Updates the calibration data
+
+    Since the configuration is updated, the evolver object will be reinitialized,
+    which will load the calibration state and initialize transformers.
+    """
     hardware_instance = get_hardware_instance(request, hardware_name)
 
     if not (calibrator := hardware_instance.calibrator):
@@ -199,6 +210,11 @@ def apply_calibration_procedure(hardware_name: str, request: Request):
         return {"started": False}
     try:
         calibration_procedure.apply()
+        # Update the evolver configuration to trigger reinitialization
+        if request.app.state.evolver:
+            request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
+    except ValueError as e:
+        raise CalibratorProcedureApplyError(detail=str(e))
     except Exception:
         raise CalibratorProcedureApplyError
 
