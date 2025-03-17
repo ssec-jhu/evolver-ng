@@ -37,6 +37,7 @@ class TestApp:
         assert response.status_code == 200
         if __version__:
             assert __version__ in response.json()["message"], response.json()
+        assert response.json()["name"]
         assert response.json()["active"]
 
     def test_evolver_app_default_config_dump_endpoint(self, app_client):
