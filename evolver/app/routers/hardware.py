@@ -8,6 +8,7 @@ from evolver.app.exceptions import (
     CalibrationProcedureActionNotFoundError,
     CalibratorCalibrationDataNotFoundError,
     CalibratorNotFoundError,
+    CalibratorProcedureApplyError,
     CalibratorProcedureSaveError,
     EvolverNotFoundError,
     HardwareNotFoundError,
@@ -183,6 +184,23 @@ def save_calibration_procedure(hardware_name: str, request: Request):
         calibration_procedure.save()
     except Exception:
         raise CalibratorProcedureSaveError
+
+    return calibration_procedure.get_state()
+
+
+@router.post("/{hardware_name}/calibrator/procedure/apply")
+def apply_calibration_procedure(hardware_name: str, request: Request):
+    hardware_instance = get_hardware_instance(request, hardware_name)
+
+    if not (calibrator := hardware_instance.calibrator):
+        raise CalibratorNotFoundError
+
+    if not (calibration_procedure := getattr(calibrator, "calibration_procedure", None)):
+        return {"started": False}
+    try:
+        calibration_procedure.apply()
+    except Exception:
+        raise CalibratorProcedureApplyError
 
     return calibration_procedure.get_state()
 

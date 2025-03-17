@@ -73,6 +73,15 @@ class CalibrationProcedure(BaseInterface, ABC):
         self.hardware.calibrator.calibration_data.save(file_path)
         return self.state
 
+    def apply(self):
+        """
+        Apply the calibration by calling the parent Calibrator's init_transformers method.
+        This initializes transformers from the calibration procedure's measured data.
+        """
+        self.hardware.calibrator.calibration_data = self.state
+        self.hardware.calibrator.init_transformers(self.state)
+        return self.state
+
     def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):
         if payload is not None and action.FormModel.model_fields != {}:
             payload = action.FormModel(**payload)
