@@ -162,8 +162,10 @@ class Calibrator(BaseInterface):
                 elif self.output_transformer:
                     self.ok = self.output_transformer.ok
 
-    def __init__(self, *args, calibration_file=None, **kwargs):
-        super().__init__(*args, calibration_file=calibration_file, **kwargs)
+    def __init__(self, *args, calibration_file=None, procedure_file=None, **kwargs):
+        super().__init__(*args, calibration_file=calibration_file, procedure_file=procedure_file, **kwargs)
+        if procedure_file is not None and procedure_file == calibration_file:
+            raise ValueError("to prevent corruption procedure_file must not be set to the same as calibration_file")
         if calibration_file:
             self.calibration_file = calibration_file
             self.load_calibration_file(calibration_file)

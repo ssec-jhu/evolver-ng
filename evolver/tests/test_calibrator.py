@@ -107,3 +107,14 @@ class TestCalibrator:
         assert obj.get_input_transformer(0).param1 == 2.0
         assert obj.get_input_transformer("1").param1 == 1.0
         assert obj.get_input_transformer(1).param1 == 1.0
+
+    def test_error_on_procedure_file_is_calibration_file(self, tmp_path):
+        with pytest.raises(ValueError, match="procedure_file must not be set to the same"):
+            NoOpCalibrator(procedure_file="x", calibration_file="x")
+        # both being unspecified should be OK
+        NoOpCalibrator(procedure_file=None, calibration_file=None)
+        # procedure file different from cal file, here we need a realistic cal
+        # file to avoid error from that.
+        cal_file = tmp_path / "calibration_state.yaml"
+        CalibrationStateModel(fitted_calibrator=NoOpCalibrator()).save(cal_file)
+        NoOpCalibrator(procedure_file="x", calibration_file=cal_file)
