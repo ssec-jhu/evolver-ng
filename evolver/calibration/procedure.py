@@ -68,6 +68,7 @@ class CalibrationProcedure(BaseInterface, ABC):
         file_path = self.hardware.calibrator.procedure_file
         # calibration_file maybe none, in which case the save operation must fail with an error message.
         if file_path is None:
+            # This indicates the user started a procedure and completed some actions and now wants to save it but no procedure file exists...
             raise ValueError("procedure_file attribute is not set on the Calibrator config.")
         self.hardware.calibrator.calibration_data = self.state
         self.hardware.calibrator.calibration_data.save(file_path)
@@ -75,22 +76,30 @@ class CalibrationProcedure(BaseInterface, ABC):
 
     def apply(self):
         """
-        Apply the calibration by updating the calibrator configuration.
+        Apply the calibration by updating the calibration_file to match the saved state of the calibration procedure.
 
-        This sets the calibration_file to the value of procedure_file and clears procedure_file.
+        This sets the calibration_file to the value of procedure_file.
+
         Since updating configuration re-initializes the evolver object, this will result in
-        loading the calibration state data and calling init_transformers through the standard mechanisms.
+        loading the calibration state data stored in the calibration_file location and calling init_transformers through the standard mechanisms.
+
+        See the /{hardware_name}/calibrator/procedure/apply HTTP endpoint.
         """
-        procedure_file = self.hardware.calibrator.procedure_file
-        if procedure_file is None:
-            raise ValueError("procedure_file attribute is not set on the Calibrator config.")
-
-        # Update the calibrator's configuration
-        self.hardware.calibrator.calibration_file = procedure_file
-        self.hardware.calibrator.procedure_file = None
-
-        # Ensure calibration data is updated
+        # call save method this saves procedure state to the procedure_file attribute.
+        self.save()
+        # now save the procedure state to the calibration_file attribute
+        file_path = self.hardware.calibrator.calibration_file
+        # calibration_file maybe none, in which case the save operation must fail with an error message.
+        if file_path is None:
+            raise ValueError("calibration_file attribute is not set on the Calibrator config.")
         self.hardware.calibrator.calibration_data = self.state
+
+        # calling save will trigger device reinitialization,
+        # this is necessary because init_transformers with the data in calibration_file is called on device initialization.
+        self.hardware.calibrator.calibration_data.save(file_path)
+
+        # Clear procedure_file to indicate that the procedure is complete and has been applied
+        self.hardware.calibrator.procedure_file = None
 
         return self.state
 

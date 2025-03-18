@@ -11,7 +11,9 @@ from evolver.hardware.demo import NoOpSensorDriver
 from evolver.tests.conftest import tmp_calibration_dir  # noqa: F401
 
 
-def setup_evolver_with_calibrator(calibrator_class, hardware_name="test", vials=[0, 1, 2], procedure_file=None):
+def setup_evolver_with_calibrator(
+    calibrator_class, hardware_name="test", vials=[0, 1, 2], procedure_file=None, calibration_file=None
+):
     calibrator = calibrator_class(
         input_transformer={
             0: LinearTransformer("Test Transformer"),
@@ -24,6 +26,7 @@ def setup_evolver_with_calibrator(calibrator_class, hardware_name="test", vials=
             2: LinearTransformer(),
         },
         procedure_file=procedure_file,
+        calibration_file=calibration_file,
     )
     evolver_instance = Evolver(
         hardware={hardware_name: NoOpSensorDriver(name=hardware_name, calibrator=calibrator, vials=vials)}
@@ -139,20 +142,68 @@ def test_dispatch_temperature_calibration_raw_value_action():
 
 
 def test_reset_calibration_procedure():
-    _, client = setup_evolver_with_calibrator(TemperatureCalibrator)
-
+    # Use a simpler approach without mocking datetime
+    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    # Starting with resume=False should generate a new procedure file
+    start_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    assert start_response.status_code == 200
 
+    # Verify procedure_file was set
+    assert temp_calibrator.procedure_file is not None
+    assert "test-calibration_procedure-" in temp_calibrator.procedure_file
+    assert temp_calibrator.procedure_file.endswith(".yml")
+
+    # Remember the first procedure file
+    first_procedure_file = temp_calibrator.procedure_file
+
+    # Perform an action
     raw_dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
     assert raw_dispatch_response.status_code == 200
 
+    # Manually modify the procedure file to ensure it's different
+    # (avoid timing issues in tests)
+    temp_calibrator.procedure_file = first_procedure_file.replace(".yml", "-modified.yml")
+
+    # Reset procedure and check if a new procedure file is generated
     reset_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
     assert reset_response.status_code == 200
 
+    # Verify the new filename is not the same as our manually modified one
+    assert temp_calibrator.procedure_file != first_procedure_file.replace(".yml", "-modified.yml")
+    assert "test-calibration_procedure-" in temp_calibrator.procedure_file
+    assert temp_calibrator.procedure_file.endswith(".yml")
+
+    # Verify state is reset
     expected_subset = get_empty_calibration_state()
     assert expected_subset.items() <= reset_response.json().items()
+
+
+def test_resume_with_no_procedure_file():
+    # Test resuming when no procedure file exists yet
+    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=None)
+
+    # Ensure procedure_file is None initially
+    assert temp_calibrator.procedure_file is None
+
+    # Try to resume - should fail with a 404 and a clear error message
+    resume_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": True})
+    assert resume_response.status_code == 404
+    assert "No in progress calibration procedure was found" in resume_response.json()["detail"]
+
+    # Start a new procedure (resume=False)
+    start_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    assert start_response.status_code == 200
+
+    # Verify a procedure file was generated
+    assert temp_calibrator.procedure_file is not None
+    assert "test-calibration_procedure-" in temp_calibrator.procedure_file
+    assert temp_calibrator.procedure_file.endswith(".yml")
+
+    # State should be empty (new procedure)
+    expected_subset = get_empty_calibration_state()
+    assert expected_subset.items() <= start_response.json().items()
 
 
 def test_calibration_procedure_undo_action_utility():
@@ -221,11 +272,21 @@ def test_calibration_procedure_resume(tmp_path):
     cal_file = tmp_path / "calibrationXXX.yml"
 
     # Initial setup and procedure
-    _, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(cal_file))
+    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(cal_file))
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
     # Start and perform initial procedure actions
-    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    start_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    assert start_response.status_code == 200
+
+    # Starting with resume=False should update the procedure file name
+    assert temp_calibrator.procedure_file != str(cal_file)
+    assert "test-calibration_procedure-" in temp_calibrator.procedure_file
+    assert temp_calibrator.procedure_file.endswith(".yml")
+
+    # Remember the procedure file name
+    procedure_file = temp_calibrator.procedure_file
+
     dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
     assert dispatch_response.status_code == 200
 
@@ -234,8 +295,21 @@ def test_calibration_procedure_resume(tmp_path):
     assert save_response.status_code == 200
     saved_state = save_response.json()
 
+    # Create a real file for the resume test
+    from pathlib import Path
+
+    import yaml
+
+    # Use the actual procedure file path from the first run
+    cali_path = Path(procedure_file)
+    state_dict = saved_state
+
+    # Write the state to the file so it can be loaded
+    with open(cali_path, "w") as f:
+        yaml.dump(state_dict, f)
+
     # Create new client to simulate fresh start
-    _, new_client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(cal_file))
+    _, new_client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=procedure_file)
 
     # Resume procedure
     resume_response = new_client.post("/hardware/test/calibrator/procedure/start", params={"resume": True})
@@ -347,10 +421,12 @@ def test_get_calibration_data(tmp_path):
 
 
 def test_calibration_procedure_apply(tmp_path):
-    # Setup fs for save.
+    # Setup fs for save and two files.
+    proc_file = tmp_path / "procedure.yml"
     cal_file = tmp_path / "calibration.yml"
 
-    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(cal_file))
+    # Initialize with only procedure_file
+    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(proc_file))
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
     # Start procedure
@@ -361,8 +437,12 @@ def test_calibration_procedure_apply(tmp_path):
     dispatch_action(client, "test", "read_vial_0_raw_output")
     dispatch_action(client, "test", "calculate_vial_0_fit")
 
-    # Test successful apply
-    apply_response = client.post("/hardware/test/calibrator/procedure/apply")
+    # Save the procedure first to ensure procedure_file exists
+    save_response = client.post("/hardware/test/calibrator/procedure/save")
+    assert save_response.status_code == 200
+
+    # Test successful apply with explicit calibration_file
+    apply_response = client.post(f"/hardware/test/calibrator/procedure/apply?calibration_file={str(cal_file)}")
     assert apply_response.status_code == 200
 
     # Verify that the calibration_file was updated and procedure_file was cleared
@@ -375,13 +455,15 @@ def test_calibration_procedure_apply(tmp_path):
     assert measured_data["raw"] == [1.23]
     assert measured_data["reference"] == [25.0]
 
-    # Test apply with no calibrator
-    no_calibrator_response = client.post("/hardware/nonexistent/calibrator/procedure/apply")
+    # Test apply with no calibrator, providing a dummy calibration file path
+    no_calibrator_response = client.post(
+        f"/hardware/nonexistent/calibrator/procedure/apply?calibration_file={str(cal_file)}"
+    )
     assert no_calibrator_response.status_code == 404
 
     # Test apply with no procedure started
     app.state.evolver.hardware["test"].calibrator.calibration_procedure = None
-    no_procedure_response = client.post("/hardware/test/calibrator/procedure/apply")
+    no_procedure_response = client.post(f"/hardware/test/calibrator/procedure/apply?calibration_file={str(cal_file)}")
     assert no_procedure_response.json() == {"started": False}
 
     # Test apply failure with missing procedure_file
@@ -389,10 +471,10 @@ def test_calibration_procedure_apply(tmp_path):
     app.state.evolver.hardware["test"].calibrator.calibration_procedure.apply.side_effect = ValueError(
         "procedure_file attribute is not set"
     )
-    error_response = client.post("/hardware/test/calibrator/procedure/apply")
+    error_response = client.post(f"/hardware/test/calibrator/procedure/apply?calibration_file={str(cal_file)}")
     assert error_response.status_code == 500
 
     # Test apply with general exception
     app.state.evolver.hardware["test"].calibrator.calibration_procedure.apply.side_effect = Exception
-    error_response = client.post("/hardware/test/calibrator/procedure/apply")
+    error_response = client.post(f"/hardware/test/calibrator/procedure/apply?calibration_file={str(cal_file)}")
     assert error_response.status_code == 500

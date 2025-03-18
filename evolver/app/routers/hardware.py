@@ -1,3 +1,5 @@
+import datetime
+import os.path
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Body, Path, Request
@@ -6,6 +8,7 @@ from pydantic import BaseModel
 
 from evolver.app.exceptions import (
     CalibrationProcedureActionNotFoundError,
+    CalibrationProcedureNotFoundError,
     CalibratorCalibrationDataNotFoundError,
     CalibratorNotFoundError,
     CalibratorProcedureApplyError,
@@ -14,7 +17,7 @@ from evolver.app.exceptions import (
     HardwareNotFoundError,
 )
 from evolver.hardware.interface import HardwareDriver
-from evolver.settings import app_settings
+from evolver.settings import app_settings, settings
 
 router = APIRouter(prefix="/hardware", tags=["hardware"], responses={404: {"description": "Not found"}})
 
@@ -80,16 +83,38 @@ def start_calibration_procedure(
     request: Request,
     resume: bool = Query(True),
 ):
-    # TODO: flesh out the flow if resume is false.
-    # Currently - starting a procedure with resume to false risks destroying the state of the procedure (if any in the existing calibration_file).
-    # One solution - when resume param is false require another param - "filename" to save the procedure state to and update the calibration_file attribute in the Calibrator config accordingly.
-    # Alternative solution - if resume is false, add a warning that extant procedure state if any will be lost.
-    # This touches on the issue described here: https://github.com/ssec-jhu/evolver-ui/issues/28
+    """Start a calibration procedure for the specified hardware.
+
+    Args:
+        hardware_name: Name of the hardware to calibrate
+        resume: If True, resume from existing procedure state. If False, start a new procedure
+                with a newly generated procedure file name.
+
+    Returns:
+        The initial state of the calibration procedure.
+    """
     hardware_instance = get_hardware_instance(request, hardware_name)
     calibrator = hardware_instance.calibrator
     if not calibrator:
         raise CalibratorNotFoundError
 
+    # When resume is False, generate a new procedure file name
+    if not resume:
+        # Generate a timestamp-based filename
+        timestamp = datetime.datetime.now().strftime(settings.DATETIME_PATH_FORMAT)
+        new_procedure_file = f"{hardware_name}-calibration_procedure-{timestamp}.yml"
+
+        # Update the calibrator's procedure_file
+        calibrator.procedure_file = new_procedure_file
+
+        # Save the updated configuration
+        if request.app.state.evolver:
+            request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
+    elif calibrator.procedure_file is None or not os.path.exists(calibrator.procedure_file):
+        # If resuming but no procedure file exists or file doesn't exist, raise an informative error
+        raise CalibrationProcedureNotFoundError()
+
+    # Create the calibration procedure
     calibrator.create_calibration_procedure(
         selected_hardware=hardware_instance,
         resume=resume,
@@ -190,17 +215,27 @@ def save_calibration_procedure(hardware_name: str, request: Request):
 
 
 @router.post("/{hardware_name}/calibrator/procedure/apply")
-def apply_calibration_procedure(hardware_name: str, request: Request):
+def apply_calibration_procedure(
+    hardware_name: str,
+    request: Request,
+    calibration_file: str,  # Required parameter to specify calibration file path
+):
     """Apply the calibration procedure to update the calibrator configuration.
 
-    This endpoint:
-    1. Sets the calibration_file to the value of procedure_file
-    2. Clears the procedure_file
-    3. Updates the calibration data
+    When trying to understand both the Calibrator.calibration_file and Calibrator.procedure_file,
+    calibration_file is a complete version of procedure_file, whereas the latter can be incomplete.
 
-    Since the configuration is updated, the evolver object will be reinitialized,
-    which will load the calibration state and initialize transformers.
+    One way to think about procedure_file is as ephemeral memory, or a "buffer" used to store the in-progress procedure data.
+    When all actions that constitute a procedure are complete, that procedure is eligible to be "applied", which means
+    that its state is copied to the calibration_file and the data stored there is sufficient to calibrate the hardware it is
+    associated with whenenever the device is initialized.
+
+    On which note: since the configuration is reinitialized by calling save -
+    self.hardware.calibrator.calibration_data.save(file_path)
+    the evolver object will be reinitialized directly when this endpoint is invoked, and transformers initialized.
+
     """
+
     hardware_instance = get_hardware_instance(request, hardware_name)
 
     if not (calibrator := hardware_instance.calibrator):
@@ -208,15 +243,21 @@ def apply_calibration_procedure(hardware_name: str, request: Request):
 
     if not (calibration_procedure := getattr(calibrator, "calibration_procedure", None)):
         return {"started": False}
+
+    # Update the calibrator's configuration with the provided calibration_file
+    calibrator.calibration_file = calibration_file
+
+    # Save the updated configuration
+    if request.app.state.evolver:
+        request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
+
     try:
+        # Apply will save the procedure state to the calibration_file
         calibration_procedure.apply()
-        # Update the evolver configuration to trigger reinitialization
-        if request.app.state.evolver:
-            request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
     except ValueError as e:
         raise CalibratorProcedureApplyError(detail=str(e))
-    except Exception:
-        raise CalibratorProcedureApplyError
+    except Exception as e:
+        raise CalibratorProcedureApplyError(detail=str(e))
 
     return calibration_procedure.get_state()
 
