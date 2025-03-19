@@ -1,5 +1,3 @@
-import datetime
-import os.path
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Body, Path, Request
@@ -17,7 +15,7 @@ from evolver.app.exceptions import (
     HardwareNotFoundError,
 )
 from evolver.hardware.interface import HardwareDriver
-from evolver.settings import app_settings, settings
+from evolver.settings import app_settings
 
 router = APIRouter(prefix="/hardware", tags=["hardware"], responses={404: {"description": "Not found"}})
 
@@ -82,13 +80,15 @@ def start_calibration_procedure(
     hardware_name: str,
     request: Request,
     resume: bool = Query(True),
+    procedure_file: str | None = None,
 ):
     """Start a calibration procedure for the specified hardware.
 
     Args:
         hardware_name: Name of the hardware to calibrate
         resume: If True, resume from existing procedure state. If False, start a new procedure
-                with a newly generated procedure file name.
+                and require a procedure_file name.
+        procedure_file: Required when resume is False. The file to save the procedure state to.
 
     Returns:
         The initial state of the calibration procedure.
@@ -98,21 +98,21 @@ def start_calibration_procedure(
     if not calibrator:
         raise CalibratorNotFoundError
 
-    # When resume is False, generate a new procedure file name
-    if not resume:
-        # Generate a timestamp-based filename
-        timestamp = datetime.datetime.now().strftime(settings.DATETIME_PATH_FORMAT)
-        new_procedure_file = f"{hardware_name}-calibration_procedure-{timestamp}.yml"
-
-        # Update the calibrator's procedure_file
-        calibrator.procedure_file = new_procedure_file
-
-        # Save the updated configuration
-        if request.app.state.evolver:
-            request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
-    elif calibrator.procedure_file is None or not os.path.exists(calibrator.procedure_file):
-        # If resuming but no procedure file exists or file doesn't exist, raise an informative error
-        raise CalibrationProcedureNotFoundError()
+    if resume:
+        # When resuming, ensure we have a procedure file defined
+        if calibrator.procedure_file is None:
+            raise CalibrationProcedureNotFoundError()
+    else:
+        # Not resuming (new procedure)
+        if calibrator.procedure_file is None:
+            # Missing procedure_file from config when starting new calibration
+            raise CalibrationProcedureNotFoundError()
+        else:
+            # Update the calibrator's procedure_file to be the one specified by the user in the request param
+            calibrator.procedure_file = procedure_file
+            # Save the updated configuration
+            if request.app.state.evolver:
+                request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
 
     # Create the calibration procedure
     calibrator.create_calibration_procedure(
@@ -228,7 +228,7 @@ def apply_calibration_procedure(
     One way to think about procedure_file is as ephemeral memory, or a "buffer" used to store the in-progress procedure data.
     When all actions that constitute a procedure are complete, that procedure is eligible to be "applied", which means
     that its state is copied to the calibration_file and the data stored there is sufficient to calibrate the hardware it is
-    associated with whenenever the device is initialized.
+    associated with whenever the device is initialized.
 
     On which note: since the configuration is reinitialized by calling save -
     self.hardware.calibrator.calibration_data.save(file_path)

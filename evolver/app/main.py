@@ -114,13 +114,6 @@ async def update_evolver(config: EvolverConfigWithoutDefaults):
       preserved via the built-in history server, so typically this will not
       impact operations.
     """
-
-    # "APPLY"
-
-    # calibration_file = "foo_bar.yml"
-
-    "it's the same thing you did to save the procedure state to the procedure file, so copy that logic"
-
     app.state.evolver = Evolver.create(config)
     app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
 

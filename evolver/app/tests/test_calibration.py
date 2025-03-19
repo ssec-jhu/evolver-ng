@@ -49,10 +49,14 @@ def dispatch_action(client, hardware_name, action_name, payload=None):
 
 
 class TestCalibration:
-    def test_get_calibration_status(self):
+    def test_get_calibration_status(self, tmp_path):
         _, client = setup_evolver_with_calibrator(NoOpCalibrator)
 
-        response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+        procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
+        response = client.post(
+            "/hardware/test/calibrator/procedure/start",
+            params={"resume": False, "procedure_file": procedure_file},
+        )
         assert response.status_code == 200
 
         response = client.get("/hardware/test/calibrator/procedure/state")
@@ -75,10 +79,15 @@ class TestCalibration:
         assert response.json() == {"started": False}
 
 
-def test_temperature_calibration_procedure_actions():
+def test_temperature_calibration_procedure_actions(tmp_path):
     temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
-    response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
+    response = client.post(
+        "/hardware/test/calibrator/procedure/start",
+        params={"resume": False, "procedure_file": procedure_file},
+    )
+
     assert response.status_code == 200
 
     actions_response = client.get("/hardware/test/calibrator/procedure/actions")
@@ -107,10 +116,14 @@ def test_temperature_calibration_procedure_actions_not_started():
     assert response.json() == {"started": False}
 
 
-def test_dispatch_temperature_calibration_bad_reference_value_action():
+def test_dispatch_temperature_calibration_bad_reference_value_action(tmp_path):
     _, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
-    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
+    client.post(
+        "/hardware/test/calibrator/procedure/start",
+        params={"resume": False, "procedure_file": procedure_file},
+    )
 
     action_payload = {"action_name": "measure_vial_0_temperature", "payload": {"this_should_not_work": 25.0}}
     dispatch_response = dispatch_action(client, "test", "measure_vial_0_temperature", action_payload["payload"])
@@ -118,12 +131,16 @@ def test_dispatch_temperature_calibration_bad_reference_value_action():
     assert dispatch_response.status_code == 422
 
 
-def test_dispatch_temperature_calibration_raw_value_action():
+def test_dispatch_temperature_calibration_raw_value_action(tmp_path):
     _, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
+    client.post(
+        "/hardware/test/calibrator/procedure/start",
+        params={"resume": False, "procedure_file": procedure_file},
+    )
 
     raw_dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
 
@@ -141,19 +158,21 @@ def test_dispatch_temperature_calibration_raw_value_action():
     assert expected_subset.items() <= raw_dispatch_response.json().items()
 
 
-def test_reset_calibration_procedure():
-    # Use a simpler approach without mocking datetime
+def test_reset_calibration_procedure(tmp_path):
     temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    # Starting with resume=False should generate a new procedure file
-    start_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
+    start_response = client.post(
+        "/hardware/test/calibrator/procedure/start",
+        params={"resume": False, "procedure_file": procedure_file},
+    )
     assert start_response.status_code == 200
 
     # Verify procedure_file was set
     assert temp_calibrator.procedure_file is not None
-    assert "test-calibration_procedure-" in temp_calibrator.procedure_file
-    assert temp_calibrator.procedure_file.endswith(".yml")
+    # Middle part of the procedure_file is a timestamp so we don't make assertions about it.
+    assert temp_calibrator.procedure_file == procedure_file
 
     # Remember the first procedure file
     first_procedure_file = temp_calibrator.procedure_file
@@ -162,27 +181,21 @@ def test_reset_calibration_procedure():
     raw_dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
     assert raw_dispatch_response.status_code == 200
 
-    # Manually modify the procedure file to ensure it's different
-    # (avoid timing issues in tests)
-    temp_calibrator.procedure_file = first_procedure_file.replace(".yml", "-modified.yml")
-
     # Reset procedure and check if a new procedure file is generated
-    reset_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    new_procedure_file = str(tmp_path / "my_test_calibration_procedure_2.yml")
+    reset_response = client.post(
+        "/hardware/test/calibrator/procedure/start",
+        params={"resume": False, "procedure_file": new_procedure_file},
+    )
     assert reset_response.status_code == 200
 
-    # Verify the new filename is not the same as our manually modified one
-    assert temp_calibrator.procedure_file != first_procedure_file.replace(".yml", "-modified.yml")
-    assert "test-calibration_procedure-" in temp_calibrator.procedure_file
-    assert temp_calibrator.procedure_file.endswith(".yml")
-
-    # Verify state is reset
-    expected_subset = get_empty_calibration_state()
-    assert expected_subset.items() <= reset_response.json().items()
+    # Verify the new updated / new procedure_file is not the same as the (1-sec-ago) old one
+    assert temp_calibrator.procedure_file != first_procedure_file
 
 
-def test_resume_with_no_procedure_file():
+def test_calibration_procedure_resume_with_no_procedure_file():
     # Test resuming when no procedure file exists yet
-    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=None)
+    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
     # Ensure procedure_file is None initially
     assert temp_calibrator.procedure_file is None
@@ -192,18 +205,47 @@ def test_resume_with_no_procedure_file():
     assert resume_response.status_code == 404
     assert "No in progress calibration procedure was found" in resume_response.json()["detail"]
 
-    # Start a new procedure (resume=False)
-    start_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+
+def test_calibration_procedure_resume_with_existing_procedure_file(tmp_path):
+    # Setup fs for an existing calibration_procedure_file.
+    procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
+
+    # create a file at cal_file, because this is created in tmp_path pytest handles cleanup.
+    from pathlib import Path
+
+    Path(procedure_file).touch()
+
+    # Initial setup using the existing calibration_procedure file
+    temp_calibrator, client = setup_evolver_with_calibrator(
+        TemperatureCalibrator,
+        procedure_file=procedure_file,
+    )
+    app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
+
+    # Start a procedure with "resume": True, this will ensure the procedure_file will be the one already represented in config.
+    start_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": True})
     assert start_response.status_code == 200
 
-    # Verify a procedure file was generated
-    assert temp_calibrator.procedure_file is not None
-    assert "test-calibration_procedure-" in temp_calibrator.procedure_file
-    assert temp_calibrator.procedure_file.endswith(".yml")
+    # dispatch an action
+    dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
+    assert dispatch_response.status_code == 200
 
-    # State should be empty (new procedure)
-    expected_subset = get_empty_calibration_state()
-    assert expected_subset.items() <= start_response.json().items()
+    # Save procedure state
+    save_response = client.post("/hardware/test/calibrator/procedure/save")
+    assert save_response.status_code == 200
+
+    before_resume = save_response.json()
+
+    # Create new client to simulate fresh start, this client will have the same procedure_file as the first client.
+    _, new_client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=procedure_file)
+
+    # Resume procedure
+    resume_response = new_client.post("/hardware/test/calibrator/procedure/start", params={"resume": True})
+    assert resume_response.status_code == 200
+    after_resume = resume_response.json()
+
+    # assert resume state matches last saved state
+    assert after_resume == before_resume
 
 
 def test_calibration_procedure_undo_action_utility():
@@ -224,13 +266,10 @@ def test_calibration_procedure_undo_action_utility():
 
 
 def test_calibration_procedure_save(tmp_path):
-    # Setup fs for save.
-    cal_file = tmp_path / "calibration.yml"
-
-    _, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(cal_file))
+    _, client = setup_evolver_with_calibrator(TemperatureCalibrator)
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    # Start procedure
+    # Start procedure, since resume is false a new procedure_file name will be generated, see start endpoint for logic.
     client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
 
     # Dispatch an action to have something to save
@@ -265,65 +304,6 @@ def test_calibration_procedure_save(tmp_path):
     app.state.evolver.hardware["test"].calibrator.calibration_procedure.save.side_effect = Exception
     error_response = client.post("/hardware/test/calibrator/procedure/save")
     assert error_response.status_code == 500
-
-
-def test_calibration_procedure_resume(tmp_path):
-    # Setup fs for save
-    cal_file = tmp_path / "calibrationXXX.yml"
-
-    # Initial setup and procedure
-    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(cal_file))
-    app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
-
-    # Start and perform initial procedure actions
-    start_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
-    assert start_response.status_code == 200
-
-    # Starting with resume=False should update the procedure file name
-    assert temp_calibrator.procedure_file != str(cal_file)
-    assert "test-calibration_procedure-" in temp_calibrator.procedure_file
-    assert temp_calibrator.procedure_file.endswith(".yml")
-
-    # Remember the procedure file name
-    procedure_file = temp_calibrator.procedure_file
-
-    dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
-    assert dispatch_response.status_code == 200
-
-    # Save procedure state
-    save_response = client.post("/hardware/test/calibrator/procedure/save")
-    assert save_response.status_code == 200
-    saved_state = save_response.json()
-
-    # Create a real file for the resume test
-    from pathlib import Path
-
-    import yaml
-
-    # Use the actual procedure file path from the first run
-    cali_path = Path(procedure_file)
-    state_dict = saved_state
-
-    # Write the state to the file so it can be loaded
-    with open(cali_path, "w") as f:
-        yaml.dump(state_dict, f)
-
-    # Create new client to simulate fresh start
-    _, new_client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=procedure_file)
-
-    # Resume procedure
-    resume_response = new_client.post("/hardware/test/calibrator/procedure/start", params={"resume": True})
-    assert resume_response.status_code == 200
-
-    # Extract the core fields we want to compare from both states
-    resume_data = resume_response.json()
-    expected_subset = {
-        "completed_actions": saved_state["completed_actions"],
-        "history": saved_state["history"],  # This includes all fields from saved state
-        "measured": saved_state["measured"],
-        "started": saved_state["started"],
-    }
-    assert expected_subset.items() <= resume_data.items()
 
 
 def test_dispatch_temperature_calibration_calculate_fit_action():
