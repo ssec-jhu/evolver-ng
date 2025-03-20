@@ -118,5 +118,16 @@ procedures, please see the :doc:`calibrators` documentation.
 Testing
 -------
 
+This package provides a test suite framework for testing hardware drivers backed
+by the serial interface. The test suite is parameterized by:
+
+* Configuration applied to the driver
+* Inputs to the driver for effectors, or Outputs expected from sensors
+* A set of simulated serial responses for sensors, or expected serial commands
+  issue for effectors.
+
+The test suites can be used by parametrizing a subclass implementation of either
+of `SerialVialSensorHardwareTestSuite` or `SerialVialEffectorHardwareTestSuite`
+classes. See the tests in `evolver/hardware/standard/tests` for examples.
 
 
