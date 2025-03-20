@@ -38,7 +38,7 @@ def setup_evolver_with_calibrator(
 
 def get_empty_calibration_state():
     """Return the expected subset for an empty/reset calibration state."""
-    return {"completed_actions": [], "history": [], "measured": {}, "started": True}
+    return {"completed_actions": [], "history": [], "measured": {}, "started": False}
 
 
 def dispatch_action(client, hardware_name, action_name, payload=None):
@@ -168,10 +168,6 @@ def test_reset_calibration_procedure(tmp_path):
         params={"resume": False, "procedure_file": procedure_file},
     )
     assert start_response.status_code == 200
-
-    # Verify procedure_file was set
-    assert temp_calibrator.procedure_file is not None
-    # Middle part of the procedure_file is a timestamp so we don't make assertions about it.
     assert temp_calibrator.procedure_file == procedure_file
 
     # Remember the first procedure file
@@ -248,12 +244,15 @@ def test_calibration_procedure_resume_with_existing_procedure_file(tmp_path):
     assert after_resume == before_resume
 
 
-def test_calibration_procedure_undo_action_utility():
+def test_calibration_procedure_undo_action_utility(tmp_path):
     _, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
-
-    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
+    client.post(
+        "/hardware/test/calibrator/procedure/start",
+        params={"resume": False, "procedure_file": procedure_file},
+    )
 
     dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
     assert dispatch_response.status_code == 200
