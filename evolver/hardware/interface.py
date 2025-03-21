@@ -29,10 +29,14 @@ class HardwareDriver(BaseInterface):
     def _transform(self, transformer: str, func: str, x: Any, vial: int = None, fallback=None):
         """Helper func to reduce boilerplate when transforming input and output data."""
         if self.calibrator and (_transformer := getattr(self.calibrator, transformer, None)):
-            if isinstance(_transformer, dict):
-                y = getattr(_transformer[vial], func)(x)
-            else:
-                y = getattr(_transformer, func)(x)
+            try:
+                if isinstance(_transformer, dict):
+                    y = getattr(_transformer[vial], func)(x)
+                else:
+                    y = getattr(_transformer, func)(x)
+            except Exception as exc:
+                self.logger.error(f"Error transforming values for {self.name} (vial {vial}): {exc}")
+                y = fallback
         else:
             y = fallback
 

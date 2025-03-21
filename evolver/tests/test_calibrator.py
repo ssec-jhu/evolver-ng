@@ -118,3 +118,14 @@ class TestCalibrator:
         cal_file = tmp_path / "calibration_state.yaml"
         CalibrationStateModel(fitted_calibrator=NoOpCalibrator()).save(cal_file)
         NoOpCalibrator(procedure_file="x", calibration_file=cal_file)
+
+    def test_transform_fallback_on_exception(self):
+        hw = NoOpSensorDriver(calibrator=NoOpCalibrator())
+
+        class ErrorTX:
+            def convert_to(self, *args, **kwargs):
+                raise ValueError("test")
+
+        hw.calibrator.output_transformer = ErrorTX()
+        hw.read()
+        assert hw.get()[0].value is None
