@@ -66,11 +66,39 @@ class CalibrationProcedure(BaseInterface, ABC):
         The file the state is saved to is defined in the Calibrator's config, specifically calibrator.dir/calibrator.calibration_file.
         """
         file_path = self.hardware.calibrator.procedure_file
-        # calibration_file maybe none, in which case the save operation must fail with an error message.
         if file_path is None:
+            # This indicates the user started a procedure and completed some actions and now wants to save it but no procedure file exists...
+            # techincally this should be an impossible state, since starting or resuming a procedure using the HTTP endpoint guarantees the procedure_file attribute exists on config.
             raise ValueError("procedure_file attribute is not set on the Calibrator config.")
         self.hardware.calibrator.calibration_data = self.state
         self.hardware.calibrator.calibration_data.save(file_path)
+        return self.state
+
+    def apply(self):
+        """
+        Apply the calibration by updating the calibration_file to match the saved state of the calibration procedure.
+
+        This sets the calibration_file to the value of procedure_file.
+
+        Since updating configuration re-initializes the evolver object, this will result in
+        loading the calibration state data stored in the calibration_file location and calling init_transformers through the standard mechanisms.
+
+        See the /{hardware_name}/calibrator/procedure/apply HTTP endpoint for further details.
+        """
+        # call save method this saves procedure state to the procedure_file attribute.
+        self.save()
+        # now save the procedure state to the calibration_file attribute
+        # see: /{hardware_name}/calibrator/procedure/apply HTTP endpoint for some setup
+        file_path = self.hardware.calibrator.calibration_file
+        if file_path is None:
+            # techincally this should be an impossible state, since applying a procedure using the HTTP endpoint guarantees the procedure_file attribute exists on config.
+            raise ValueError("calibration_file attribute is not set on the Calibrator config.")
+        self.hardware.calibrator.calibration_data = self.state
+
+        self.hardware.calibrator.calibration_data.save(file_path)
+        # Clear procedure_file to indicate that the procedure is complete and has been applied
+        self.hardware.calibrator.procedure_file = None
+
         return self.state
 
     def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):

@@ -27,6 +27,7 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
         **kwargs,
     ):
         procedure_state = CalibrationStateModel.load(self.procedure_file) if resume else None
+
         calibration_procedure = CalibrationProcedure(
             state=procedure_state.model_dump() if procedure_state else None, hardware=selected_hardware
         )
