@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 from fastapi import APIRouter, Body, Path, Request
 from fastapi.params import Query
 from pydantic import BaseModel
+import datetime
 
 from evolver.app.exceptions import (
     CalibrationProcedureActionNotFoundError,
@@ -80,6 +81,7 @@ def start_calibration_procedure(
     hardware_name: str,
     request: Request,
     resume: bool = Query(True),
+    procedure_file: str = Query(None),
 ):
     """Start a calibration procedure for the specified hardware.
 
@@ -87,7 +89,7 @@ def start_calibration_procedure(
         hardware_name: Name of the hardware to calibrate
         resume: If True, resume from existing procedure state. If False, start a new procedure
                 and require a procedure_file name.
-        procedure_file: Required when resume is False. The file to save the procedure state to.
+        procedure_file: Optional, file name to save the procedure state to, useful for testing the api if provided the hardware's procedure_file attribute in .
 
     Returns:
         The initial state of the calibration procedure.
@@ -103,10 +105,15 @@ def start_calibration_procedure(
             raise CalibrationProcedureNotFoundError()
     else:
         # Not resuming (new procedure)
-        # Update the calibrator's procedure_file to be the one specified by the user in the request param
-        calibrator.procedure_file = Path(f"{hardware_instance.name}_{settings.DATETIME_PATH_FORMAT}").with_suffix(
-            ".yml"
-        )
+        # Update the calibrator's procedure_file to be the one specified by the user in the request param if it's present
+        # otherwise use a default.
+
+        if procedure_file is not None:
+            calibrator.procedure_file = procedure_file
+        else:
+            calibrator.procedure_file = Path(
+                f"{hardware_instance.name}_{datetime.datetime.now().strftime(settings.DATETIME_PATH_FORMAT)}"
+            ).with_suffix(".yml")
 
         # Save the updated configuration file
         request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
