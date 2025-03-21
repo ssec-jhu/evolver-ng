@@ -1,6 +1,7 @@
+from http import HTTPStatus
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Body, Path, Request
+from fastapi import APIRouter, Body, Path, Request, HTTPException
 from fastapi.params import Query
 from pydantic import BaseModel
 
@@ -99,20 +100,23 @@ def start_calibration_procedure(
         raise CalibratorNotFoundError
 
     if resume:
-        # When resuming, ensure we have a procedure file defined
+        # Resuming, ensure we have a procedure file defined
         if calibrator.procedure_file is None:
             raise CalibrationProcedureNotFoundError()
     else:
         # Not resuming (new procedure)
-        if calibrator.procedure_file is None:
-            # Missing procedure_file from config when starting new calibration
-            raise CalibrationProcedureNotFoundError()
-        else:
-            # Update the calibrator's procedure_file to be the one specified by the user in the request param
-            calibrator.procedure_file = procedure_file
-            # Save the updated configuration
-            if request.app.state.evolver:
-                request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
+        if procedure_file is None:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail="Procedure file param is required when starting a new calibration procedure.",
+            )
+        # Update the calibrator's procedure_file to be the one specified by the user in the request param
+        calibrator.procedure_file = procedure_file
+        # Create the file specified by the user
+
+        # Save the updated configuration
+        if request.app.state.evolver:
+            request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
 
     # Create the calibration procedure
     calibrator.create_calibration_procedure(

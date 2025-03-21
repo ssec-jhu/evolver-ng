@@ -38,7 +38,7 @@ def setup_evolver_with_calibrator(
 
 def get_empty_calibration_state():
     """Return the expected subset for an empty/reset calibration state."""
-    return {"completed_actions": [], "history": [], "measured": {}, "started": False}
+    return {"completed_actions": [], "history": [], "measured": {}}
 
 
 def dispatch_action(client, hardware_name, action_name, payload=None):
