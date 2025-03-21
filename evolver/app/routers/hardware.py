@@ -1,7 +1,6 @@
-from http import HTTPStatus
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Body, HTTPException, Path, Request
+from fastapi import APIRouter, Body, Path, Request
 from fastapi.params import Query
 from pydantic import BaseModel
 
@@ -16,7 +15,7 @@ from evolver.app.exceptions import (
     HardwareNotFoundError,
 )
 from evolver.hardware.interface import HardwareDriver
-from evolver.settings import app_settings
+from evolver.settings import app_settings, settings
 
 router = APIRouter(prefix="/hardware", tags=["hardware"], responses={404: {"description": "Not found"}})
 
@@ -81,7 +80,6 @@ def start_calibration_procedure(
     hardware_name: str,
     request: Request,
     resume: bool = Query(True),
-    procedure_file: str | None = None,
 ):
     """Start a calibration procedure for the specified hardware.
 
@@ -100,23 +98,18 @@ def start_calibration_procedure(
         raise CalibratorNotFoundError
 
     if resume:
-        # Resuming, ensure we have a procedure file defined
+        # Resuming, ensure we have a procedure file defined in config
         if calibrator.procedure_file is None:
             raise CalibrationProcedureNotFoundError()
     else:
         # Not resuming (new procedure)
-        if procedure_file is None:
-            raise HTTPException(
-                status_code=HTTPStatus.BAD_REQUEST,
-                detail="Procedure file param is required when starting a new calibration procedure.",
-            )
         # Update the calibrator's procedure_file to be the one specified by the user in the request param
-        calibrator.procedure_file = procedure_file
-        # Create the file specified by the user
+        calibrator.procedure_file = Path(f"{hardware_instance.name}_{settings.DATETIME_PATH_FORMAT}").with_suffix(
+            ".yml"
+        )
 
-        # Save the updated configuration
-        if request.app.state.evolver:
-            request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
+        # Save the updated configuration file
+        request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
 
     # Create the calibration procedure
     calibrator.create_calibration_procedure(
@@ -251,13 +244,11 @@ def apply_calibration_procedure(
     # Update the calibrator's configuration with the provided calibration_file
     calibrator.calibration_file = calibration_file
 
-    # Save the updated configuration
-    if request.app.state.evolver:
-        request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
-
     try:
         # Apply will save the procedure state to the calibration_file
         calibration_procedure.apply()
+        # Save the updated configuration
+        request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
     except ValueError as e:
         raise CalibratorProcedureApplyError(detail=str(e))
     except Exception as e:
