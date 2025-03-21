@@ -233,6 +233,7 @@ def test_calibration_procedure_resume_with_existing_procedure_file(tmp_path):
     before_resume = save_response.json()
 
     # Create new client to simulate fresh start, this client will have the same procedure_file as the first client.
+    # because the procedure attached to this client will be resumed from later, we want to make sure it has a procedure_file attirbute defined.
     _, new_client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=procedure_file)
 
     # Resume procedure

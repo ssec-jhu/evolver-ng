@@ -68,6 +68,7 @@ class CalibrationProcedure(BaseInterface, ABC):
         file_path = self.hardware.calibrator.procedure_file
         if file_path is None:
             # This indicates the user started a procedure and completed some actions and now wants to save it but no procedure file exists...
+            # techincally this should be an impossible state, since starting or resuming a procedure using the HTTP endpoint guarantees the procedure_file attribute exists on config.
             raise ValueError("procedure_file attribute is not set on the Calibrator config.")
         self.hardware.calibrator.calibration_data = self.state
         self.hardware.calibrator.calibration_data.save(file_path)
@@ -89,8 +90,8 @@ class CalibrationProcedure(BaseInterface, ABC):
         # now save the procedure state to the calibration_file attribute
         # see: /{hardware_name}/calibrator/procedure/apply HTTP endpoint for some setup
         file_path = self.hardware.calibrator.calibration_file
-        # calibration_file maybe none, in which case the save operation must fail with an error message.
         if file_path is None:
+            # techincally this should be an impossible state, since applying a procedure using the HTTP endpoint guarantees the procedure_file attribute exists on config.
             raise ValueError("calibration_file attribute is not set on the Calibrator config.")
         self.hardware.calibrator.calibration_data = self.state
 

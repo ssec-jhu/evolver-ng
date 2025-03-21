@@ -26,7 +26,6 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
         *args,
         **kwargs,
     ):
-        # Decide resume behavior.
         procedure_state = CalibrationStateModel.load(self.procedure_file) if resume else None
 
         calibration_procedure = CalibrationProcedure(
