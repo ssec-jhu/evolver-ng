@@ -44,7 +44,9 @@ components built or maintained by the eVolver team.
 
 As with all configuration in the system, each component will have a class
 specifying the code component that controls it, along with a configuration
-section for user settings. For example, the OD90 sensor might be configured as::
+section for user settings. For example, the OD90 sensor might be configured as:
+
+.. code-block:: yaml
 
     hardware:
       OD90:
@@ -102,7 +104,9 @@ Experiments are configured in the same manner as other components in the system,
 such as hardware described above. The eVolver has a set of named experiments,
 which in turn are made up of one or more
 :py:class:`Controllers<evolver.controller.interface.Controller>`. Each
-controller is a descriptor object that has a config section, for example::
+controller is a descriptor object that has a config section, for example:
+
+.. code-block:: yaml
 
     experiments:
       growth:

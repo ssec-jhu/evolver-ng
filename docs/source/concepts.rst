@@ -37,6 +37,7 @@ categories:
   Included in the package are standard implementations of all of these
   components.
 
+.. _config:
 
 Configuration and ConfigDescriptors
 -----------------------------------
