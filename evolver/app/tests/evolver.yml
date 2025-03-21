@@ -9,8 +9,8 @@ hardware:
       calibrator:
         classinfo: evolver.calibration.standard.calibrators.temperature.TemperatureCalibrator
         config:
-          calibration_file: null
-          created: '2025-03-21T10:48:44.959765'
+          calibration_file: /private/var/folders/6m/tmk5cc4n13l8dn9byddj1y8m0000gn/T/pytest-of-iainland/pytest-110/test_calibration_procedure_app0/calibration_file.yml
+          created: '2025-03-21T11:39:30.432085'
           default_input_transformer: null
           default_output_transformer: null
           dir: calibration_files
@@ -19,7 +19,7 @@ hardware:
             '0':
               classinfo: evolver.calibration.standard.polyfit.LinearTransformer
               config:
-                created: '2025-03-21T10:48:44.959709'
+                created: '2025-03-21T11:39:30.431870'
                 degree: 1
                 dir: calibration_files
                 expire: P168D
@@ -28,7 +28,7 @@ hardware:
             '1':
               classinfo: evolver.calibration.standard.polyfit.LinearTransformer
               config:
-                created: '2025-03-21T10:48:44.959730'
+                created: '2025-03-21T11:39:30.431917'
                 degree: 1
                 dir: calibration_files
                 expire: P168D
@@ -37,7 +37,7 @@ hardware:
             '2':
               classinfo: evolver.calibration.standard.polyfit.LinearTransformer
               config:
-                created: '2025-03-21T10:48:44.959737'
+                created: '2025-03-21T11:39:30.431947'
                 degree: 1
                 dir: calibration_files
                 expire: P168D
@@ -49,16 +49,18 @@ hardware:
             '0':
               classinfo: evolver.calibration.standard.polyfit.LinearTransformer
               config:
-                created: '2025-03-21T10:48:44.959743'
+                created: '2025-03-21T11:39:30.467038'
                 degree: 1
                 dir: calibration_files
                 expire: P168D
-                name: LinearTransformer
-                parameters: null
+                name: null
+                parameters:
+                - 0.6149999999999997
+                - 0.024599999999999997
             '1':
               classinfo: evolver.calibration.standard.polyfit.LinearTransformer
               config:
-                created: '2025-03-21T10:48:44.959749'
+                created: '2025-03-21T11:39:30.432005'
                 degree: 1
                 dir: calibration_files
                 expire: P168D
@@ -67,13 +69,13 @@ hardware:
             '2':
               classinfo: evolver.calibration.standard.polyfit.LinearTransformer
               config:
-                created: '2025-03-21T10:48:44.959754'
+                created: '2025-03-21T11:39:30.432041'
                 degree: 1
                 dir: calibration_files
                 expire: P168D
                 name: LinearTransformer
                 parameters: null
-          procedure_file: /private/var/folders/6m/tmk5cc4n13l8dn9byddj1y8m0000gn/T/pytest-of-iainland/pytest-94/test_calibration_procedure_und0/my_test_calibration_procedure.yml
+          procedure_file: null
           vials:
           - 0
           - 1

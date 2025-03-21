@@ -1,7 +1,7 @@
 from http import HTTPStatus
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, Body, Path, Request, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Path, Request
 from fastapi.params import Query
 from pydantic import BaseModel
 

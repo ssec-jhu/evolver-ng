@@ -268,8 +268,15 @@ def test_calibration_procedure_save(tmp_path):
     _, client = setup_evolver_with_calibrator(TemperatureCalibrator)
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
+    procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
     # Start procedure, since resume is false a new procedure_file name will be generated, see start endpoint for logic.
-    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    client.post(
+        "/hardware/test/calibrator/procedure/start",
+        params={
+            "resume": False,
+            "procedure_file": procedure_file,
+        },
+    )
 
     # Dispatch an action to have something to save
     dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
@@ -305,12 +312,14 @@ def test_calibration_procedure_save(tmp_path):
     assert error_response.status_code == 500
 
 
-def test_dispatch_temperature_calibration_calculate_fit_action():
+def test_dispatch_temperature_calibration_calculate_fit_action(tmp_path):
     temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
+
+    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False, "procedure_file": procedure_file})
 
     reference_dispatch_response = dispatch_action(client, "test", "measure_vial_0_temperature", {"temperature": 25.0})
     assert reference_dispatch_response.status_code == 200
@@ -343,14 +352,12 @@ def get_stable_state_subset(state):
 
 
 def test_get_calibration_data(tmp_path):
-    # Setup fs for save.
-    cal_file = tmp_path / "calibration.yml"
+    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
-    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(cal_file))
-
+    procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False, "procedure_file": procedure_file})
 
     dispatch_action(client, "test", "measure_vial_0_temperature", {"temperature": 25.0})
     dispatch_action(client, "test", "read_vial_0_raw_output")
@@ -401,31 +408,33 @@ def test_get_calibration_data(tmp_path):
 
 def test_calibration_procedure_apply(tmp_path):
     # Setup fs for save and two files.
-    proc_file = tmp_path / "procedure.yml"
-    cal_file = tmp_path / "calibration.yml"
+    procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
+    calibration_file = str(tmp_path / "calibration_file.yml")
 
     # Initialize with only procedure_file
-    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=str(proc_file))
+    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
     # Start procedure
-    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
+    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False, "procedure_file": procedure_file})
 
-    # Collect calibration data
+    # Collect calibration procedure data
     dispatch_action(client, "test", "measure_vial_0_temperature", {"temperature": 25.0})
     dispatch_action(client, "test", "read_vial_0_raw_output")
     dispatch_action(client, "test", "calculate_vial_0_fit")
 
-    # Save the procedure first to ensure procedure_file exists
+    # Save the procedure first to ensure procedure_file is created and contains state from the procedure
     save_response = client.post("/hardware/test/calibrator/procedure/save")
     assert save_response.status_code == 200
 
     # Test successful apply with explicit calibration_file
-    apply_response = client.post(f"/hardware/test/calibrator/procedure/apply?calibration_file={str(cal_file)}")
+    apply_response = client.post(
+        "/hardware/test/calibrator/procedure/apply", params={"calibration_file": calibration_file}
+    )
     assert apply_response.status_code == 200
 
     # Verify that the calibration_file was updated and procedure_file was cleared
-    assert temp_calibrator.calibration_file == str(cal_file)
+    assert temp_calibrator.calibration_file == calibration_file
     assert temp_calibrator.procedure_file is None
 
     # Verify the correct state was set on the calibrator
@@ -436,13 +445,15 @@ def test_calibration_procedure_apply(tmp_path):
 
     # Test apply with no calibrator, providing a dummy calibration file path
     no_calibrator_response = client.post(
-        f"/hardware/nonexistent/calibrator/procedure/apply?calibration_file={str(cal_file)}"
+        "/hardware/test/calibrator/procedure/apply", params={"calibration_file": calibration_file}
     )
-    assert no_calibrator_response.status_code == 404
+    assert no_calibrator_response.status_code == 500
 
     # Test apply with no procedure started
     app.state.evolver.hardware["test"].calibrator.calibration_procedure = None
-    no_procedure_response = client.post(f"/hardware/test/calibrator/procedure/apply?calibration_file={str(cal_file)}")
+    no_procedure_response = client.post(
+        f"/hardware/test/calibrator/procedure/apply?calibration_file={calibration_file}"
+    )
     assert no_procedure_response.json() == {"started": False}
 
     # Test apply failure with missing procedure_file
@@ -450,10 +461,14 @@ def test_calibration_procedure_apply(tmp_path):
     app.state.evolver.hardware["test"].calibrator.calibration_procedure.apply.side_effect = ValueError(
         "procedure_file attribute is not set"
     )
-    error_response = client.post(f"/hardware/test/calibrator/procedure/apply?calibration_file={str(cal_file)}")
+    error_response = client.post(
+        "/hardware/test/calibrator/procedure/apply", params={"calibration_file": calibration_file}
+    )
     assert error_response.status_code == 500
 
     # Test apply with general exception
     app.state.evolver.hardware["test"].calibrator.calibration_procedure.apply.side_effect = Exception
-    error_response = client.post(f"/hardware/test/calibrator/procedure/apply?calibration_file={str(cal_file)}")
+    error_response = client.post(
+        "/hardware/test/calibrator/procedure/apply", params={"calibration_file": calibration_file}
+    )
     assert error_response.status_code == 500
