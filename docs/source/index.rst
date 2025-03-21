@@ -24,7 +24,7 @@ by developing control codes or hardware drivers, see :doc:`development/index`.
 
    quick-start
    installation
+   concepts
    usage
    development/index.rst
-   concepts
    api

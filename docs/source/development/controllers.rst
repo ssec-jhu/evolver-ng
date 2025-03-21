@@ -72,7 +72,7 @@ set desired state.
     class, and represents a list of vials to operate on.
 
 Support multiple vial configurations
--------------   -----------------------
+------------------------------------
 
 You might note in the above example that:
 
