@@ -1,9 +1,9 @@
+import datetime
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Body, Path, Request
 from fastapi.params import Query
 from pydantic import BaseModel
-import datetime
 
 from evolver.app.exceptions import (
     CalibrationProcedureActionNotFoundError,
@@ -72,24 +72,19 @@ def hardware_commit(hardware_name: str, request: Request):
     hardware_instance.commit()
 
 
-# Start the calibration procedure for the selected hardware and vials,
-# resume will init the procedure with the CalibrationData from the Calibrator.
-# Where CalibrationData is the state of the procedure that has been persisted to the config file.
-# If resume is False, the procedure state will reset.
+# Start a new calibration procedure
 @router.post("/{hardware_name}/calibrator/procedure/start")
 def start_calibration_procedure(
     hardware_name: str,
     request: Request,
-    resume: bool = Query(True),
     procedure_file: str = Query(None),
 ):
-    """Start a calibration procedure for the specified hardware.
+    """Start a new calibration procedure for the specified hardware.
 
     Args:
         hardware_name: Name of the hardware to calibrate
-        resume: If True, resume from existing procedure state. If False, start a new procedure
-                and require a procedure_file name.
-        procedure_file: Optional, file name to save the procedure state to, useful for testing the api if provided the hardware's procedure_file attribute in .
+        procedure_file: Optional, file name to save the procedure state to, useful for testing the api if provided
+                        as the hardware's procedure_file attribute.
 
     Returns:
         The initial state of the calibration procedure.
@@ -99,29 +94,55 @@ def start_calibration_procedure(
     if not calibrator:
         raise CalibratorNotFoundError
 
-    if resume:
-        # Resuming, ensure we have a procedure file defined in config
-        if calibrator.procedure_file is None:
-            raise CalibrationProcedureNotFoundError()
+    # Starting a new procedure
+    # Update the calibrator's procedure_file to be the one specified by the user in the request param if it's present
+    # otherwise use a default.
+    if procedure_file is not None:
+        calibrator.procedure_file = procedure_file
     else:
-        # Not resuming (new procedure)
-        # Update the calibrator's procedure_file to be the one specified by the user in the request param if it's present
-        # otherwise use a default.
+        calibrator.procedure_file = Path(
+            f"{hardware_instance.name}_{datetime.datetime.now().strftime(settings.DATETIME_PATH_FORMAT)}"
+        ).with_suffix(".yml")
 
-        if procedure_file is not None:
-            calibrator.procedure_file = procedure_file
-        else:
-            calibrator.procedure_file = Path(
-                f"{hardware_instance.name}_{datetime.datetime.now().strftime(settings.DATETIME_PATH_FORMAT)}"
-            ).with_suffix(".yml")
+    # Save the updated configuration file
+    request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
 
-        # Save the updated configuration file
-        request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
-
-    # Create the calibration procedure
+    # Create the calibration procedure with resume=False for a new procedure
     calibrator.create_calibration_procedure(
         selected_hardware=hardware_instance,
-        resume=resume,
+        resume=False,
+    )
+
+    return calibrator.calibration_procedure.get_state()
+
+
+# Resume an existing calibration procedure
+@router.post("/{hardware_name}/calibrator/procedure/resume")
+def resume_calibration_procedure(
+    hardware_name: str,
+    request: Request,
+):
+    """Resume an existing calibration procedure for the specified hardware.
+
+    Args:
+        hardware_name: Name of the hardware to calibrate
+
+    Returns:
+        The current state of the calibration procedure.
+    """
+    hardware_instance = get_hardware_instance(request, hardware_name)
+    calibrator = hardware_instance.calibrator
+    if not calibrator:
+        raise CalibratorNotFoundError
+
+    # Resuming, ensure we have a procedure file defined in config
+    if calibrator.procedure_file is None:
+        raise CalibrationProcedureNotFoundError()
+
+    # Create the calibration procedure with resume=True to load existing state
+    calibrator.create_calibration_procedure(
+        selected_hardware=hardware_instance,
+        resume=True,
     )
 
     return calibrator.calibration_procedure.get_state()

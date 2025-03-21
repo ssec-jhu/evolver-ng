@@ -55,7 +55,7 @@ class TestCalibration:
         procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
         response = client.post(
             "/hardware/test/calibrator/procedure/start",
-            params={"resume": False, "procedure_file": procedure_file},
+            params={"procedure_file": procedure_file},
         )
         assert response.status_code == 200
 
@@ -85,7 +85,7 @@ def test_temperature_calibration_procedure_actions(tmp_path):
     procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
     response = client.post(
         "/hardware/test/calibrator/procedure/start",
-        params={"resume": False, "procedure_file": procedure_file},
+        params={"procedure_file": procedure_file},
     )
 
     assert response.status_code == 200
@@ -122,7 +122,7 @@ def test_dispatch_temperature_calibration_bad_reference_value_action(tmp_path):
     procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
     client.post(
         "/hardware/test/calibrator/procedure/start",
-        params={"resume": False, "procedure_file": procedure_file},
+        params={"procedure_file": procedure_file},
     )
 
     action_payload = {"action_name": "measure_vial_0_temperature", "payload": {"this_should_not_work": 25.0}}
@@ -139,7 +139,7 @@ def test_dispatch_temperature_calibration_raw_value_action(tmp_path):
     procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
     client.post(
         "/hardware/test/calibrator/procedure/start",
-        params={"resume": False, "procedure_file": procedure_file},
+        params={"procedure_file": procedure_file},
     )
 
     raw_dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
@@ -165,7 +165,7 @@ def test_reset_calibration_procedure(tmp_path):
     procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
     start_response = client.post(
         "/hardware/test/calibrator/procedure/start",
-        params={"resume": False, "procedure_file": procedure_file},
+        params={"procedure_file": procedure_file},
     )
     assert start_response.status_code == 200
     assert temp_calibrator.procedure_file == procedure_file
@@ -181,7 +181,7 @@ def test_reset_calibration_procedure(tmp_path):
     new_procedure_file = str(tmp_path / "my_test_calibration_procedure_2.yml")
     reset_response = client.post(
         "/hardware/test/calibrator/procedure/start",
-        params={"resume": False, "procedure_file": new_procedure_file},
+        params={"procedure_file": new_procedure_file},
     )
     assert reset_response.status_code == 200
 
@@ -197,7 +197,7 @@ def test_calibration_procedure_resume_with_no_procedure_file():
     assert temp_calibrator.procedure_file is None
 
     # Try to resume - should fail with a 404 and a clear error message
-    resume_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": True})
+    resume_response = client.post("/hardware/test/calibrator/procedure/resume")
     assert resume_response.status_code == 404
     assert "No in progress calibration procedure was found" in resume_response.json()["detail"]
 
@@ -218,8 +218,8 @@ def test_calibration_procedure_resume_with_existing_procedure_file(tmp_path):
     )
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    # Start a procedure with "resume": True, this will ensure the procedure_file will be the one already represented in config.
-    start_response = client.post("/hardware/test/calibrator/procedure/start", params={"resume": True})
+    # Resume the procedure using the dedicated resume endpoint
+    start_response = client.post("/hardware/test/calibrator/procedure/resume")
     assert start_response.status_code == 200
 
     # dispatch an action
@@ -236,8 +236,8 @@ def test_calibration_procedure_resume_with_existing_procedure_file(tmp_path):
     # because the procedure attached to this client will be resumed from later, we want to make sure it has a procedure_file attirbute defined.
     _, new_client = setup_evolver_with_calibrator(TemperatureCalibrator, procedure_file=procedure_file)
 
-    # Resume procedure
-    resume_response = new_client.post("/hardware/test/calibrator/procedure/start", params={"resume": True})
+    # Resume procedure using the resume endpoint
+    resume_response = new_client.post("/hardware/test/calibrator/procedure/resume")
     assert resume_response.status_code == 200
     after_resume = resume_response.json()
 
@@ -252,7 +252,7 @@ def test_calibration_procedure_undo_action_utility(tmp_path):
     procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
     client.post(
         "/hardware/test/calibrator/procedure/start",
-        params={"resume": False, "procedure_file": procedure_file},
+        params={"procedure_file": procedure_file},
     )
 
     dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
@@ -270,11 +270,10 @@ def test_calibration_procedure_save(tmp_path):
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
     procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
-    # Start procedure, since resume is false a new procedure_file name will be generated, see start endpoint for logic.
+    # Start procedure with the new start endpoint
     client.post(
         "/hardware/test/calibrator/procedure/start",
         params={
-            "resume": False,
             "procedure_file": procedure_file,
         },
     )
@@ -320,7 +319,7 @@ def test_dispatch_temperature_calibration_calculate_fit_action(tmp_path):
 
     procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
 
-    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False, "procedure_file": procedure_file})
+    client.post("/hardware/test/calibrator/procedure/start", params={"procedure_file": procedure_file})
 
     reference_dispatch_response = dispatch_action(client, "test", "measure_vial_0_temperature", {"temperature": 25.0})
     assert reference_dispatch_response.status_code == 200
@@ -416,8 +415,8 @@ def test_calibration_procedure_apply(tmp_path):
     temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
     app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
 
-    # Start procedure
-    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False, "procedure_file": procedure_file})
+    # Start procedure with the new start endpoint
+    client.post("/hardware/test/calibrator/procedure/start", params={"procedure_file": procedure_file})
 
     # Collect calibration procedure data
     dispatch_action(client, "test", "measure_vial_0_temperature", {"temperature": 25.0})
