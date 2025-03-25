@@ -78,6 +78,17 @@ class EffectorDriver(VialHardwareDriver):
         self.proposal: dict[int, self.Input] = {}
         self.committed: dict[int, self.Input] = {}
 
+    def _get_input_from_args(self, *args, **kwargs):
+        if kwargs and args:
+            raise ValueError("Pass either an input model instance or input fields to set")
+        if args:
+            input = args[0]
+        elif kwargs:
+            input = kwargs
+        else:
+            raise ValueError("No input provided")
+        return self.Input.model_validate(input)
+
     def set(self, *args, **kwargs):
         """Set a value proposal for the hardware.
 
@@ -92,15 +103,7 @@ class EffectorDriver(VialHardwareDriver):
         communicating with the underlying hardware is handled in the commit
         method.
         """
-        if kwargs and args:
-            raise ValueError("Pass either an input model instance or input fields to set")
-        if args:
-            input = args[0]
-        elif kwargs:
-            input = kwargs
-        else:
-            raise ValueError("No input provided")
-        validated_input = self.Input.model_validate(input)
+        validated_input = self._get_input_from_args(*args, **kwargs)
         self.proposal[validated_input.vial] = validated_input
 
     @abstractmethod
