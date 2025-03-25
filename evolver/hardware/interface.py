@@ -78,12 +78,40 @@ class EffectorDriver(VialHardwareDriver):
         self.proposal: dict[int, self.Input] = {}
         self.committed: dict[int, self.Input] = {}
 
-    def set(self, input: Input):
-        """The implementation is responsible for calling methods of ``self.input_transformer`` as deemed necessary."""
-        self.proposal[input.vial] = input
+    def set(self, *args, **kwargs):
+        """Set a value proposal for the hardware.
+
+        The value should either be an instance of the hardware Input model, or
+        fields that will be set on said model. This method proposes individual
+        values (e.g. for a single vial), which will be committed in bulk when
+        the commit method is called (done typically in the experiment loop by
+        the Evolver manager).
+
+        In most cases this method need not be overridden, the logic of
+        performing calibration transform, preparing data packets and
+        communicating with the underlying hardware is handled in the commit
+        method.
+        """
+        if kwargs and args:
+            raise ValueError("Pass either an input model instance or input fields to set")
+        if args:
+            input = args[0]
+        elif kwargs:
+            input = kwargs
+        else:
+            raise ValueError("No input provided")
+        validated_input = self.Input.model_validate(input)
+        self.proposal[validated_input.vial] = validated_input
 
     @abstractmethod
     def commit(self):
+        """Commit all pending proposals to the underlying hardware device.
+
+        This method handles the logic of performing calibration transform,
+        preparing data packets and communicating with the underlying hardware.
+        It should be implemented by the hardware driver to perform the necessary
+        actions to commit the proposals to the hardware.
+        """
         pass
 
     @abstractmethod
