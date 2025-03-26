@@ -107,7 +107,7 @@ class CalibrationProcedure(BaseInterface, ABC):
 
         return self.state
 
-    def dispatch(self, action: CalibrationAction | str, payload: Dict[str, Any]):
+    def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):
         if payload is not None and action.FormModel.model_fields != {}:
             payload = action.FormModel(**payload)
         previous_state = self.state.model_dump()
