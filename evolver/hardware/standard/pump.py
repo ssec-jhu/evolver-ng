@@ -42,7 +42,7 @@ class GenericPump(EffectorDriver):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pump_ids = self.active_pumps if self.active_pumps else list(range(self.slots))
+        self.pump_ids = list(range(self.slots)) if self.active_pumps is None else self.active_pumps
         if self.ipp_pumps is True:
             self.ipp_pumps = list(range(self.slots / 3))
         elif self.ipp_pumps in (False, None):
@@ -53,10 +53,12 @@ class GenericPump(EffectorDriver):
         return self.serial_conn or self.evolver.serial
 
     def set(self, *args, **kwargs):
-        # We index here by pump_id, which is a concept outside of vail - we
+        # We index here by pump_id, which is a concept outside of vial - we
         # don't want confuse things by overloading the concept, so be explicit
         # here
         input = self._get_input_from_args(*args, **kwargs)
+        if input.pump_id not in self.pump_ids:
+            raise ValueError(f"pump_id {input.pump_id} not in active pumps")
         self.proposal[input.pump_id] = input
 
     def commit(self):
