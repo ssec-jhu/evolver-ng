@@ -20,7 +20,11 @@ def test_log_capture_handler():
     assert hist.kind == "log"
 
 
-def test_log_evolver_hookup():
+def test_log_evolver_hookup(caplog):
+    # to prevent pytest from taking the records before they hit our handlers, we
+    # need to set this higher than the level we are testing for below.
+    caplog.set_level(logging.CRITICAL + 1)
+
     history = InMemoryHistoryServer()
 
     class HW(SensorDriver):

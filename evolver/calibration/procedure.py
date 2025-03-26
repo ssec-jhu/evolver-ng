@@ -44,9 +44,21 @@ class CalibrationProcedure(BaseInterface, ABC):
                 f"If you want to repeat an action, any action can be dispatched multiple times using the HTTP api."
             )
         self.actions.append(action)
+        return self
+
+    def add_action_list(self, actions: list[CalibrationAction]):
+        for action in actions:
+            self.add_action(action)
+        return self
 
     def get_actions(self):
         return self.actions
+
+    def get_action(self, name):
+        actions = [action for action in self.actions if action.name == name]
+        if len(actions) == 0:
+            raise ValueError(f"Action with name '{name}' not found.")
+        return actions[0]
 
     def get_state(self, *args, **kwargs):
         return self.state
@@ -101,7 +113,9 @@ class CalibrationProcedure(BaseInterface, ABC):
 
         return self.state
 
-    def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):
+    def dispatch(self, action: CalibrationAction | str, payload: Dict[str, Any]):
+        if isinstance(action, str):
+            action = self.get_action(action)
         if payload is not None and action.FormModel.model_fields != {}:
             payload = action.FormModel(**payload)
         previous_state = self.state.model_dump()
