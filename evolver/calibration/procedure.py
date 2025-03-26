@@ -44,12 +44,6 @@ class CalibrationProcedure(BaseInterface, ABC):
                 f"If you want to repeat an action, any action can be dispatched multiple times using the HTTP api."
             )
         self.actions.append(action)
-        return self
-
-    def add_action_list(self, actions: list[CalibrationAction]):
-        for action in actions:
-            self.add_action(action)
-        return self
 
     def get_actions(self):
         return self.actions
@@ -114,8 +108,6 @@ class CalibrationProcedure(BaseInterface, ABC):
         return self.state
 
     def dispatch(self, action: CalibrationAction | str, payload: Dict[str, Any]):
-        if isinstance(action, str):
-            action = self.get_action(action)
         if payload is not None and action.FormModel.model_fields != {}:
             payload = action.FormModel(**payload)
         previous_state = self.state.model_dump()

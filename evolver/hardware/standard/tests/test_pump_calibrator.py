@@ -39,11 +39,14 @@ def test_pump_calibration_procedure(active_pumps):
     hardware.calibrator.create_calibration_procedure(selected_hardware=hardware, resume=False)
     procedure = hardware.calibrator.calibration_procedure
 
-    procedure.dispatch("fill_beaker", {})
-    procedure.dispatch("place_vials", {})
+    def dispatch_to(procedure, action_name, payload):
+        procedure.dispatch(procedure.get_action(action_name), payload)
+
+    dispatch_to(procedure, "fill_beaker", {})
+    dispatch_to(procedure, "place_vials", {})
 
     hardware.serial_conn = MagicMock()
-    procedure.dispatch("pump_run", {})
+    dispatch_to(procedure, "pump_run", {})
     # We expect the pump run to have sent the command with by default the slow
     # pump rate set on calibrator. For those pumps not active we expect the null
     # command (--) to be set for the relevant slot.
@@ -55,13 +58,13 @@ def test_pump_calibration_procedure(active_pumps):
                 expected_cmd.data[i] = b"--"
     hardware.serial_conn.__enter__().communicate.assert_called_with(expected_cmd)
 
-    procedure.dispatch("wait_pumps", {})
+    dispatch_to(procedure, "wait_pumps", {})
 
     measured = 2.0
-    procedure.dispatch("record_pump_0", {"volume": measured})
+    dispatch_to(procedure, "record_pump_0", {"volume": measured})
     assert procedure.state.measured == ({0: (calibrator.time_to_pump_slow, measured)})
 
-    procedure.dispatch("pump_run", {"use_fast_mode": True})
+    dispatch_to(procedure, "pump_run", {"use_fast_mode": True})
     measured = 4.0
-    procedure.dispatch("record_pump_2", {"volume": measured})
+    dispatch_to(procedure, "record_pump_2", {"volume": measured})
     assert procedure.state.measured[2] == (calibrator.time_to_pump_fast, measured)

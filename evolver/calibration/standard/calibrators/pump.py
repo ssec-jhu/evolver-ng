@@ -65,51 +65,47 @@ class GenericPumpCalibrator(IndependentVialBasedCalibrator):
 
     def create_calibration_procedure(self, selected_hardware, resume, *args, **kwargs):
         procedure_state = CalibrationStateModel.load(self.procedure_file) if resume else None
-
-        self.calibration_procedure = (
-            CalibrationProcedure(
-                state=procedure_state.model_dump() if procedure_state else None, hardware=selected_hardware
-            )
-            .add_action(
-                DisplayInstructionAction(
-                    description="Fill a large beaker with water. Submerge pump lines ensuring ends are below the surface",
-                    name="fill_beaker",
-                    hardware=selected_hardware,
-                )
-            )
-            .add_action(
-                DisplayInstructionAction(
-                    description=(
-                        "For each pump, set a vial in a rack and place line in vial. Note that to prevent damage"
-                        "from overrun, vials should not be placed on the evolver in this procedure"
-                    ),
-                    name="place_vials",
-                    hardware=selected_hardware,
-                )
-            )
-            .add_action(
-                PumpAction(
-                    fast=self.time_to_pump_fast,
-                    slow=self.time_to_pump_slow,
-                    name="pump_run",
-                    description="Run pumps",
-                    hardware=selected_hardware,
-                )
-            )
-            .add_action(
-                DisplayInstructionAction(
-                    description="Wait for pumps to finish", name="wait_pumps", hardware=selected_hardware
-                )
-            )
-            .add_action_list(
-                [
-                    RecordVolumeAction(
-                        name=f"record_pump_{pump_id}",
-                        description=f"Record volume for pump {pump_id}",
-                        hardware=selected_hardware,
-                        pump_id=pump_id,
-                    )
-                    for pump_id in selected_hardware.pump_ids
-                ]
+        procedure = CalibrationProcedure(
+            state=procedure_state.model_dump() if procedure_state else None, hardware=selected_hardware
+        )
+        procedure.add_action(
+            DisplayInstructionAction(
+                description="Fill a large beaker with water. Submerge pump lines ensuring ends are below the surface",
+                name="fill_beaker",
+                hardware=selected_hardware,
             )
         )
+        procedure.add_action(
+            DisplayInstructionAction(
+                description=(
+                    "For each pump, set a vial in a rack and place line in vial. Note that to prevent damage"
+                    "from overrun, vials should not be placed on the evolver in this procedure"
+                ),
+                name="place_vials",
+                hardware=selected_hardware,
+            )
+        )
+        procedure.add_action(
+            PumpAction(
+                fast=self.time_to_pump_fast,
+                slow=self.time_to_pump_slow,
+                name="pump_run",
+                description="Run pumps",
+                hardware=selected_hardware,
+            )
+        )
+        procedure.add_action(
+            DisplayInstructionAction(
+                description="Wait for pumps to finish", name="wait_pumps", hardware=selected_hardware
+            )
+        )
+        for pump_id in selected_hardware.pump_ids:
+            procedure.add_action(
+                RecordVolumeAction(
+                    name=f"record_pump_{pump_id}",
+                    description=f"Record volume for pump {pump_id}",
+                    hardware=selected_hardware,
+                    pump_id=pump_id,
+                )
+            )
+        self.calibration_procedure = procedure
