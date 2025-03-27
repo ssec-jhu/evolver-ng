@@ -11,7 +11,7 @@ class NoOpSensorDriver(SensorDriver):
 
     class Output(SensorDriver.Output):
         raw: int
-        value: int | None = None
+        value: float | None = None
 
     def read(self):
         """Simulate reading data from sensors, applying transformations if a calibrator is present."""
