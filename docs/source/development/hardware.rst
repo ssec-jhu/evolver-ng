@@ -16,7 +16,8 @@ For sensors::
 
         # model for output data
         class Output(SensorDriver.Output):
-            value: float
+            raw: int
+            value: float | None
 
         def read(self):
             # Read the hardware here, set and return self.outputs
@@ -31,7 +32,8 @@ For effectors::
 
         # model for input data
         class Input(EffectorDriver.Input):
-            value: float
+            value: float | None
+            raw: int | None
 
         def commit(self, value):
             # Apply the values from self.proposal to the underlying hardware by
@@ -76,7 +78,19 @@ Similar to `Config`, hardware classes also define an `Input` (for effectors) and
 from  and transformed or transformed and sent to hardware.
 
 The use of model classes here, as in `Config`, provides a schema for use in
-input and display by clients, documentation, and validation of data.
+input and display by clients, documentation, and validation of data. Validation
+implies that the model defined must define all useful types of each field,
+exceptions will occur and be expected for cases where bad input is given.
+
+.. note::
+    The physical value (subject to calibration transformation) represented in an
+    `Output` class should in general be defined to be optional (e.g. `float | None`)
+    to allow for cases where a calibrator is unspecified - for example prior to
+    running a calibration procedure. The `None` value communicates to consumers that
+    calibration is not available or has failed. In other cases, a fallback value
+    must be used when performing the transformation (`_transform`) when constructing
+    the `Output` object in the driver. See below for more details on calibration
+    transformations.
 
 
 Calibrated value transformations
