@@ -20,7 +20,7 @@ class ODSensor(SensorDriver):
         integrations: int = Field(500, description="on read, request average of this number of ADC reads")
 
     class Output(SerialDeviceOutputBase, SensorDriver.Output):
-        density: float = Field(None, description="Optical density")
+        density: float | None = Field(None, description="Optical density")
 
     @property
     def serial(self):
