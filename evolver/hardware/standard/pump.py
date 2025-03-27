@@ -1,37 +1,13 @@
 from copy import copy
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from evolver.base import BaseConfig, ConfigDescriptor
-from evolver.calibration.interface import Calibrator, IndependentVialBasedCalibrator, Transformer
+from evolver.calibration.interface import Calibrator
+from evolver.calibration.standard.calibrators.pump import GenericPumpCalibrator
 from evolver.hardware.interface import EffectorDriver
 from evolver.hardware.standard.base import SerialDeviceConfigBase
 from evolver.serial import SerialData
-
-
-class RateTransformer(Transformer):
-    class Config(Transformer.Config):
-        rate: float
-
-    def convert_to(self, time):  # convert to volume from time
-        return self.rate * time
-
-    def convert_from(self, volume):  # convert to time from volume
-        return volume / self.rate
-
-
-class GenericPumpCalibrator(IndependentVialBasedCalibrator):
-    class Config(IndependentVialBasedCalibrator.Config):
-        time_to_pump_fast: float = 10.0
-        time_to_pump_slow: float = 100.0
-
-    def init_transformers(self, calibration_data):
-        self.input_transformer = {}
-        for vial, (time, volume) in calibration_data.measured.items():
-            self.input_transformer[vial] = RateTransformer(rate=volume / time)
-
-    def create_calibration_procedure(self, selected_hardware, resume, *args, **kwargs):
-        raise NotImplementedError
 
 
 class GenericPump(EffectorDriver):
@@ -50,14 +26,23 @@ class GenericPump(EffectorDriver):
     class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         ipp_pumps: bool | list[int] = Field(False, description="False (no IPP), True (all IPP), or list of IPP ids")
         calibrator: ConfigDescriptor | Calibrator = ConfigDescriptor(classinfo=GenericPumpCalibrator)
+        active_pumps: list[int] | None = Field(None, description="List of active pump IDs, or None for all")
 
     class Input(BaseConfig):  # This intentionally doesn't inherit from EffectorDriver.Input.
         pump_id: int
-        volume: float = Field(description="Volume to pump in mL per event")
+        volume: float = Field(0, description="Volume to pump in mL per event")
         rate: float = Field(0, description="Rate of pumping in volumes per hour")
+        time: float = Field(0, description="Time to pump in seconds, mutually exclusive with volume")
+
+        @model_validator(mode="after")
+        def validate(self):
+            if self.volume and self.time:
+                raise ValueError("Only one of volume or time can be specified")
+            return self
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.pump_ids = list(range(self.slots)) if self.active_pumps is None else self.active_pumps
         if self.ipp_pumps is True:
             self.ipp_pumps = list(range(self.slots / 3))
         elif self.ipp_pumps in (False, None):
@@ -67,7 +52,13 @@ class GenericPump(EffectorDriver):
     def serial(self):
         return self.serial_conn or self.evolver.serial
 
-    def set(self, input):
+    def set(self, *args, **kwargs):
+        # We index here by pump_id, which is a concept outside of vial - we
+        # don't want confuse things by overloading the concept, so be explicit
+        # here
+        input = self._get_input_from_args(*args, **kwargs)
+        if input.pump_id not in self.pump_ids:
+            raise ValueError(f"pump_id {input.pump_id} not in active pumps")
         self.proposal[input.pump_id] = input
 
     def commit(self):
@@ -85,7 +76,10 @@ class GenericPump(EffectorDriver):
             elif any(pump - i < 3 for i in self.ipp_pumps):
                 raise ValueError(f"pump slot {pump} reserved for IPP pump, cannot address as standard")
             else:
-                time_to_pump = self._transform("input_transformer", "convert_from", input.volume, pump)
+                if input.time:
+                    time_to_pump = input.time
+                else:
+                    time_to_pump = self._transform("input_transformer", "convert_from", input.volume, pump)
                 pump_interval = int(3600 / input.rate) if input.rate else 0
                 cmd[pump] = f"{time_to_pump}|{pump_interval}".encode()
         with self.serial as comm:

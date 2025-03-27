@@ -48,6 +48,12 @@ class CalibrationProcedure(BaseInterface, ABC):
     def get_actions(self):
         return self.actions
 
+    def get_action(self, name):
+        actions = [action for action in self.actions if action.name == name]
+        if len(actions) == 0:
+            raise ValueError(f"Action with name '{name}' not found.")
+        return actions[0]
+
     def get_state(self, *args, **kwargs):
         return self.state
 

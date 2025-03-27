@@ -1,7 +1,11 @@
+from unittest.mock import MagicMock
+
 import pytest
 
 from evolver.calibration.interface import CalibrationStateModel
-from evolver.hardware.standard.pump import GenericPumpCalibrator
+from evolver.calibration.standard.calibrators.pump import GenericPumpCalibrator
+from evolver.hardware.standard.pump import GenericPump
+from evolver.serial import SerialData
 from evolver.settings import settings
 
 
@@ -26,3 +30,41 @@ def test_pump_calibrator_read_from_file(cal_data):
     cal_data.save("test_cal_data.yaml")
     calibrator = GenericPumpCalibrator(calibration_file="test_cal_data.yaml")
     assert calibrator.calibration_data == cal_data
+
+
+@pytest.mark.parametrize("active_pumps", [None, [0, 2]])
+def test_pump_calibration_procedure(active_pumps):
+    calibrator = GenericPumpCalibrator()
+    hardware = GenericPump(addr="pump", calibrator=calibrator, active_pumps=active_pumps)
+    hardware.calibrator.create_calibration_procedure(selected_hardware=hardware, resume=False)
+    procedure = hardware.calibrator.calibration_procedure
+
+    def dispatch_to(procedure, action_name, payload):
+        procedure.dispatch(procedure.get_action(action_name), payload)
+
+    dispatch_to(procedure, "fill_beaker", {})
+    dispatch_to(procedure, "place_vials", {})
+
+    hardware.serial_conn = MagicMock()
+    dispatch_to(procedure, "pump_run", {})
+    # We expect the pump run to have sent the command with by default the slow
+    # pump rate set on calibrator. For those pumps not active we expect the null
+    # command (--) to be set for the relevant slot.
+    per_pump_bytes = f"{calibrator.time_to_pump_slow}|0".encode()
+    expected_cmd = SerialData(addr="pump", data=[per_pump_bytes] * hardware.slots)
+    if active_pumps:
+        for i in range(hardware.slots):
+            if i not in active_pumps:
+                expected_cmd.data[i] = b"--"
+    hardware.serial_conn.__enter__().communicate.assert_called_with(expected_cmd)
+
+    dispatch_to(procedure, "wait_pumps", {})
+
+    measured = 2.0
+    dispatch_to(procedure, "record_pump_0", {"volume": measured})
+    assert procedure.state.measured == ({0: (calibrator.time_to_pump_slow, measured)})
+
+    dispatch_to(procedure, "pump_run", {"use_fast_mode": True})
+    measured = 4.0
+    dispatch_to(procedure, "record_pump_2", {"volume": measured})
+    assert procedure.state.measured[2] == (calibrator.time_to_pump_fast, measured)
