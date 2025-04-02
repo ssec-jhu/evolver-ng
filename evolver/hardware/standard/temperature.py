@@ -50,8 +50,14 @@ class Temperature(SensorDriver, EffectorDriver):
             inputs.update({k: v for k, v in self.proposal.items() if k in self.vials})
         for vial, input in inputs.items():
             # Calibrate temperature to raw data.
-            raw = int(self._transform("input_transformer", "convert_from", input.temperature, vial))
-            data[vial] = str(raw).encode()
+            transformed_value = self._transform("input_transformer", "convert_from", input.temperature, vial)
+            # Handle None results from transformation to prevent int(None) error
+            if transformed_value is not None:
+                raw = int(transformed_value)
+                data[vial] = str(raw).encode()
+            else:
+                # Default to HEAT_OFF if transformation fails
+                data[vial] = self.HEAT_OFF
         with self.serial as comm:
             response = comm.communicate(SerialData(addr=self.addr, data=data))
         self.committed = inputs
@@ -65,6 +71,8 @@ class Temperature(SensorDriver, EffectorDriver):
                 # Calibrate raw data to temperature.
                 raw = int(raw)
                 temperature = self._transform("output_transformer", "convert_to", raw, vial)
+                # temperature can be None if transformation fails or isn't configured correctly
+                # This is handled gracefully since Output model allows temperature to be None
                 self.outputs[vial] = self.Output(vial=vial, raw=raw, temperature=temperature)
         return self.outputs
 
