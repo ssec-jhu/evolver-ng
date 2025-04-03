@@ -59,7 +59,7 @@ class TestLinearTransformer:
 
         with pytest.raises(ValidationError):
             LinearTransformer.Config(degree=1, parameters=[1, 2, 3])
-            
+
     def test_none_parameters(self):
         """Test that None is returned when parameters is None."""
         transformer = LinearTransformer(parameters=None)
