@@ -28,11 +28,11 @@ class HardwareDriver(BaseInterface):
 
     def _transform(self, transformer: str, func: str, x: Any, vial: int = None, fallback=None):
         """Helper func to reduce boilerplate when transforming input and output data."""
-        # Early return if input is None - prevents "NoneType + int" errors 
+        # Early return if input is None - prevents "NoneType + int" errors
         # when input to transformation is None
         if x is None:
             return fallback
-            
+
         if self.calibrator and (_transformer := getattr(self.calibrator, transformer, None)):
             try:
                 if isinstance(_transformer, dict):
