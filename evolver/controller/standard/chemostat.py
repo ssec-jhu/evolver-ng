@@ -75,12 +75,8 @@ class Chemostat(Controller):
             if len(self.od_buffer[vial]) < self.window or elapsed_time < self.start_delay * 3600:
                 continue
 
-            # Filter out None values to prevent "NoneType + int" errors during sum
-            valid_values = [v for v in self.od_buffer[vial] if v is not None]
-            if not valid_values:  # Skip if all values are None
-                continue
+            od_mean = sum(self.od_buffer[vial]) / self.window
 
-            od_mean = sum(valid_values) / len(valid_values)
             if self.min_od > od_mean:
                 continue
 

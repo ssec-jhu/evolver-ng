@@ -65,8 +65,6 @@ class Temperature(SensorDriver, EffectorDriver):
                 # Calibrate raw data to temperature.
                 raw = int(raw)
                 temperature = self._transform("output_transformer", "convert_to", raw, vial)
-                # Temperature can be None if transformation fails or isn't configured correctly
-                # This is handled gracefully since Output model allows temperature to be None
                 self.outputs[vial] = self.Output(vial=vial, raw=raw, temperature=temperature)
         return self.outputs
 
