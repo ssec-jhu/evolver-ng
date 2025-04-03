@@ -54,7 +54,10 @@ class LinearTransformer(PolyFitTransformer):
         return super().refit(x, y, *args, **kwargs)
 
     def convert_from(self, y):
-        return super().convert_from(y)[0]
+        result = super().convert_from(y)
+        if result is None:
+            return None
+        return result[0]
 
 
 class PolyFitCalibrator(Calibrator):
