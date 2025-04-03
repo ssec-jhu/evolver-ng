@@ -30,9 +30,15 @@ class PolyFitTransformer(Transformer):
         return super().refit(x, y, self.degree, *args, **kwargs)
 
     def convert_to(self, x):
+        # Check if parameters exist before attempting to use them
+        if self.parameters is None:
+            return None
         return poly.polyval(x, self.parameters)
 
     def convert_from(self, y):
+        # Check if parameters exist before attempting to use them
+        if self.parameters is None:
+            return None
         return (poly.Polynomial(self.parameters) - y).roots()
 
 
