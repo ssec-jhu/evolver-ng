@@ -60,6 +60,12 @@ class TestLinearTransformer:
         with pytest.raises(ValidationError):
             LinearTransformer.Config(degree=1, parameters=[1, 2, 3])
 
+    def test_none_parameters(self):
+        """Test that None is returned when parameters is None."""
+        transformer = LinearTransformer(parameters=None)
+        assert transformer.convert_to(10) is None
+        assert transformer.convert_from(10) is None
+
 
 class TestLinearCalibrator:
     def test_calibration_procedure(self, mock_linear_data, tmp_calibration_dir):  # noqa: F811

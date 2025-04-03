@@ -28,6 +28,7 @@ class HardwareDriver(BaseInterface):
 
     def _transform(self, transformer: str, func: str, x: Any, vial: int = None, fallback=None):
         """Helper func to reduce boilerplate when transforming input and output data."""
+
         if self.calibrator and (_transformer := getattr(self.calibrator, transformer, None)):
             try:
                 if isinstance(_transformer, dict):

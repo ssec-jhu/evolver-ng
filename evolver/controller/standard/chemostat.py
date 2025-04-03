@@ -76,6 +76,7 @@ class Chemostat(Controller):
                 continue
 
             od_mean = sum(self.od_buffer[vial]) / self.window
+
             if self.min_od > od_mean:
                 continue
 
