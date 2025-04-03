@@ -36,9 +36,6 @@ class HardwareDriver(BaseInterface):
         if self.calibrator and (_transformer := getattr(self.calibrator, transformer, None)):
             try:
                 if isinstance(_transformer, dict):
-                    # Protect against missing vial in transformer dictionary
-                    if vial not in _transformer:
-                        return fallback
                     y = getattr(_transformer[vial], func)(x)
                 else:
                     y = getattr(_transformer, func)(x)
