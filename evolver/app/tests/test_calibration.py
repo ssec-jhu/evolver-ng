@@ -8,6 +8,7 @@ from evolver.calibration.standard.calibrators.temperature import TemperatureCali
 from evolver.calibration.standard.polyfit import LinearTransformer
 from evolver.device import Evolver
 from evolver.hardware.demo import NoOpSensorDriver
+from evolver.settings import app_settings
 from evolver.tests.conftest import tmp_calibration_dir  # noqa: F401
 
 
@@ -156,6 +157,12 @@ def test_dispatch_temperature_calibration_raw_value_action(tmp_path):
         "started": True,
     }
     assert expected_subset.items() <= raw_dispatch_response.json().items()
+
+
+def test_start_calibration_no_procedure_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(app_settings, "CONFIG_FILE", str(tmp_path / "evolver.yml"))
+    _, client = setup_evolver_with_calibrator(TemperatureCalibrator)
+    client.post("/hardware/test/calibrator/procedure/start", params={"resume": False})
 
 
 def test_reset_calibration_procedure(tmp_path):
