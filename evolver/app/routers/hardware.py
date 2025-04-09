@@ -1,4 +1,5 @@
 import datetime
+from pathlib import Path as PathLibPath
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Body, Path, Request
@@ -100,7 +101,7 @@ def start_calibration_procedure(
     if procedure_file is not None:
         calibrator.procedure_file = procedure_file
     else:
-        calibrator.procedure_file = Path(
+        calibrator.procedure_file = PathLibPath(
             f"{hardware_instance.name}_{datetime.datetime.now().strftime(settings.DATETIME_PATH_FORMAT)}"
         ).with_suffix(".yml")
 
