@@ -1,5 +1,8 @@
 from evolver.calibration.action import DisplayInstructionAction
-from evolver.calibration.interface import CalibrationStateModel, IndependentVialBasedCalibrator
+from evolver.calibration.interface import (
+    CalibrationStateModel,
+    IndependentVialBasedCalibrator,
+)
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
     CalculateFitAction,
@@ -26,7 +29,9 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
         *args,
         **kwargs,
     ):
-        procedure_state = CalibrationStateModel.load(self.procedure_file) if resume else None
+        procedure_state = None
+        if resume and self.procedure_file:
+            procedure_state = CalibrationStateModel.load(self.procedure_file)
 
         calibration_procedure = CalibrationProcedure(
             state=procedure_state.model_dump() if procedure_state else None, hardware=selected_hardware
