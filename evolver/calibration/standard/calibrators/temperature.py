@@ -1,10 +1,7 @@
-from pathlib import Path
-
 from evolver.calibration.action import DisplayInstructionAction
 from evolver.calibration.interface import (
     CalibrationStateModel,
     IndependentVialBasedCalibrator,
-    root_calibrator_file_storage_path,
 )
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
@@ -34,15 +31,7 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
     ):
         procedure_state = None
         if resume and self.procedure_file:
-            # Check if procedure_file is an absolute path
-            if Path(self.procedure_file).is_absolute():
-                procedure_file_path = self.procedure_file
-            else:
-                # Use self.dir if defined, otherwise use the default storage path
-                procedure_dir = getattr(self, "dir", root_calibrator_file_storage_path())
-                procedure_file_path = procedure_dir / self.procedure_file
-
-            procedure_state = CalibrationStateModel.load(procedure_file_path)
+            procedure_state = CalibrationStateModel.load(self.procedure_file)
 
         calibration_procedure = CalibrationProcedure(
             state=procedure_state.model_dump() if procedure_state else None, hardware=selected_hardware
