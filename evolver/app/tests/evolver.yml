@@ -1,0 +1,142 @@
+abort_on_commit_errors: false
+abort_on_control_errors: false
+enable_control: true
+experiments: {}
+hardware:
+  test:
+    classinfo: evolver.hardware.demo.NoOpSensorDriver
+    config:
+      calibrator:
+        classinfo: evolver.calibration.standard.calibrators.temperature.TemperatureCalibrator
+        config:
+          calibration_file: null
+          created: '2025-04-10T12:12:26.731362'
+          default_input_transformer: null
+          default_output_transformer: null
+          dir: calibration_files
+          expire: P168D
+          input_transformer:
+            '0':
+              classinfo: evolver.calibration.standard.polyfit.LinearTransformer
+              config:
+                created: '2025-04-10T12:12:26.731310'
+                degree: 1
+                dir: calibration_files
+                expire: P168D
+                name: LinearTransformer
+                parameters: null
+            '1':
+              classinfo: evolver.calibration.standard.polyfit.LinearTransformer
+              config:
+                created: '2025-04-10T12:12:26.731327'
+                degree: 1
+                dir: calibration_files
+                expire: P168D
+                name: LinearTransformer
+                parameters: null
+            '2':
+              classinfo: evolver.calibration.standard.polyfit.LinearTransformer
+              config:
+                created: '2025-04-10T12:12:26.731335'
+                degree: 1
+                dir: calibration_files
+                expire: P168D
+                name: LinearTransformer
+                parameters: null
+          name: TemperatureCalibrator
+          no_refit: false
+          output_transformer:
+            '0':
+              classinfo: evolver.calibration.standard.polyfit.LinearTransformer
+              config:
+                created: '2025-04-10T12:12:26.731341'
+                degree: 1
+                dir: calibration_files
+                expire: P168D
+                name: LinearTransformer
+                parameters: null
+            '1':
+              classinfo: evolver.calibration.standard.polyfit.LinearTransformer
+              config:
+                created: '2025-04-10T12:12:26.731346'
+                degree: 1
+                dir: calibration_files
+                expire: P168D
+                name: LinearTransformer
+                parameters: null
+            '2':
+              classinfo: evolver.calibration.standard.polyfit.LinearTransformer
+              config:
+                created: '2025-04-10T12:12:26.731352'
+                degree: 1
+                dir: calibration_files
+                expire: P168D
+                name: LinearTransformer
+                parameters: null
+          procedure_file: /private/var/folders/6m/tmk5cc4n13l8dn9byddj1y8m0000gn/T/pytest-of-iainland/pytest-10/test_get_calibration_data0/my_test_calibration_procedure.yml
+          vials:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+          - 9
+          - 10
+          - 11
+          - 12
+          - 13
+          - 14
+          - 15
+      echo_raw: 1
+      echo_val: 2
+      name: test
+      vials:
+      - 0
+      - 1
+      - 2
+history:
+  classinfo: evolver.history.standard.HistoryServer
+  config:
+    buffer_partitions: 3
+    default_n_max: 5000
+    default_window: 3600
+    name: HistoryServer
+    namespace: null
+    partition_seconds: 3600
+interval: 20
+log_level: 21
+name: Evolver
+namespace: unspecified
+raise_loop_exceptions: false
+serial:
+  classinfo: evolver.serial.EvolverSerialUART
+  config:
+    baudrate: 9600
+    name: EvolverSerialUART
+    port: /dev/ttyAMA0
+    timeout: 1.0
+skip_control_on_read_failure: true
+vial_layout:
+- 4
+- 4
+vials:
+- 0
+- 1
+- 2
+- 3
+- 4
+- 5
+- 6
+- 7
+- 8
+- 9
+- 10
+- 11
+- 12
+- 13
+- 14
+- 15

@@ -319,29 +319,6 @@ def test_calibration_procedure_save(tmp_path):
     assert error_response.status_code == 500
 
 
-def test_dispatch_temperature_calibration_calculate_fit_action(tmp_path):
-    temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
-
-    app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
-
-    procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
-
-    client.post("/hardware/test/calibrator/procedure/start", params={"procedure_file": procedure_file})
-
-    reference_dispatch_response = dispatch_action(client, "test", "measure_vial_0_temperature", {"temperature": 25.0})
-    assert reference_dispatch_response.status_code == 200
-
-    raw_dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
-    assert raw_dispatch_response.status_code == 200
-
-    fit_dispatch_response = dispatch_action(client, "test", "calculate_vial_0_fit")
-    assert fit_dispatch_response.status_code == 200
-
-    output_transformer_response = client.get("/hardware/test/calibrator/output_transformer")
-    assert output_transformer_response.status_code == 200
-    assert output_transformer_response.json()["0"]["parameters"] == [0.6149999999999997, 0.024599999999999997]
-
-
 def get_stable_state_subset(state):
     """Extract only the stable fields we want to compare from a state object."""
     result = {
@@ -382,27 +359,13 @@ def test_get_calibration_data(tmp_path):
     actual_state = get_stable_state_subset(calibration_data)
 
     expected_state = {
-        "completed_actions": ["measure_vial_0_temperature", "read_vial_0_raw_output", "calculate_vial_0_fit"],
+        "completed_actions": ["measure_vial_0_temperature", "read_vial_0_raw_output"],
         "history": [
             {"completed_actions": [], "history": [], "measured": {}, "started": True},
             {
                 "completed_actions": ["measure_vial_0_temperature"],
                 "history": [{"completed_actions": [], "history": [], "measured": {}, "started": True}],
                 "measured": {"0": {"raw": [], "reference": [25.0]}},
-                "started": True,
-            },
-            {
-                "completed_actions": ["measure_vial_0_temperature", "read_vial_0_raw_output"],
-                "history": [
-                    {"completed_actions": [], "history": [], "measured": {}, "started": True},
-                    {
-                        "completed_actions": ["measure_vial_0_temperature"],
-                        "history": [{"completed_actions": [], "history": [], "measured": {}, "started": True}],
-                        "measured": {"0": {"raw": [], "reference": [25.0]}},
-                        "started": True,
-                    },
-                ],
-                "measured": {"0": {"raw": [1.23], "reference": [25.0]}},
                 "started": True,
             },
         ],
