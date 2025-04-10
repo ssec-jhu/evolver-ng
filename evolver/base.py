@@ -155,7 +155,7 @@ class BaseConfig(_BaseConfig):
 
 class ConfigDescriptor(_BaseModel):
     classinfo: ImportString
-    config: dict = {}
+    config: dict | None = {}
 
     @pydantic.field_validator("classinfo", mode="after")
     @classmethod
