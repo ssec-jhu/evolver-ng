@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 from fastapi import APIRouter, Body, Path, Request
 from fastapi.params import Query
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from evolver.app.exceptions import (
     CalibrationProcedureActionNotFoundError,
@@ -28,6 +28,11 @@ class Action(BaseModel):
 
 class StartCalibrationProcedureRequest(BaseModel):
     selected_vials: None | List[int] = None
+
+    @field_validator("selected_vials", mode="before")
+    @classmethod
+    def validate_selected_vials(cls, v):
+        return [] if v is None else v
 
 
 def get_hardware_instance(request: Request, hardware_name: str) -> HardwareDriver:

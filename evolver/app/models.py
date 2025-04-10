@@ -32,6 +32,11 @@ class EventInfo(pydantic.BaseModel):
     vial: int | None = None
     data: dict = {}
 
+    @pydantic.field_validator("data", mode="before")
+    @classmethod
+    def validate_data(cls, v):
+        return {} if v is None else v
+
 
 class EvolverState(pydantic.BaseModel):
     state: dict

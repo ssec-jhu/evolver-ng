@@ -31,6 +31,11 @@ class Experiment(BaseInterface.Config):
     def serialize_controllers(self, data):
         return [ConfigDescriptor.model_validate(c) for c in data]
 
+    @field_validator("controllers", mode="before")
+    @classmethod
+    def validate_controllers(cls, v):
+        return [] if v is None else v
+
 
 class Evolver(BaseInterface):
     class Config(BaseInterface.Config):
@@ -54,6 +59,11 @@ class Evolver(BaseInterface):
         abort_on_commit_errors: bool = False
         skip_control_on_read_failure: bool = True
         log_level: int = EVENT
+
+        @field_validator("hardware", "experiments", mode="before")
+        @classmethod
+        def validate_dicts(cls, v):
+            return {} if v is None else v
 
         @field_validator("vials", mode="after")
         @classmethod
