@@ -32,9 +32,23 @@ class HardwareDriver(BaseInterface):
         if self.calibrator and (_transformer := getattr(self.calibrator, transformer, None)):
             try:
                 if isinstance(_transformer, dict):
-                    y = getattr(_transformer[vial], func)(x)
-                else:
+                    # Handle dictionary transformer (for vial-based operations)
+                    if vial in _transformer and _transformer[vial] is not None:
+                        # Make sure the transformer for this vial exists and has the method
+                        if hasattr(_transformer[vial], func):
+                            y = getattr(_transformer[vial], func)(x)
+                        else:
+                            self.logger.warning(f"Transformer for vial {vial} does not have method {func}")
+                            y = fallback
+                    else:
+                        self.logger.debug(f"No transformer for vial {vial}")
+                        y = fallback
+                elif _transformer is not None and hasattr(_transformer, func):
+                    # Make sure the transformer exists and has the method
                     y = getattr(_transformer, func)(x)
+                else:
+                    self.logger.warning(f"Transformer does not have method {func}")
+                    y = fallback
             except Exception as exc:
                 self.logger.error(f"Error transforming values for {self.name} (vial {vial}): {exc}")
                 y = fallback

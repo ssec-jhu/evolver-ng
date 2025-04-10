@@ -48,8 +48,10 @@ class Evolver(BaseInterface):
             max_length=3,
         )
         vials: list = list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
-        hardware: dict[str, ConfigDescriptor | HardwareDriver] = Field(default={}, 
-                description="Hardware drivers mapped by name. Preserves ConfigDescriptor types during serialization.")
+        hardware: dict[str, ConfigDescriptor | HardwareDriver] = Field(
+            default={},
+            description="Hardware drivers mapped by name. Preserves ConfigDescriptor types during serialization.",
+        )
         experiments: dict[str, Experiment] = {}
         serial: ConfigDescriptor | Connection = ConfigDescriptor.model_validate(DEFAULT_SERIAL)
         history: ConfigDescriptor | History = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
@@ -65,11 +67,11 @@ class Evolver(BaseInterface):
         @classmethod
         def validate_dicts(cls, v):
             return {} if v is None else v
-            
+
         @field_serializer("hardware")
         def serialize_hardware(self, hardware_dict):
             """Ensures hardware items are correctly serialized.
-            
+
             When union types (ConfigDescriptor | HardwareDriver) are used,
             Pydantic's smart union mode doesn't always preserve ConfigDescriptor
             serialization, especially with nested calibrators. This explicitly

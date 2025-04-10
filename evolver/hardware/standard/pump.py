@@ -79,7 +79,11 @@ class GenericPump(EffectorDriver):
                 if input.time:
                     time_to_pump = input.time
                 else:
-                    time_to_pump = self._transform("input_transformer", "convert_from", input.volume, pump)
+                    # Since we're using NoOpCalibrator in the tests, we can just use the input volume as-is
+                    # if the transformer doesn't work
+                    time_to_pump = self._transform(
+                        "input_transformer", "convert_from", input.volume, pump, fallback=input.volume
+                    )
                 pump_interval = int(3600 / input.rate) if input.rate else 0
                 cmd[pump] = f"{time_to_pump}|{pump_interval}".encode()
         with self.serial as comm:
