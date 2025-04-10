@@ -249,3 +249,49 @@ class TestEvolver:
         with pytest.raises(ValueError, match="Vials configured exceed total available slots"):
             Evolver.Config(vials=[0, 1, 2, 8], vial_layout=[2, 2])
         Evolver.Config(vials=[0, 1, 2, 3], vial_layout=[2, 2])
+
+    def test_temperature_with_null_calibrator(self):
+        """Test that Temperature hardware with null calibrator is properly handled as ConfigDescriptor."""
+        from evolver.base import ConfigDescriptor
+        from evolver.hardware.standard.temperature import Temperature
+
+        # Initialize Evolver with Temperature hardware with None calibrator
+        evolver = Evolver(hardware={"test": Temperature(addr="x", calibrator=None)})
+
+        # Get config model to check if descriptors are correctly created
+        config_model = evolver.config_model
+
+        # Validate hardware is a config descriptor
+        hardware_descriptor = config_model.hardware["test"]
+        assert isinstance(hardware_descriptor, ConfigDescriptor)
+
+        # Validate calibrator is None
+        assert hardware_descriptor.config.get("calibrator") is None, "Calibrator should be None"
+
+    def test_temperature_with_calibrator(self):
+        """Test that Temperature hardware with calibrator is properly handled as ConfigDescriptor."""
+        from evolver.base import ConfigDescriptor
+        from evolver.calibration.standard.calibrators.temperature import TemperatureCalibrator
+        from evolver.hardware.standard.temperature import Temperature
+
+        # Initialize calibrator and Evolver with Temperature hardware
+        calibrator = TemperatureCalibrator()
+        evolver = Evolver(hardware={"test": Temperature(addr="x", calibrator=calibrator)})
+
+        # Get config model to check if descriptors are correctly created
+        config_model = evolver.config_model
+
+        # Validate hardware is a config descriptor
+        hardware_descriptor = config_model.hardware["test"]
+        assert isinstance(hardware_descriptor, ConfigDescriptor)
+
+        # Validate calibrator is a dictionary with classinfo and config
+        calibrator_descriptor = hardware_descriptor.config.get("calibrator")
+        assert isinstance(calibrator_descriptor, dict), "Calibrator should be a dictionary"
+        assert "classinfo" in calibrator_descriptor, "Calibrator should have classinfo key"
+        assert "config" in calibrator_descriptor, "Calibrator should have config key"
+        assert calibrator_descriptor["config"]["name"] == "TemperatureCalibrator"
+        assert (
+            calibrator_descriptor["classinfo"]
+            == "evolver.calibration.standard.calibrators.temperature.TemperatureCalibrator"
+        )
