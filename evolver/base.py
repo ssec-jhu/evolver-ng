@@ -406,7 +406,34 @@ class BaseInterface(ABC):
     @property
     def config_model(self) -> BaseConfig:
         """Return an instance of Config populated from instance attributes."""
-        return self.Config.model_validate(vars(self))
+        attrs = vars(self).copy()
+        
+        # Process hardware items to ensure they're properly represented as ConfigDescriptors
+        if "hardware" in attrs and isinstance(attrs["hardware"], dict):
+            hardware_dict = {}
+            for k, v in attrs["hardware"].items():
+                if isinstance(v, ConfigDescriptor):
+                    hardware_dict[k] = v
+                else:
+                    # Convert hardware driver to ConfigDescriptor and ensure its calibrator is also properly represented
+                    hardware_config = ConfigDescriptor.model_validate(v)
+                    # If it has a calibrator, ensure it's also properly converted to a ConfigDescriptor
+                    if hasattr(v, 'calibrator') and v.calibrator:
+                        calibrator = v.calibrator
+                        calibrator_config = ConfigDescriptor.model_validate(calibrator)
+                        # Ensure classinfo is a string, not a class
+                        classinfo = calibrator_config.classinfo
+                        if not isinstance(classinfo, str):
+                            classinfo = f"{classinfo.__module__}.{classinfo.__qualname__}"
+                            
+                        hardware_config.config['calibrator'] = {
+                            'classinfo': classinfo,
+                            'config': calibrator_config.config
+                        }
+                    hardware_dict[k] = hardware_config
+            attrs["hardware"] = hardware_dict
+            
+        return self.Config.model_validate(attrs)
 
     @property
     def descriptor(self) -> ConfigDescriptor:

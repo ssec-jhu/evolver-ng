@@ -107,7 +107,7 @@ class TestBaseInterface:
     def test_config_property(self):
         config = ConcreteInterface.Config(a=6, b=7)
         obj = ConcreteInterface.create(config)
-        assert obj.config == config.dict()
+        assert obj.config == config.model_dump()
         assert obj.Config.model_validate(config) == config
 
     @pytest.mark.parametrize("conf", ("mock_conf_as_json", "mock_conf_as_dict"))

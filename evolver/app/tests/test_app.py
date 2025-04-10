@@ -59,7 +59,7 @@ class TestApp:
         for content in contents["detail"]:
             assert content["msg"] == "Field required"
 
-        new_data = Evolver.Config().copy(update=data)
+        new_data = Evolver.Config().model_copy(update=data)
         response = app_client.post("/", data=new_data.model_dump_json())
         assert response.status_code == 200
         newconfig = app_client.get("/").json()["config"]

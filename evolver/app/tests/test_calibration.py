@@ -97,7 +97,7 @@ def test_temperature_calibration_procedure_actions(tmp_path):
         {
             "name": action.name,
             "description": action.description,
-            "input_schema": action.FormModel.schema() if action.FormModel else None,
+            "input_schema": action.FormModel.model_json_schema() if action.FormModel else None,
         }
         for action in temp_calibrator.calibration_procedure.actions
     ]
