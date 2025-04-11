@@ -6,10 +6,7 @@ from math import prod
 from pydantic import Field, ValidationInfo, field_serializer, field_validator
 
 from evolver.base import BaseInterface, ConfigDescriptor
-from evolver.connection.interface import Connection
-from evolver.controller.interface import Controller
-from evolver.hardware.interface import EffectorDriver, HardwareDriver, SensorDriver
-from evolver.history.interface import History
+from evolver.hardware.interface import EffectorDriver, SensorDriver
 from evolver.history.standard import HistoryServer
 from evolver.logutils import EVENT, LogHistoryCaptureHandler
 from evolver.serial import EvolverSerialUART
@@ -20,8 +17,8 @@ DEFAULT_HISTORY = HistoryServer
 
 
 class Experiment(BaseInterface.Config):
-    enabled: bool = True
-    controllers: list[ConfigDescriptor | Controller] = []
+    enabled: bool = Field(True, description="True if experiment controllers should be run, False otherwise.")
+    controllers: list[ConfigDescriptor] = Field([], description="list of Controllers to run for this experiment.")
 
     # this seemed to have been required for the tests of config symmetry.
     # Without it there is pydantic error about unkown type (the underlying
@@ -43,10 +40,16 @@ class Evolver(BaseInterface):
             max_length=3,
         )
         vials: list = list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
-        hardware: dict[str, ConfigDescriptor | HardwareDriver] = {}
-        experiments: dict[str, Experiment] = {}
-        serial: ConfigDescriptor | Connection = ConfigDescriptor.model_validate(DEFAULT_SERIAL)
-        history: ConfigDescriptor | History = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
+        hardware: dict[str, ConfigDescriptor] = Field(
+            {}, description="hardware components as a map of name to HardwareDriver component"
+        )
+        experiments: dict[str, Experiment] = Field({}, description="experiments as a map of name to Experiment")
+        serial: ConfigDescriptor = Field(
+            ConfigDescriptor.model_validate(DEFAULT_SERIAL), description="shared serial connection"
+        )
+        history: ConfigDescriptor = Field(
+            ConfigDescriptor.model_validate(DEFAULT_HISTORY), description="history server to use"
+        )
         enable_control: bool = True
         interval: int = settings.DEFAULT_LOOP_INTERVAL
         raise_loop_exceptions: bool = False

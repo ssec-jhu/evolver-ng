@@ -156,8 +156,12 @@ class Calibrator(BaseInterface):
     """
 
     class Config(Transformer.Config):
-        input_transformer: ConfigDescriptor | Transformer | None = None
-        output_transformer: ConfigDescriptor | Transformer | None = None
+        input_transformer: ConfigDescriptor | None = Field(
+            None, description="transformer spec for input transformation"
+        )
+        output_transformer: ConfigDescriptor | None = Field(
+            None, description="transformer spec for output transformation"
+        )
         no_refit: bool = Field(False, description="If True, use only cached fitted transfomers from calibration_file")
         calibration_file: str | None = Field(
             None,
@@ -253,10 +257,14 @@ class IndependentVialBasedCalibrator(Calibrator, ABC):
             list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX)),
             description="The vials that this calibrator is for.",
         )
-        default_input_transformer: ConfigDescriptor | Transformer | None = None
-        default_output_transformer: ConfigDescriptor | Transformer | None = None
-        input_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
-        output_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = None
+        default_input_transformer: ConfigDescriptor | None = Field(None, description="Default input transformer spec")
+        default_output_transformer: ConfigDescriptor | None = Field(None, description="Default output transformer spec")
+        input_transformer: dict[int, ConfigDescriptor | Transformer | None] | None = Field(
+            None, description="map of vial number to input transformer spec"
+        )
+        output_transformer: dict[int, ConfigDescriptor | None] | None = Field(
+            None, description="map of vial number to output transformer spec"
+        )
 
     def get_input_transformer(self, vial):
         """Get the input transformer for a given vial."""

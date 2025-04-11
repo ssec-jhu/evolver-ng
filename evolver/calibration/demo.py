@@ -22,8 +22,8 @@ class NoOpTransformer(Transformer):
 
 class NoOpCalibrator(Calibrator):
     class Config(Calibrator.Config):
-        input_transformer: ConfigDescriptor | Transformer | None = Field(default_factory=NoOpTransformer)
-        output_transformer: ConfigDescriptor | Transformer | None = Field(default_factory=NoOpTransformer)
+        input_transformer: ConfigDescriptor | None = Field(default_factory=NoOpTransformer)
+        output_transformer: ConfigDescriptor | None = Field(default_factory=NoOpTransformer)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -76,8 +76,8 @@ class PolyFitCalibrator(Calibrator):
 
 class LinearCalibrator(PolyFitCalibrator):
     class Config(PolyFitCalibrator.Config):
-        input_transformer: ConfigDescriptor | LinearTransformer | None = None
-        output_transformer: ConfigDescriptor | LinearTransformer | None = None
+        input_transformer: ConfigDescriptor | None = None
+        output_transformer: ConfigDescriptor | None = None
 
 
 class IndependentVialBasedLinearCalibrator(IndependentVialBasedCalibrator):

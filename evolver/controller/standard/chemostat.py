@@ -10,9 +10,9 @@ from evolver.hardware.interface import HardwareDriver, VialConfigBaseModel
 
 class Chemostat(Controller):
     class Config(Controller.Config, VialConfigBaseModel):
-        od_sensor: HardwareDriver | ConfigDescriptor | str = Field(description="name of OD sensor to use")
-        pump: HardwareDriver | ConfigDescriptor | str = Field(description="name of pump device to use")
-        stirrer: HardwareDriver | ConfigDescriptor | str = Field(description="name of stirrer device to use")
+        od_sensor: ConfigDescriptor | str = Field(description="name of OD sensor to use")
+        pump: ConfigDescriptor | str = Field(description="name of pump device to use")
+        stirrer: ConfigDescriptor | str = Field(description="name of stirrer device to use")
         window: int = Field(7, description="number of OD measurements to collect prior to start")
         min_od: float = Field(0, description="OD at which to start chemostat dilutions")
         start_delay: int = Field(0, description="Time (in hours) after which to start dilutions")
