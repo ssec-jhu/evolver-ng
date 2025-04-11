@@ -4,7 +4,6 @@ from pydantic import Field
 from pydantic.fields import FieldInfo
 
 from evolver.base import ConfigDescriptor
-from evolver.calibration.interface import Calibrator
 from evolver.hardware.interface import (
     EffectorDriver,
     HardwareDriver,
@@ -26,7 +25,7 @@ class Temperature(SensorDriver, EffectorDriver):
     HEAT_OFF = b"4095"
 
     class Config(SerialDeviceConfigBase, EffectorDriver.Config):
-        calibrator: ConfigDescriptor | Calibrator | None = FieldInfo.merge_field_infos(
+        calibrator: ConfigDescriptor | None = FieldInfo.merge_field_infos(
             HardwareDriver.Config.model_fields["calibrator"],
             default_factory=lambda: ConfigDescriptor.load(settings.DEFAULT_TEMPERATURE_CALIBRATION_CONFIG_FILE),
         )
