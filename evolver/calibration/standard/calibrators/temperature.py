@@ -5,7 +5,6 @@ from evolver.calibration.interface import (
 )
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
-    CalculateFitAction,
     RawValueAction,
     ReferenceValueAction,
 )
@@ -66,16 +65,6 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
                     vial_idx=vial,
                     description=f"The hardware will now read the raw output values of vial: {vial}'s temperature sensor.",
                     name=f"read_vial_{vial}_raw_output",
-                )
-            )
-
-        for vial in self.vials:
-            calibration_procedure.add_action(
-                CalculateFitAction(
-                    hardware=selected_hardware,
-                    vial_idx=vial,
-                    description=f"Calculate the fit for the vial: {vial}'s temperature sensor",
-                    name=f"calculate_vial_{vial}_fit",
                 )
             )
 
