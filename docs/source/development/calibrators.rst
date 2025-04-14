@@ -102,3 +102,122 @@ actions and state in the overall flow.
 Transformers
 ------------
 
+Transformers handle the work of converting a raw reading on a sensor or a
+physical input on an effector into the physical or raw counterparts. As with
+other parts of the framework, transformers are a configurable component on the
+calibrators to which they are attached, implementing the following interface::
+
+    class Transformer:
+        def convert_to(self, raw: Any) -> Any
+        def convert_from(self, real: Any) -> Any
+
+The `convert_from` and `convert_to` methods are inverses of each other. The
+meaning of each depends on whether the transformer is an input or an output
+transformer, according to the following guidelines:
+
+* **Sensors** should use an output transformer and call its `convert_to` method
+  to convert from the raw reading to the physical value to return to user.
+* **Effectors** should use an input transformer and call its `convert_from`
+  method to convert from the physical value to the raw value to send to
+  hardware.
+
+The :py:class:`HardwareDriver<evolver.hardware.interface.HardwareDriver>` class
+contains a convenience method to call transformers from the configured
+calibrator falling back as needed::
+
+    # transform sensor value for this vial to physical units
+    # (self is derivative HardwareDriver)
+    self._transform("output_transformer", "convert_to", raw, vial)
+
+By default the transform function will fallback to a `None` value, but the
+caller of `_transform` can specify a `fallback` arg. In most cases a `None`
+usefully transmits information to the user that the hardware is not calibrated
+properly for the present conditions. A log error message will be emitted in such
+a case.
+
+Transformer fitting
+~~~~~~~~~~~~~~~~~~~
+
+Transformers must implement a `fit` method, which is used to calculate
+parameters for the transformation function from input to output, following
+whatever method makes sense for the given transformer. It should return a
+`Self.Config` object which can be used to create a fitted transformer.
+
+By default, the calibrator will attempt to initialize the transformers and fit
+them based on data collected in the procedure. To do so, a calibrator must
+implement the `init_transformers` method which uses calibrator-specific
+knowledge to formulate the fit call::
+
+    def init_transformers(self, calibration_data: CalibrationStateModel):
+        for vial, data in calibration_data.measured.items():
+            self.get_output_transformer(vial).refit(data["reference"], data["raw"])
+
+in the above case, the specific knowledge encoded is that the procedure writes
+out two items to the state for each vial, "reference" and "raw". Note that we
+call `refit` above, which under the hood calls `fit` on the transformer and
+creates a new transformer from the resultant fit configuration object.
+
+The interface for calibrator also affords that the procedure or an external
+utility can cache fitted transformers in the calibration data
+(:py:class:`CalibrationStateModel`) structure, which can be optionally consulted
+to avoid a re-fit at initialization time. Setting the `refit` flag to `False` on
+the calibrator configuration will instruct the calibrator to load from the
+`fitted_calibrator` found in the calibration file:
+
+.. code-block:: yaml
+
+    <<on hardware>>
+    config:
+      calibrator:
+        classinfo: CalibratorClass
+        config:
+          refit: false
+          calibration_file: file_with_fitted_transformers.yaml
+
+Setting transformers on calibrators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Transformer classes can be set on the config of a Calibrator in order to
+override the default. In most cases we want to do transformation on all vials
+with the same type of transformer and we want to fit based on data collected in
+a procedure. In this case, simply setting the transformer class as:
+
+.. code-block:: yaml
+
+    <<on hardware>>
+    config:
+      calibrator:
+        classinfo: CalibratorClass
+        config:
+          default_output_transformer:
+            classinfo: TransformerClass
+            config: {}
+
+.. note::
+    There are no guarantees made that a configured transformer class is
+    appropriate for the given calibrator/hardware. For example, if the hardware
+    needs to convert from two raw values into its physical unit, both the
+    calibrator and transformer configured on it should be those that handle such
+    a situation. In cases where these are incompatible, the hardware will
+    generally fallback to a null value (see above) and log an error message.
+
+In some rare cases, we may want to set pre-fit transformers on the calibrator
+and bypass the procedure entirely. In this case, we can set the appropriate
+configuration on transformers, which will be initialized into objects upon
+startup:
+
+.. code-block:: yaml
+
+    config:
+      output_transformers:
+        '0':
+            classinfo: TransformerClass
+            config:
+              param1: 0.5
+              param2: 0.1
+        '1':
+            classinfo: TransformerClass
+            config:
+              param1: 1.0
+              param2: 2.0
+
