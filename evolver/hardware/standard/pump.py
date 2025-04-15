@@ -25,7 +25,7 @@ class GenericPump(EffectorDriver):
 
     class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         ipp_pumps: bool | list[int] = Field(False, description="False (no IPP), True (all IPP), or list of IPP ids")
-        calibrator: ConfigDescriptor | Calibrator = ConfigDescriptor(classinfo=GenericPumpCalibrator)
+        calibrator: Calibrator = ConfigDescriptor(classinfo=GenericPumpCalibrator)
         active_pumps: list[int] | None = Field(None, description="List of active pump IDs, or None for all")
 
     class Input(BaseConfig):  # This intentionally doesn't inherit from EffectorDriver.Input.
@@ -119,7 +119,7 @@ class VialIEPump(EffectorDriver):
     class Config(GenericPump.Config):
         influx_map: dict[int, int] | None = Field(None, description="map of vial to influx pump ID")
         efflux_map: dict[int, int] | None = Field(None, description="map of vial to efflux pump ID")
-        calibrator: ConfigDescriptor | Calibrator = ConfigDescriptor(classinfo=VialIEPumpCalibrator)
+        calibrator: Calibrator = ConfigDescriptor(classinfo=VialIEPumpCalibrator)
 
         def model_post_init(self, *args, **kwargs) -> None:
             super().model_post_init(*args, **kwargs)

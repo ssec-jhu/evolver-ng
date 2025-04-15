@@ -93,6 +93,13 @@ class TestBaseConfig:
     def test_classinfo(self):
         assert ConcreteInterface.Config.get_classinfo() == evolver.util.fully_qualified_name(ConcreteInterface)
 
+    def test_baseinterface_errors_on_bad_class(self):
+        class Config(evolver.base.BaseConfig):
+            thing: ConcreteInterface
+
+        with pytest.raises(pydantic.ValidationError):
+            Config.model_validate_json('{"thing": {"classinfo": "not.a.real.Class" } }')
+
 
 class TestBaseInterface:
     def test_create(self):
@@ -166,26 +173,31 @@ class TestBaseInterface:
 
         assert Foo.model_json_schema() == {
             "$defs": {
-                "Config": {
+                "ConfigDescriptor": {
                     "properties": {
-                        "name": {"default": "TestDevice", "title": "Name", "type": "string"},
-                        "a": {"default": 2, "title": "A", "type": "integer"},
-                        "b": {"default": 3, "title": "B", "type": "integer"},
+                        "classinfo": {
+                            "description": "fully qualified class name",
+                            "title": "Classinfo",
+                            "type": "string",
+                        },
+                        "config": {"default": {}, "title": "Config", "type": "object"},
                     },
-                    "title": "Config",
+                    "required": ["classinfo"],
+                    "title": "ConfigDescriptor",
                     "type": "object",
                 }
             },
-            "properties": {"interface": {"$ref": "#/$defs/Config"}},
+            "properties": {"interface": {"$ref": "#/$defs/ConfigDescriptor"}},
             "required": ["interface"],
             "title": "Foo",
             "type": "object",
         }
 
-        obj = Foo(interface=ConcreteInterface.Config())
-        assert obj.interface.a == 2
-        assert obj.interface.b == 3
-        assert obj.model_dump() == {"interface": {"name": "TestDevice", "a": 2, "b": 3}}
+        obj = Foo(interface=ConcreteInterface.create())
+        assert obj.interface.config == {"a": 2, "b": 3, "name": "TestDevice"}
+        assert obj.model_dump() == {
+            "interface": {"classinfo": ConcreteInterface, "config": {"name": "TestDevice", "a": 2, "b": 3}}
+        }
 
     def test_auto_config(self):
         obj = ConcreteInterface()
@@ -200,6 +212,16 @@ class TestBaseInterface:
         obj = ConcreteInterface(auto_config=False)
         assert not hasattr(obj, "a")
         assert not hasattr(obj, "b")
+
+    def test_config_embedding_as_configdescriptor(self):
+        class Config(evolver.base.BaseConfig):
+            inner: ConcreteInterface
+
+        concrete_obj = ConcreteInterface(a=99, b=101)
+        config_obj = Config(inner=concrete_obj)
+        assert isinstance(config_obj.inner, evolver.base.ConfigDescriptor)
+        assert config_obj.inner.classinfo == ConcreteInterface
+        assert config_obj.inner.config == {"a": concrete_obj.a, "b": concrete_obj.b, "name": concrete_obj.name}
 
     def test_auto_config_required_field_exception(self):
         class MyClass(ConcreteInterface):

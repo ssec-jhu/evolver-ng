@@ -269,7 +269,7 @@ class BaseInterface(ABC):
     class Config(BaseConfig): ...
 
     @classmethod
-    def create(cls, config: ConfigDescriptor | BaseConfig | dict | str | None = None):
+    def create(cls, config: BaseConfig | dict | str | None = None):
         """Create an instance from a config."""
 
         def validate_classinfo(classinfo: type | str):
@@ -383,11 +383,11 @@ class BaseInterface(ABC):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, *args, **kwargs):
-        return cls.Config.__get_pydantic_core_schema__(*args, **kwargs)
+        return ConfigDescriptor.__get_pydantic_core_schema__(*args, **kwargs)
 
     @classmethod
     def __get_pydantic_json_schema__(cls, *args, **kwargs):
-        return cls.Config.__get_pydantic_json_schema__(*args, **kwargs)
+        return ConfigDescriptor.__get_pydantic_json_schema__(*args, **kwargs)
 
     @property
     def config(self) -> dict:

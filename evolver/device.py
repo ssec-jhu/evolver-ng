@@ -21,7 +21,7 @@ DEFAULT_HISTORY = HistoryServer
 
 class Experiment(BaseInterface.Config):
     enabled: bool = True
-    controllers: list[ConfigDescriptor | Controller] = []
+    controllers: list[Controller] = []
 
     # this seemed to have been required for the tests of config symmetry.
     # Without it there is pydantic error about unkown type (the underlying
@@ -43,10 +43,10 @@ class Evolver(BaseInterface):
             max_length=3,
         )
         vials: list = list(range(settings.DEFAULT_NUMBER_OF_VIALS_PER_BOX))
-        hardware: dict[str, ConfigDescriptor | HardwareDriver] = {}
+        hardware: dict[str, HardwareDriver] = {}
         experiments: dict[str, Experiment] = {}
-        serial: ConfigDescriptor | Connection = ConfigDescriptor.model_validate(DEFAULT_SERIAL)
-        history: ConfigDescriptor | History = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
+        serial: Connection = ConfigDescriptor.model_validate(DEFAULT_SERIAL)
+        history: History = ConfigDescriptor.model_validate(DEFAULT_HISTORY)
         enable_control: bool = True
         interval: int = settings.DEFAULT_LOOP_INTERVAL
         raise_loop_exceptions: bool = False
