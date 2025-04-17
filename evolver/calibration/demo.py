@@ -1,7 +1,6 @@
 from pydantic import Field
 
-from evolver.base import ConfigDescriptor
-from evolver.calibration.interface import Calibrator, Transformer
+from evolver.calibration.interface import Calibrator, IndependentVialBasedCalibrator, Transformer
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.hardware.interface import HardwareDriver
 
@@ -22,8 +21,8 @@ class NoOpTransformer(Transformer):
 
 class NoOpCalibrator(Calibrator):
     class Config(Calibrator.Config):
-        input_transformer: ConfigDescriptor | Transformer | None = Field(default_factory=NoOpTransformer)
-        output_transformer: ConfigDescriptor | Transformer | None = Field(default_factory=NoOpTransformer)
+        input_transformer: Transformer | None = Field(default_factory=NoOpTransformer)
+        output_transformer: Transformer | None = Field(default_factory=NoOpTransformer)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -42,3 +41,8 @@ class NoOpCalibrator(Calibrator):
         calibration_procedure = CalibrationProcedure(hardware=selected_hardware)
         self.calibration_procedure = calibration_procedure
         pass
+
+
+class NoOpPerVialCalibrator(IndependentVialBasedCalibrator, NoOpCalibrator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

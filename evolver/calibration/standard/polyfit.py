@@ -3,7 +3,6 @@ from typing import Self
 import numpy.polynomial.polynomial as poly
 from pydantic import Field, model_validator
 
-from evolver.base import ConfigDescriptor
 from evolver.calibration.interface import Calibrator, IndependentVialBasedCalibrator, Transformer
 from evolver.settings import settings
 
@@ -76,8 +75,8 @@ class PolyFitCalibrator(Calibrator):
 
 class LinearCalibrator(PolyFitCalibrator):
     class Config(PolyFitCalibrator.Config):
-        input_transformer: ConfigDescriptor | LinearTransformer | None = None
-        output_transformer: ConfigDescriptor | LinearTransformer | None = None
+        input_transformer: LinearTransformer | None = None
+        output_transformer: LinearTransformer | None = None
 
 
 class IndependentVialBasedLinearCalibrator(IndependentVialBasedCalibrator):

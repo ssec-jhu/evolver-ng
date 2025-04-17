@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 
 from evolver.app.main import app
-from evolver.calibration.demo import NoOpCalibrator
+from evolver.calibration.demo import NoOpCalibrator, NoOpPerVialCalibrator
 from evolver.calibration.standard.calibrators.temperature import TemperatureCalibrator
 from evolver.calibration.standard.polyfit import LinearTransformer
 from evolver.device import Evolver
@@ -51,7 +51,7 @@ def dispatch_action(client, hardware_name, action_name, payload=None):
 
 class TestCalibration:
     def test_get_calibration_status(self, tmp_path):
-        _, client = setup_evolver_with_calibrator(NoOpCalibrator)
+        _, client = setup_evolver_with_calibrator(NoOpPerVialCalibrator)
 
         procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
         response = client.post(

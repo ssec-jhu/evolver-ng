@@ -26,7 +26,7 @@ class Temperature(SensorDriver, EffectorDriver):
     HEAT_OFF = b"4095"
 
     class Config(SerialDeviceConfigBase, EffectorDriver.Config):
-        calibrator: ConfigDescriptor | Calibrator | None = FieldInfo.merge_field_infos(
+        calibrator: Calibrator | None = FieldInfo.merge_field_infos(
             HardwareDriver.Config.model_fields["calibrator"],
             default_factory=lambda: ConfigDescriptor.load(settings.DEFAULT_TEMPERATURE_CALIBRATION_CONFIG_FILE),
         )

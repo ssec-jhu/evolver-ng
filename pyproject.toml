@@ -13,7 +13,7 @@ dependencies = [
     "duckdb",
     "fastapi[all]",
     "numpy",
-    "pydantic<2.8",
+    "pydantic",
     "pydantic-settings",
     "pyserial",
     "scipy",

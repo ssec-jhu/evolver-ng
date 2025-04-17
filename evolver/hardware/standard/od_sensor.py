@@ -50,7 +50,7 @@ class OD90(ODSensor):
             ODSensor.Config.model_fields["addr"],
             default="od_90",
         )
-        calibrator: ConfigDescriptor | Calibrator | None = FieldInfo.merge_field_infos(
+        calibrator: Calibrator | None = FieldInfo.merge_field_infos(
             ODSensor.Config.model_fields["calibrator"],
             default_factory=lambda: ConfigDescriptor.load(settings.DEFAULT_OD90_CALIBRATION_CONFIG_FILE),
         )
@@ -66,7 +66,7 @@ class OD135(ODSensor):
             ODSensor.Config.model_fields["addr"],
             default="od_135",
         )
-        calibrator: ConfigDescriptor | Calibrator | None = FieldInfo.merge_field_infos(
+        calibrator: Calibrator | None = FieldInfo.merge_field_infos(
             ODSensor.Config.model_fields["calibrator"],
             default_factory=lambda: ConfigDescriptor.load(settings.DEFAULT_OD135_CALIBRATION_CONFIG_FILE),
         )

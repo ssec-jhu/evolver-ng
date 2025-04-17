@@ -383,11 +383,11 @@ class BaseInterface(ABC):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, *args, **kwargs):
-        return cls.Config.__get_pydantic_core_schema__(*args, **kwargs)
+        return ConfigDescriptor.__get_pydantic_core_schema__(*args, **kwargs)
 
     @classmethod
     def __get_pydantic_json_schema__(cls, *args, **kwargs):
-        return cls.Config.__get_pydantic_json_schema__(*args, **kwargs)
+        return ConfigDescriptor.__get_pydantic_json_schema__(*args, **kwargs)
 
     @property
     def config(self) -> dict:
