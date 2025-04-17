@@ -100,9 +100,9 @@ def start_calibration_procedure(
     if procedure_file is not None:
         calibrator.procedure_file = procedure_file
     else:
-        calibrator.procedure_file = Path(
-            f"{hardware_instance.name}_{datetime.datetime.now().strftime(settings.DATETIME_PATH_FORMAT)}"
-        ).with_suffix(".yml")
+        calibrator.procedure_file = (
+            f"{hardware_instance.name}_{datetime.datetime.now().strftime(settings.DATETIME_PATH_FORMAT)}.yml"
+        )
 
     # Save the updated configuration file
     request.app.state.evolver.config_model.save(app_settings.CONFIG_FILE)

@@ -255,9 +255,27 @@ class TestConfigDescriptor:
         assert obj.b == 22
 
     def test_create_with_empty_config(self):
+        # Test with default for no config attribute
         obj = evolver.base.ConfigDescriptor(classinfo="evolver.tests.test_base.ConcreteInterface").create()
         assert obj.a == 2
         assert obj.b == 3
+
+        # Test with explicit empty config attribute config: {}
+        obj = evolver.base.ConfigDescriptor(classinfo="evolver.tests.test_base.ConcreteInterface", config={}).create()
+        assert obj.a == 2
+        assert obj.b == 3
+
+        # Test with explicit config attiribute config: None
+        obj = evolver.base.ConfigDescriptor(classinfo="evolver.tests.test_base.ConcreteInterface", config=None).create()
+        assert obj.a == 2
+        assert obj.b == 3
+
+        # Create with None config and updates via kwargs
+        obj = evolver.base.ConfigDescriptor(classinfo="evolver.tests.test_base.ConcreteInterface", config=None).create(
+            a=101, b=202
+        )
+        assert obj.a == 101
+        assert obj.b == 202
 
     @pytest.mark.parametrize("kwargs", (dict(a=101), dict(update=dict(a=101)), dict(update=dict(a=102), a=101)))
     def test_create_with_overrides(self, mock_descriptor, kwargs):

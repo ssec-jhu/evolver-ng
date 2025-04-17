@@ -69,6 +69,23 @@ class Transformer(BaseInterface):
                 )
             return super().save(file_path=self.dir / file_path, encoding=encoding)
 
+        @classmethod
+        def load(cls, file_path: str | Path, encoding: str | None = None):
+            """Loads a configuration from a file path.
+
+            Handles both absolute paths and relative paths. For relative paths,
+            it resolves them against the appropriate storage directory.
+            """
+            # Check if file_path is an absolute path
+            if Path(file_path).is_absolute():
+                resolved_file_path = file_path
+            else:
+                # Use the root calibrator file storage path as default
+                storage_dir = root_calibrator_file_storage_path()
+                resolved_file_path = storage_dir / file_path
+
+            return super().load(file_path=resolved_file_path, encoding=encoding)
+
     @abstractmethod
     def convert_to(self, *args, **kwargs):
         """Implement and return some transformation upon the input.
@@ -142,7 +159,10 @@ class Calibrator(BaseInterface):
         input_transformer: ConfigDescriptor | Transformer | None = None
         output_transformer: ConfigDescriptor | Transformer | None = None
         no_refit: bool = Field(False, description="If True, use only cached fitted transfomers from calibration_file")
-        calibration_file: str | None = Field(None, description="Completed calibration file to use for transformations")
+        calibration_file: str | None = Field(
+            None,
+            description="Completed calibration file (created when a procedure_file is complete, using the 'apply' button). Contents of this file is used as input values for transformation",
+        )
         procedure_file: str | None = Field(
             None, description="Working calibration file for currently active (or next) procedure"
         )
@@ -180,8 +200,6 @@ class Calibrator(BaseInterface):
         )
 
     def load_calibration_file(self, calibration_file: str | None = None):
-        if not Path(calibration_file).is_absolute():
-            calibration_file = self.dir / calibration_file
         if calibration_file is not None:
             self.load_calibration(CalibrationStateModel.load(calibration_file))
         else:
