@@ -269,7 +269,7 @@ class BaseInterface(ABC):
     class Config(BaseConfig): ...
 
     @classmethod
-    def create(cls, config: BaseConfig | dict | str | None = None):
+    def create(cls, config: ConfigDescriptor | BaseConfig | dict | str | None = None):
         """Create an instance from a config."""
 
         def validate_classinfo(classinfo: type | str):
