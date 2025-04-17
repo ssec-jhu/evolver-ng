@@ -180,7 +180,7 @@ class TestBaseInterface:
                             "title": "Classinfo",
                             "type": "string",
                         },
-                        "config": {"default": {}, "title": "Config", "type": "object"},
+                        "config": {"additionalProperties": True, "default": {}, "title": "Config", "type": "object"},
                     },
                     "required": ["classinfo"],
                     "title": "ConfigDescriptor",
