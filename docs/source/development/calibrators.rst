@@ -1,7 +1,7 @@
 Developing Calibrators
 ======================
 
-In this framework, a calibrator is attached to a hardware driver and servers a
+In this framework, a calibrator is attached to a hardware driver and server a
 dual purpose:
 
 #. It provides a mechanism to perform a calibration procedure on the hardware,
