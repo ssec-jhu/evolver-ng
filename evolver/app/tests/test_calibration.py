@@ -364,7 +364,7 @@ def test_get_calibration_data(tmp_path):
             {"completed_actions": [], "history": [], "measured": {}, "started": True},
             {
                 "completed_actions": ["measure_vial_0_temperature"],
-                "history": [{"completed_actions": [], "history": [], "measured": {}, "started": True}],
+                "history": [],
                 "measured": {"0": {"raw": [], "reference": [25.0]}},
                 "started": True,
             },
@@ -372,7 +372,6 @@ def test_get_calibration_data(tmp_path):
         "measured": {"0": {"raw": [1.23], "reference": [25.0]}},
         "started": True,
     }
-
     assert actual_state == expected_state
 
 
