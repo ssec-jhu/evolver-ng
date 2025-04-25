@@ -62,7 +62,7 @@ class CalibrationProcedure(BaseInterface, ABC):
         Undo the last action that was dispatched in the calibration procedure.
         """
         if len(self.state.history) > 0:
-            # only the head of the state (LIFO) stack has the history attribute with values assigned, and this is detatched and reattached to the new head after undo.
+            # only the head of the state (LIFO) stack has the history attribute and this is detatched and reattached to the new head after undo.
             previous_state = self.state.history.pop()
             # self.state.history now 1 element shorter (i.e. it doesn't contain previous_state).
             current_history = self.state.history
