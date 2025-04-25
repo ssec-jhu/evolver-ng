@@ -360,11 +360,18 @@ def test_get_calibration_data(tmp_path):
 
     expected_state = {
         "completed_actions": ["measure_vial_0_temperature", "read_vial_0_raw_output"],
-        "history": [],
+        "history": [
+            {"completed_actions": [], "history": [], "measured": {}, "started": True},
+            {
+                "completed_actions": ["measure_vial_0_temperature"],
+                "history": [],
+                "measured": {"0": {"raw": [], "reference": [25.0]}},
+                "started": True,
+            },
+        ],
         "measured": {"0": {"raw": [1.23], "reference": [25.0]}},
         "started": True,
     }
-
     assert actual_state == expected_state
 
 
