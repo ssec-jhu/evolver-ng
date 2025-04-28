@@ -8,6 +8,7 @@ from evolver.calibration.standard.calibrators.temperature import TemperatureCali
 from evolver.calibration.standard.polyfit import LinearTransformer
 from evolver.device import Evolver
 from evolver.hardware.demo import NoOpSensorDriver
+from evolver.hardware.standard.temperature import Temperature
 from evolver.settings import app_settings
 from evolver.tests.conftest import tmp_calibration_dir  # noqa: F401
 
@@ -47,6 +48,14 @@ def dispatch_action(client, hardware_name, action_name, payload=None):
         f"/hardware/{hardware_name}/calibrator/procedure/dispatch",
         json={"action_name": action_name, "payload": payload or {}},
     )
+
+
+def mock_temperature_read():
+    return [
+        Temperature.Output(vial=0, raw=123),
+        Temperature.Output(vial=1, raw=234),
+        Temperature.Output(vial=2, raw=345),
+    ]
 
 
 class TestCalibration:
@@ -135,7 +144,7 @@ def test_dispatch_temperature_calibration_bad_reference_value_action(tmp_path):
 def test_dispatch_temperature_calibration_raw_value_action(tmp_path):
     _, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
-    app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
+    app.state.evolver.hardware["test"].read = mock_temperature_read
 
     procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
     client.post(
@@ -153,7 +162,7 @@ def test_dispatch_temperature_calibration_raw_value_action(tmp_path):
     expected_subset = {
         "completed_actions": ["read_vial_0_raw_output"],
         "history": [initial_state],  # Use the actual initial state with all fields
-        "measured": {"0": {"raw": [1.23], "reference": []}},
+        "measured": {"0": {"raw": [123], "reference": []}},
         "started": True,
     }
     assert expected_subset.items() <= raw_dispatch_response.json().items()
@@ -167,7 +176,7 @@ def test_start_calibration_no_procedure_file(tmp_path, monkeypatch):
 
 def test_reset_calibration_procedure(tmp_path):
     temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
-    app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
+    app.state.evolver.hardware["test"].read = mock_temperature_read
 
     procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
     start_response = client.post(
@@ -223,7 +232,7 @@ def test_calibration_procedure_resume_with_existing_procedure_file(tmp_path):
         TemperatureCalibrator,
         procedure_file=procedure_file,
     )
-    app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
+    app.state.evolver.hardware["test"].read = mock_temperature_read
 
     # Resume the procedure using the dedicated resume endpoint
     start_response = client.post("/hardware/test/calibrator/procedure/resume")
@@ -255,7 +264,7 @@ def test_calibration_procedure_resume_with_existing_procedure_file(tmp_path):
 def test_calibration_procedure_undo_action_utility(tmp_path):
     _, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
-    app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
+    app.state.evolver.hardware["test"].read = mock_temperature_read
     procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
     client.post(
         "/hardware/test/calibrator/procedure/start",
@@ -274,7 +283,7 @@ def test_calibration_procedure_undo_action_utility(tmp_path):
 
 def test_calibration_procedure_save(tmp_path):
     _, client = setup_evolver_with_calibrator(TemperatureCalibrator)
-    app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
+    app.state.evolver.hardware["test"].read = mock_temperature_read
 
     procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
     # Start procedure with the new start endpoint
@@ -298,7 +307,7 @@ def test_calibration_procedure_save(tmp_path):
     expected_subset = {
         "completed_actions": ["read_vial_0_raw_output"],
         "history": [initial_state],
-        "measured": {"0": {"raw": [1.23], "reference": []}},
+        "measured": {"0": {"raw": [123], "reference": []}},
         "started": True,
     }
     assert expected_subset.items() <= response_data.items()
@@ -339,7 +348,7 @@ def test_get_calibration_data(tmp_path):
     temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
 
     procedure_file = str(tmp_path / "my_test_calibration_procedure.yml")
-    app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
+    app.state.evolver.hardware["test"].read = mock_temperature_read
 
     client.post("/hardware/test/calibrator/procedure/start", params={"resume": False, "procedure_file": procedure_file})
 
@@ -369,7 +378,7 @@ def test_get_calibration_data(tmp_path):
                 "started": True,
             },
         ],
-        "measured": {"0": {"raw": [1.23], "reference": [25.0]}},
+        "measured": {"0": {"raw": [123], "reference": [25.0]}},
         "started": True,
     }
 
@@ -383,7 +392,7 @@ def test_calibration_procedure_apply(tmp_path):
 
     # Initialize with only procedure_file
     temp_calibrator, client = setup_evolver_with_calibrator(TemperatureCalibrator)
-    app.state.evolver.hardware["test"].read = lambda: [1.23, 2.34, 3.45]
+    app.state.evolver.hardware["test"].read = mock_temperature_read
 
     # Start procedure with the new start endpoint
     client.post("/hardware/test/calibrator/procedure/start", params={"procedure_file": procedure_file})
@@ -410,7 +419,7 @@ def test_calibration_procedure_apply(tmp_path):
     # Verify the correct state was set on the calibrator
     assert "0" in temp_calibrator.calibration_data.measured or 0 in temp_calibrator.calibration_data.measured
     measured_data = temp_calibrator.calibration_data.measured.get("0", temp_calibrator.calibration_data.measured.get(0))
-    assert measured_data["raw"] == [1.23]
+    assert measured_data["raw"] == [123]
     assert measured_data["reference"] == [25.0]
 
     # Test apply with no calibrator, providing a dummy calibration file path

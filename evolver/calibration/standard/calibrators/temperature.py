@@ -1,13 +1,17 @@
+from pydantic import Field
+
 from evolver.calibration.action import DisplayInstructionAction
 from evolver.calibration.interface import (
     CalibrationStateModel,
     IndependentVialBasedCalibrator,
+    Transformer,
 )
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
     RawValueAction,
     ReferenceValueAction,
 )
+from evolver.calibration.standard.polyfit import LinearTransformer
 from evolver.hardware.interface import HardwareDriver
 
 
@@ -16,9 +20,13 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
     A calibrator for each vial's temperature sensor.
     """
 
+    class Config(IndependentVialBasedCalibrator.Config):
+        default_output_transformer: Transformer = Field(default_factory=LinearTransformer)
+
     def init_transformers(self, calibration_data: CalibrationStateModel):
         for vial, data in calibration_data.measured.items():
-            self.get_output_transformer(vial).refit(data["reference"], data["raw"])
+            # temperature uses convert_to so raw should be left-hand-side of transfomer
+            self.get_output_transformer(vial).refit(data["raw"], data["reference"])
 
     def create_calibration_procedure(
         self,

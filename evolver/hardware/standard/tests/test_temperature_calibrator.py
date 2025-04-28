@@ -22,5 +22,5 @@ def test_temperature_initialization_refit(temperature_calibration_file):
     )
     # we expect the measured raw and reference to be passed to the refit method
     # of transformers as (reference, raw) tuple args.
-    assert calibrator.get_output_transformer(0)._refit_args == (0, 1)
-    assert calibrator.get_output_transformer(1)._refit_args == (99, 100)
+    assert calibrator.get_output_transformer(0)._refit_args == (1, 0)
+    assert calibrator.get_output_transformer(1)._refit_args == (100, 99)
