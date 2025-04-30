@@ -113,6 +113,8 @@ def start_calibration_procedure(
         resume=False,
     )
 
+    calibrator.calibration_procedure.save()
+
     return calibrator.calibration_procedure.get_state()
 
 

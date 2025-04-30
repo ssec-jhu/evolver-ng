@@ -175,3 +175,4 @@ openapi.json
 **/calibration_files/
 **/experiment_files/
 **/evolver_snapshot.yml
+**/app/tests/**evolver.yml

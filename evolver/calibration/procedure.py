@@ -62,7 +62,14 @@ class CalibrationProcedure(BaseInterface, ABC):
         Undo the last action that was dispatched in the calibration procedure.
         """
         if len(self.state.history) > 0:
-            self.state = self.state.history.pop()
+            # only the head of the state (LIFO) stack has the history attribute and this is detatched and reattached to the new head after undo.
+            previous_state = self.state.history.pop()
+            # self.state.history now 1 element shorter (i.e. it doesn't contain previous_state).
+            current_history = self.state.history
+            self.state = previous_state
+            # apply history
+            self.state.history = current_history
+
         return self.state
 
     def save(self):
@@ -110,10 +117,14 @@ class CalibrationProcedure(BaseInterface, ABC):
     def dispatch(self, action: CalibrationAction, payload: Dict[str, Any]):
         if payload is not None and action.FormModel.model_fields != {}:
             payload = action.FormModel(**payload)
+        # Create a shallow copy of the previous state without the history
         previous_state = self.state.model_dump()
+        previous_state_no_history = {k: v for k, v in previous_state.items() if k != "history"}
+
         updated_state = action.execute(self.state, payload)
         updated_state.completed_actions.append(action.name)
-        # Convert previous state to model before appending
-        updated_state.history.append(CalibrationStateModel.model_validate(previous_state))
+
+        # Store only the state without nested history
+        updated_state.history.append(CalibrationStateModel.model_validate(previous_state_no_history))
         self.state = updated_state
         return self.state
