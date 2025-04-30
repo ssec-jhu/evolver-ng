@@ -135,8 +135,13 @@ def test_dispatch_temperature_calibration_bad_reference_value_action(tmp_path):
         params={"procedure_file": procedure_file},
     )
 
-    action_payload = {"action_name": "measure_vial_0_temperature", "payload": {"this_should_not_work": 25.0}}
-    dispatch_response = dispatch_action(client, "test", "measure_vial_0_temperature", action_payload["payload"])
+    action_payload = {
+        "action_name": "vial_sweep_1_measure_vial_0_temperature",
+        "payload": {"this_should_not_work": 25.0},
+    }
+    dispatch_response = dispatch_action(
+        client, "test", "vial_sweep_1_measure_vial_0_temperature", action_payload["payload"]
+    )
 
     assert dispatch_response.status_code == 422
 
@@ -152,7 +157,7 @@ def test_dispatch_temperature_calibration_raw_value_action(tmp_path):
         params={"procedure_file": procedure_file},
     )
 
-    raw_dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
+    raw_dispatch_response = dispatch_action(client, "test", "vial_sweep_1_read_vial_0_raw_output")
 
     assert raw_dispatch_response.status_code == 200
 
@@ -160,7 +165,7 @@ def test_dispatch_temperature_calibration_raw_value_action(tmp_path):
     initial_state = response_data["history"][0]  # Get the actual initial state from history
 
     expected_subset = {
-        "completed_actions": ["read_vial_0_raw_output"],
+        "completed_actions": ["vial_sweep_1_read_vial_0_raw_output"],
         "history": [initial_state],  # Use the actual initial state with all fields
         "measured": {"0": {"raw": [123], "reference": []}},
         "started": True,
@@ -190,7 +195,7 @@ def test_reset_calibration_procedure(tmp_path):
     first_procedure_file = temp_calibrator.procedure_file
 
     # Perform an action
-    raw_dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
+    raw_dispatch_response = dispatch_action(client, "test", "vial_sweep_1_read_vial_0_raw_output")
     assert raw_dispatch_response.status_code == 200
 
     # Reset procedure and check if a new procedure file is generated
@@ -239,7 +244,7 @@ def test_calibration_procedure_resume_with_existing_procedure_file(tmp_path):
     assert start_response.status_code == 200
 
     # dispatch an action
-    dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
+    dispatch_response = dispatch_action(client, "test", "vial_sweep_1_read_vial_0_raw_output")
     assert dispatch_response.status_code == 200
 
     # Save procedure state
@@ -271,7 +276,7 @@ def test_calibration_procedure_undo_action_utility(tmp_path):
         params={"procedure_file": procedure_file},
     )
 
-    dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
+    dispatch_response = dispatch_action(client, "test", "vial_sweep_1_read_vial_0_raw_output")
     assert dispatch_response.status_code == 200
 
     undo_response = client.post("/hardware/test/calibrator/procedure/undo")
@@ -295,7 +300,7 @@ def test_calibration_procedure_save(tmp_path):
     )
 
     # Dispatch an action to have something to save
-    dispatch_response = dispatch_action(client, "test", "read_vial_0_raw_output")
+    dispatch_response = dispatch_action(client, "test", "vial_sweep_1_read_vial_0_raw_output")
     assert dispatch_response.status_code == 200
 
     # Test successful save
@@ -305,7 +310,7 @@ def test_calibration_procedure_save(tmp_path):
     response_data = save_response.json()
     initial_state = response_data["history"][0]  # Get the actual initial state
     expected_subset = {
-        "completed_actions": ["read_vial_0_raw_output"],
+        "completed_actions": ["vial_sweep_1_read_vial_0_raw_output"],
         "history": [initial_state],
         "measured": {"0": {"raw": [123], "reference": []}},
         "started": True,
@@ -352,8 +357,8 @@ def test_get_calibration_data(tmp_path):
 
     client.post("/hardware/test/calibrator/procedure/start", params={"resume": False, "procedure_file": procedure_file})
 
-    dispatch_action(client, "test", "measure_vial_0_temperature", {"temperature": 25.0})
-    dispatch_action(client, "test", "read_vial_0_raw_output")
+    dispatch_action(client, "test", "vial_sweep_1_measure_vial_0_temperature", {"temperature": 25.0})
+    dispatch_action(client, "test", "vial_sweep_1_read_vial_0_raw_output")
     dispatch_action(client, "test", "calculate_vial_0_fit")
 
     # save the calibration data, this pops the data up into the calibrator's CalibrationData class.
@@ -368,11 +373,11 @@ def test_get_calibration_data(tmp_path):
     actual_state = get_stable_state_subset(calibration_data)
 
     expected_state = {
-        "completed_actions": ["measure_vial_0_temperature", "read_vial_0_raw_output"],
+        "completed_actions": ["vial_sweep_1_measure_vial_0_temperature", "vial_sweep_1_read_vial_0_raw_output"],
         "history": [
             {"completed_actions": [], "history": [], "measured": {}, "started": True},
             {
-                "completed_actions": ["measure_vial_0_temperature"],
+                "completed_actions": ["vial_sweep_1_measure_vial_0_temperature"],
                 "history": [],
                 "measured": {"0": {"raw": [], "reference": [25.0]}},
                 "started": True,
@@ -397,8 +402,8 @@ def test_calibration_procedure_apply(tmp_path):
     client.post("/hardware/test/calibrator/procedure/start", params={"procedure_file": procedure_file})
 
     # Collect calibration procedure data
-    dispatch_action(client, "test", "measure_vial_0_temperature", {"temperature": 25.0})
-    dispatch_action(client, "test", "read_vial_0_raw_output")
+    dispatch_action(client, "test", "vial_sweep_1_measure_vial_0_temperature", {"temperature": 25.0})
+    dispatch_action(client, "test", "vial_sweep_1_read_vial_0_raw_output")
     dispatch_action(client, "test", "calculate_vial_0_fit")
 
     # Save the procedure first to ensure procedure_file is created and contains state from the procedure

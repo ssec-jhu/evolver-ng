@@ -26,14 +26,14 @@ class RawValueAction(CalibrationAction):
     class FormModel(BaseModel):
         pass
 
-    def __init__(self, vial_idx: int, *args, **kwargs):
+    def __init__(self, vial_idx: int, num_readings: int = 3, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.vial_idx = vial_idx
+        self.num_readings = num_readings
 
     def execute(self, state: CalibrationStateModel, payload: Optional[FormModel] = None):
         all_raw_readings = []
-        NUM_READINGS = 3
-        for i in range(NUM_READINGS):
+        for i in range(self.num_readings):
             raw_reading = self.hardware.read()[self.vial_idx].raw
             all_raw_readings.append(raw_reading)
         median_raw_reading = np.median(all_raw_readings)
