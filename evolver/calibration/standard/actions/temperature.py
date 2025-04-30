@@ -30,7 +30,7 @@ class RawValueAction(CalibrationAction):
         self.vial_idx = vial_idx
 
     def execute(self, state: CalibrationStateModel, payload: Optional[FormModel] = None):
-        sensor_value = self.hardware.read()[self.vial_idx]
+        sensor_value = self.hardware.read()[self.vial_idx].raw
         state.measured = state.measured or defaultdict(lambda: {"reference": [], "raw": []})
         state.measured[self.vial_idx]["raw"].append(sensor_value)
         return state
