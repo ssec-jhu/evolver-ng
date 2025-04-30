@@ -1,6 +1,7 @@
 from collections import defaultdict
 from typing import Optional
 
+import numpy as np
 from pydantic import BaseModel, Field
 
 from evolver.calibration.action import CalibrationAction
@@ -30,9 +31,14 @@ class RawValueAction(CalibrationAction):
         self.vial_idx = vial_idx
 
     def execute(self, state: CalibrationStateModel, payload: Optional[FormModel] = None):
-        sensor_value = self.hardware.read()[self.vial_idx].raw
+        all_raw_readings = []
+        NUM_READINGS = 3
+        for i in range(NUM_READINGS):
+            raw_reading = self.hardware.read()[self.vial_idx].raw
+            all_raw_readings.append(raw_reading)
+        median_raw_reading = np.median(all_raw_readings)
         state.measured = state.measured or defaultdict(lambda: {"reference": [], "raw": []})
-        state.measured[self.vial_idx]["raw"].append(sensor_value)
+        state.measured[self.vial_idx]["raw"].append(median_raw_reading)
         return state
 
 

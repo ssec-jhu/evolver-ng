@@ -58,22 +58,31 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
             )
         )
 
-        for vial in self.vials:
+        NUM_TEMP_READINGS = 3
+        for i in range(NUM_TEMP_READINGS):
             calibration_procedure.add_action(
-                ReferenceValueAction(
+                DisplayInstructionAction(
+                    description=f"Beginning vial sweep {i} of {NUM_TEMP_READINGS} set temperature and wait 25 mins for equilibrium",
+                    name="wait_for_equilibrium_instruction",
                     hardware=selected_hardware,
-                    vial_idx=vial,
-                    description=f"Use a thermometer to measure the real temperature in vial: {vial}.",
-                    name=f"measure_vial_{vial}_temperature",
                 )
             )
-            calibration_procedure.add_action(
-                RawValueAction(
-                    hardware=selected_hardware,
-                    vial_idx=vial,
-                    description=f"The hardware will now read the raw output values of vial: {vial}'s temperature sensor.",
-                    name=f"read_vial_{vial}_raw_output",
+            for vial in self.vials:
+                calibration_procedure.add_action(
+                    ReferenceValueAction(
+                        hardware=selected_hardware,
+                        vial_idx=vial,
+                        description=f"Use a thermometer to measure the real temperature in vial: {vial}.",
+                        name=f"measure_vial_{vial}_temperature",
+                    )
                 )
-            )
+                calibration_procedure.add_action(
+                    RawValueAction(
+                        hardware=selected_hardware,
+                        vial_idx=vial,
+                        description=f"The hardware will now read the raw output values of vial: {vial}'s temperature sensor.",
+                        name=f"read_vial_{vial}_raw_output",
+                    )
+                )
 
         self.calibration_procedure = calibration_procedure
