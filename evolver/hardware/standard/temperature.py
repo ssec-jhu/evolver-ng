@@ -35,7 +35,8 @@ class Temperature(SensorDriver, EffectorDriver):
         temperature: float | None = Field(None, description="Sensor temperature in degrees Celsius")
 
     class Input(EffectorDriver.Input):
-        temperature: float = Field(description="Target temperature in degrees Celsius")
+        temperature: float | None = Field(None, description="Target temperature in degrees Celsius")
+        raw: int = Field(4095, description="Raw value to set the heater to")
 
     @property
     def serial(self):
@@ -50,7 +51,10 @@ class Temperature(SensorDriver, EffectorDriver):
             inputs.update({k: v for k, v in self.proposal.items() if k in self.vials})
         for vial, input in inputs.items():
             # Calibrate temperature to raw data.
-            raw = int(self._transform("input_transformer", "convert_from", input.temperature, vial))
+            if input.temperature is None:
+                raw = input.raw
+            else:
+                raw = int(self._transform("input_transformer", "convert_from", input.temperature, vial))
             data[vial] = str(raw).encode()
         with self.serial as comm:
             response = comm.communicate(SerialData(addr=self.addr, data=data))
