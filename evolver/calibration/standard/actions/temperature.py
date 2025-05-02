@@ -32,13 +32,10 @@ class RawValueAction(CalibrationAction):
         self.num_readings = num_readings
 
     def execute(self, state: CalibrationStateModel, payload: Optional[FormModel] = None):
-        all_raw_readings = []
-        for i in range(self.num_readings):
-            raw_reading = self.hardware.read()[self.vial_idx].raw
-            all_raw_readings.append(raw_reading)
-        median_raw_reading = np.median(all_raw_readings)
+        readings = [self.hardware.read()[self.vial_idx].raw for i in range(self.num_readings)]
+        median_raw = np.median(readings)
         state.measured = state.measured or defaultdict(lambda: {"reference": [], "raw": []})
-        state.measured[self.vial_idx]["raw"].append(median_raw_reading)
+        state.measured[self.vial_idx]["raw"].append(median_raw)
         return state
 
 
