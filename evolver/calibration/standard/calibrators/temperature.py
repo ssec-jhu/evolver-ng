@@ -22,6 +22,9 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
 
     class Config(IndependentVialBasedCalibrator.Config):
         default_output_transformer: Transformer = Field(default_factory=LinearTransformer)
+        num_temp_readings: int = Field(
+            3, description="Number of times reference temperature readings are taken from each vial."
+        )
 
     def init_transformers(self, calibration_data: CalibrationStateModel):
         for vial, data in calibration_data.measured.items():
@@ -58,22 +61,30 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
             )
         )
 
-        for vial in self.vials:
+        for i in range(self.num_temp_readings):
             calibration_procedure.add_action(
-                ReferenceValueAction(
+                DisplayInstructionAction(
+                    description=f"Beginning vial sweep {i} of {self.num_temp_readings} set temperature and wait 25 mins for global equilibrium",
+                    name=f"vial_sweep_{i}_wait_for_equilibrium_instruction",
                     hardware=selected_hardware,
-                    vial_idx=vial,
-                    description=f"Use a thermometer to measure the real temperature in vial: {vial}.",
-                    name=f"measure_vial_{vial}_temperature",
                 )
             )
-            calibration_procedure.add_action(
-                RawValueAction(
-                    hardware=selected_hardware,
-                    vial_idx=vial,
-                    description=f"The hardware will now read the raw output values of vial: {vial}'s temperature sensor.",
-                    name=f"read_vial_{vial}_raw_output",
+            for vial in self.vials:
+                calibration_procedure.add_action(
+                    ReferenceValueAction(
+                        hardware=selected_hardware,
+                        vial_idx=vial,
+                        description=f"Use a thermometer to measure the real temperature in vial: {vial}.",
+                        name=f"vial_sweep_{i}_measure_vial_{vial}_temperature",
+                    )
                 )
-            )
+                calibration_procedure.add_action(
+                    RawValueAction(
+                        hardware=selected_hardware,
+                        vial_idx=vial,
+                        description=f"The hardware will now read the raw output values of vial: {vial}'s temperature sensor.",
+                        name=f"vial_sweep_{i}_read_vial_{vial}_raw_output",
+                    )
+                )
 
         self.calibration_procedure = calibration_procedure
