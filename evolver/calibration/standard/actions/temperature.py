@@ -39,6 +39,35 @@ class RawValueAction(CalibrationAction):
         return state
 
 
+class AdjustHeaterAction(CalibrationAction):
+    def __init__(self, vials: list[int], raw_adjustment: int, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.vials = vials
+        self.raw_adjustment = raw_adjustment
+
+    def execute(self, state: CalibrationStateModel, payload=None):
+        current_readings = self.hardware.get()
+        for vial in self.vials:
+            # current readings could come average of historical readings using
+            # history server.
+            raw = int(current_readings[vial].raw + self.raw_adjustment)
+            self.hardware.set(vial=vial, temperature=None, raw=raw)
+        self.hardware.commit()
+        return state
+
+
+class HeaterOffAction(CalibrationAction):
+    def __init__(self, vials: list[int], *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.vials = vials
+
+    def execute(self, state: CalibrationStateModel, payload=None):
+        for vial in self.vials:
+            self.hardware.set(vial=vial, temperature=None, raw=None)
+        self.hardware.commit()
+        return state
+
+
 class CalculateFitAction(CalibrationAction):
     class FormModel(BaseModel):
         pass

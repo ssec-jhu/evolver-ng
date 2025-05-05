@@ -23,7 +23,8 @@ class Temperature(SensorDriver, EffectorDriver):
     stands in for off (HEAT_OFF property of this class).
     """
 
-    HEAT_OFF = b"4095"
+    HEAT_OFF_RAW = 4095
+    HEAT_OFF = str(HEAT_OFF_RAW).encode()
 
     class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         calibrator: Calibrator | None = FieldInfo.merge_field_infos(
@@ -36,7 +37,7 @@ class Temperature(SensorDriver, EffectorDriver):
 
     class Input(EffectorDriver.Input):
         temperature: float | None = Field(None, description="Target temperature in degrees Celsius")
-        raw: int = Field(4095, description="Raw value to set the heater to. Only used if temperature is not set")
+        raw: int | None = Field(None, description="Raw value to set the heater to. Only used if temperature is not set")
 
     @property
     def serial(self):
@@ -52,7 +53,7 @@ class Temperature(SensorDriver, EffectorDriver):
         for vial, input in inputs.items():
             # Calibrate temperature to raw data.
             if input.temperature is None:
-                raw = input.raw
+                raw = input.raw if input.raw is not None else self.HEAT_OFF_RAW
             else:
                 raw = int(self._transform("input_transformer", "convert_from", input.temperature, vial))
             data[vial] = str(raw).encode()

@@ -8,6 +8,8 @@ from evolver.calibration.interface import (
 )
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
+    AdjustHeaterAction,
+    HeaterOffAction,
     RawValueAction,
     ReferenceValueAction,
 )
@@ -25,6 +27,9 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
         num_temp_readings: int = Field(
             3, description="Number of times reference temperature readings are taken from each vial."
         )
+        heater_boundary_low: int = 0
+        heater_boundary_high: int = 1000
+        heater_slope_init: float = 0.02
 
     def init_transformers(self, calibration_data: CalibrationStateModel):
         for vial, data in calibration_data.measured.items():
@@ -53,18 +58,37 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
             )
         )
 
-        calibration_procedure.add_action(
-            DisplayInstructionAction(
-                description="Wait 25 mins for equilibrium",
-                name="wait_for_equilibrium_instruction",
-                hardware=selected_hardware,
-            )
-        )
-
         for i in range(self.num_temp_readings):
+            if i == 0:
+                calibration_procedure.add_action(
+                    HeaterOffAction(
+                        name="vial_sweep_0_turn_off_heaters",
+                        vials=self.vials,
+                        description="Begin sweep for room temperature. Heaters will be turned off.",
+                        hardware=selected_hardware,
+                    )
+                )
+            else:
+                # We adjust heaters relative to room temperature evenly in the
+                # configured range per step.
+                adjustment = -1 * (self.heater_boundary_high - self.heater_boundary_low) / (self.num_temp_readings - 1)
+                approx_delta = -1 * i * self.heater_slope_init * adjustment  # This is just for display purposes
+                calibration_procedure.add_action(
+                    AdjustHeaterAction(
+                        name=f"vial_sweep_{i}_adjust_heaters",
+                        vials=self.vials,
+                        raw_adjustment=adjustment,
+                        description=(
+                            f"Begin sweep for temperature wave {i + 1}/{self.num_temp_readings}."
+                            f"Will set heaters to approximately room temp +{approx_delta:0.2f} degrees"
+                        ),
+                        hardware=selected_hardware,
+                    )
+                )
+
             calibration_procedure.add_action(
                 DisplayInstructionAction(
-                    description=f"Beginning vial sweep {i} of {self.num_temp_readings} set temperature and wait 25 mins for global equilibrium",
+                    description="Wait global equilibrium. This may take several hours. Proceed when reached.",
                     name=f"vial_sweep_{i}_wait_for_equilibrium_instruction",
                     hardware=selected_hardware,
                 )
