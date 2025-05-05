@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+
 import pytest
 
 from evolver.calibration.demo import NoOpTransformer
@@ -46,4 +47,3 @@ def test_temperature_calibrator_effector_actions():
     action = procedure.get_action("vial_sweep_2_adjust_heaters")
     action.execute(state=None)
     mock_hardware.set.assert_called_with(vial=0, temperature=None, raw=1000)
-
