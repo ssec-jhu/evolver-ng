@@ -81,7 +81,7 @@ class TestTempSensor:
             [b"tempr,4095,1523,_!", b"tempr,4095,1523,_!"],
         ),
         (
-            {"addr": "temp", "vials": [0], "slots": 2},
+            {"addr": "temp", "vials": [0, 1], "slots": 2},
             [[Temperature.Input(vial=0)], [Temperature.Input(vial=1, raw=1234)]],
             [b"tempr,4095,4095,_!", b"tempr,4095,1234,_!"],
         ),
