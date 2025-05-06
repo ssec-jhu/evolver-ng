@@ -46,11 +46,11 @@ class AdjustHeaterAction(CalibrationAction):
         self.raw_adjustment = raw_adjustment
 
     def execute(self, state: CalibrationStateModel, payload=None):
-        current_readings = self.hardware.get()
         for vial in self.vials:
-            # current readings could come average of historical readings using
-            # history server.
-            raw = int(current_readings[vial].raw + self.raw_adjustment)
+            # To do the adjustment action, we have to have read the room temp
+            # reading, and it has to have been the first reading measured.
+            room_temp_raw = state.measured[vial]["raw"][0]
+            raw = int(room_temp_raw + self.raw_adjustment)
             self.hardware.set(vial=vial, temperature=None, raw=raw)
         self.hardware.commit()
         return state

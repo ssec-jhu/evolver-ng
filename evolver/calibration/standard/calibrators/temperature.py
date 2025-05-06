@@ -71,8 +71,10 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
             else:
                 # We adjust heaters relative to room temperature evenly in the
                 # configured range per step.
-                adjustment = -1 * (self.heater_boundary_high - self.heater_boundary_low) / (self.num_temp_readings - 1)
-                approx_delta = -1 * i * self.heater_slope_init * adjustment  # This is just for display purposes
+                adjustment = (
+                    -1 * i * (self.heater_boundary_high - self.heater_boundary_low) / (self.num_temp_readings - 1)
+                )
+                approx_delta = -1 * self.heater_slope_init * adjustment  # This is just for display purposes
                 calibration_procedure.add_action(
                     AdjustHeaterAction(
                         name=f"vial_sweep_{i}_adjust_heaters",
