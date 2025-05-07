@@ -8,8 +8,9 @@ from evolver.calibration.interface import (
 )
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
-    AdjustHeaterAction,
-    HeaterOffAction,
+    AllVialsAdjustHeaterAction,
+    AllVialsHeaterOffAction,
+    AllVialsReadRoomTempAction,
     RawValueAction,
     ReferenceValueAction,
 )
@@ -27,9 +28,11 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
         num_temp_readings: int = Field(
             3, description="Number of times reference temperature readings are taken from each vial."
         )
-        heater_boundary_low: int = 0
-        heater_boundary_high: int = 1000
-        heater_slope_init: float = 0.02
+        heater_boundary_low: int = Field(0, description="Lower bound for heater adjustment range in raw units.")
+        heater_boundary_high: int = Field(1000, description="Upper bound for heater adjustment range in raw units.")
+        heater_slope_init: float = Field(
+            0.02, description="Initial slope approximation for heater in (degrees C)/(raw unit)"
+        )
 
     def init_transformers(self, calibration_data: CalibrationStateModel):
         for vial, data in calibration_data.measured.items():
@@ -61,10 +64,10 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
         for i in range(self.num_temp_readings):
             if i == 0:
                 calibration_procedure.add_action(
-                    HeaterOffAction(
+                    AllVialsHeaterOffAction(
                         name="vial_sweep_0_turn_off_heaters",
                         vials=self.vials,
-                        description="Begin sweep for room temperature. Heaters will be turned off.",
+                        description="Begin sweep for room temperature. Heaters for calibrating vials will be turned off.",
                         hardware=selected_hardware,
                     )
                 )
@@ -76,13 +79,13 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
                 )
                 approx_delta = -1 * self.heater_slope_init * adjustment  # This is just for display purposes
                 calibration_procedure.add_action(
-                    AdjustHeaterAction(
+                    AllVialsAdjustHeaterAction(
                         name=f"vial_sweep_{i}_adjust_heaters",
                         vials=self.vials,
                         raw_adjustment=adjustment,
                         description=(
                             f"Begin sweep for temperature wave {i + 1}/{self.num_temp_readings}."
-                            f"Will set heaters to approximately room temp +{approx_delta:0.2f} degrees"
+                            f"Will set heaters to approximately room temp +{approx_delta:0.2f} C"
                         ),
                         hardware=selected_hardware,
                     )
@@ -90,11 +93,22 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
 
             calibration_procedure.add_action(
                 DisplayInstructionAction(
-                    description="Wait global equilibrium. This may take several hours. Proceed when reached.",
+                    description="Wait for global equilibrium. This may take several hours. Proceed when reached.",
                     name=f"vial_sweep_{i}_wait_for_equilibrium_instruction",
                     hardware=selected_hardware,
                 )
             )
+
+            if i == 0:
+                calibration_procedure.add_action(
+                    AllVialsReadRoomTempAction(
+                        name="vial_sweep_0_read_room_temp",
+                        vials=self.vials,
+                        description="The hardware will now read the raw output values of the room temperature sensor.",
+                        hardware=selected_hardware,
+                    )
+                )
+
             for vial in self.vials:
                 calibration_procedure.add_action(
                     ReferenceValueAction(

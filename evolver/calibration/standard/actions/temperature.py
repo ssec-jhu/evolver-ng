@@ -39,7 +39,7 @@ class RawValueAction(CalibrationAction):
         return state
 
 
-class AdjustHeaterAction(CalibrationAction):
+class AllVialsAdjustHeaterAction(CalibrationAction):
     def __init__(self, vials: list[int], raw_adjustment: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.vials = vials
@@ -47,16 +47,13 @@ class AdjustHeaterAction(CalibrationAction):
 
     def execute(self, state: CalibrationStateModel, payload=None):
         for vial in self.vials:
-            # To do the adjustment action, we have to have read the room temp
-            # reading, and it has to have been the first reading measured.
-            room_temp_raw = state.measured[vial]["raw"][0]
-            raw = int(room_temp_raw + self.raw_adjustment)
+            raw = int(state.roomTempRawValues[vial] + self.raw_adjustment)
             self.hardware.set(vial=vial, temperature=None, raw=raw)
         self.hardware.commit()
         return state
 
 
-class HeaterOffAction(CalibrationAction):
+class AllVialsHeaterOffAction(CalibrationAction):
     def __init__(self, vials: list[int], *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.vials = vials
@@ -65,6 +62,20 @@ class HeaterOffAction(CalibrationAction):
         for vial in self.vials:
             self.hardware.set(vial=vial, temperature=None, raw=None)
         self.hardware.commit()
+        return state
+
+
+class AllVialsReadRoomTempAction(CalibrationAction):
+    def __init__(self, vials: list[int], num_readings=3, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.vials = vials
+        self.num_readings = num_readings
+
+    def execute(self, state: CalibrationStateModel, payload=None):
+        readings = [self.hardware.read() for _ in range(self.num_readings)]
+        # unpack the readings into per-vial set of raw values
+        per_vial_raw = {vial: [readings[i][vial].raw for i in range(self.num_readings)] for vial in self.vials}
+        state.roomTempRawValues = {vial: int(np.median(per_vial_raw[vial])) for vial in self.vials}
         return state
 
 

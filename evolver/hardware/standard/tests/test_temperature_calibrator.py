@@ -37,8 +37,11 @@ def test_temperature_calibrator_effector_actions():
     action = procedure.get_action("vial_sweep_0_turn_off_heaters")
     action.execute(state=None)
     mock_hardware.set.assert_called_with(vial=0, temperature=None, raw=None)
+    # do the room temp read action
+    mock_hardware.read.return_value = {0: MagicMock(raw=2000)}
+    action = procedure.get_action("vial_sweep_0_read_room_temp")
+    state = action.execute(state=CalibrationStateModel())
     # temp 1
-    state = CalibrationStateModel(measured={0: {"raw": [2000]}})
     action = procedure.get_action("vial_sweep_1_adjust_heaters")
     action.execute(state=state)
     mock_hardware.set.assert_called_with(vial=0, temperature=None, raw=1500)
