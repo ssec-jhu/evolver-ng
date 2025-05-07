@@ -84,7 +84,7 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
                         vials=self.vials,
                         raw_adjustment=adjustment,
                         description=(
-                            f"Begin sweep for temperature wave {i + 1}/{self.num_temp_readings}."
+                            f"Begin sweep for temperature wave {i + 1}/{self.num_temp_readings}. "
                             f"Will set heaters to approximately room temp +{approx_delta:0.2f} C"
                         ),
                         hardware=selected_hardware,
@@ -104,7 +104,7 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
                     AllVialsReadRoomTempAction(
                         name="vial_sweep_0_read_room_temp",
                         vials=self.vials,
-                        description="The hardware will now read the raw output values of the room temperature sensor.",
+                        description="The hardware will now read and store the raw outputs of each vial sensor.",
                         hardware=selected_hardware,
                     )
                 )
