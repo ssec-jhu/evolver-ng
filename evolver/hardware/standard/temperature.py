@@ -23,7 +23,8 @@ class Temperature(SensorDriver, EffectorDriver):
     stands in for off (HEAT_OFF property of this class).
     """
 
-    HEAT_OFF = b"4095"
+    HEAT_OFF_RAW = 4095  # Raw value for heater off for input data structure
+    HEAT_OFF_CMD = str(HEAT_OFF_RAW).encode()  # Serial command for above (to reduce boilerplate)
 
     class Config(SerialDeviceConfigBase, EffectorDriver.Config):
         calibrator: Calibrator | None = FieldInfo.merge_field_infos(
@@ -35,14 +36,21 @@ class Temperature(SensorDriver, EffectorDriver):
         temperature: float | None = Field(None, description="Sensor temperature in degrees Celsius")
 
     class Input(EffectorDriver.Input):
-        temperature: float = Field(description="Target temperature in degrees Celsius")
+        """Input for heater control.
+
+        raw will be used when temperature is not set. If neither is set, the heater
+        will be turned off.
+        """
+
+        temperature: float | None = Field(None, description="Target temperature in degrees Celsius")
+        raw: int | None = Field(None, description="Raw value to set the heater to. Only used if temperature is not set")
 
     @property
     def serial(self):
         return self.serial_conn or self.evolver.serial
 
     def _do_serial(self, from_proposal=False):
-        data = [self.HEAT_OFF] * self.slots
+        data = [self.HEAT_OFF_CMD] * self.slots
         # since a read is also a send, we load all committed values as a base and
         # in the case of proposals overwrite with new data.
         inputs = copy(self.committed)
@@ -50,7 +58,10 @@ class Temperature(SensorDriver, EffectorDriver):
             inputs.update({k: v for k, v in self.proposal.items() if k in self.vials})
         for vial, input in inputs.items():
             # Calibrate temperature to raw data.
-            raw = int(self._transform("input_transformer", "convert_from", input.temperature, vial))
+            if input.temperature is None:
+                raw = input.raw if input.raw is not None else self.HEAT_OFF_RAW
+            else:
+                raw = int(self._transform("input_transformer", "convert_from", input.temperature, vial))
             data[vial] = str(raw).encode()
         with self.serial as comm:
             response = comm.communicate(SerialData(addr=self.addr, data=data))
@@ -72,6 +83,6 @@ class Temperature(SensorDriver, EffectorDriver):
         self._do_serial(from_proposal=True)
 
     def off(self):
-        cmd = [self.HEAT_OFF] * self.slots
+        cmd = [self.HEAT_OFF_CMD] * self.slots
         with self.serial as comm:
             comm.communicate(SerialData(addr=self.addr, data=cmd))

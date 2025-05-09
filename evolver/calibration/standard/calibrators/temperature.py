@@ -8,6 +8,9 @@ from evolver.calibration.interface import (
 )
 from evolver.calibration.procedure import CalibrationProcedure
 from evolver.calibration.standard.actions.temperature import (
+    AllVialsAdjustHeaterAction,
+    AllVialsHeaterOffAction,
+    AllVialsReadRoomTempAction,
     RawValueAction,
     ReferenceValueAction,
 )
@@ -24,6 +27,11 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
         default_output_transformer: Transformer = Field(default_factory=LinearTransformer)
         num_temp_readings: int = Field(
             3, description="Number of times reference temperature readings are taken from each vial."
+        )
+        heater_boundary_low: int = Field(0, description="Lower bound for heater adjustment range in raw units.")
+        heater_boundary_high: int = Field(1000, description="Upper bound for heater adjustment range in raw units.")
+        heater_slope_init: float = Field(
+            0.02, description="Initial slope approximation for heater in (degrees C)/(raw unit)"
         )
 
     def init_transformers(self, calibration_data: CalibrationStateModel):
@@ -53,22 +61,54 @@ class TemperatureCalibrator(IndependentVialBasedCalibrator):
             )
         )
 
-        calibration_procedure.add_action(
-            DisplayInstructionAction(
-                description="Wait 25 mins for equilibrium",
-                name="wait_for_equilibrium_instruction",
-                hardware=selected_hardware,
-            )
-        )
-
         for i in range(self.num_temp_readings):
+            if i == 0:
+                calibration_procedure.add_action(
+                    AllVialsHeaterOffAction(
+                        name="vial_sweep_0_turn_off_heaters",
+                        vials=self.vials,
+                        description="Begin sweep for room temperature. Heaters for calibrating vials will be turned off.",
+                        hardware=selected_hardware,
+                    )
+                )
+            else:
+                # We adjust heaters relative to room temperature evenly in the
+                # configured range per step.
+                adjustment = (
+                    -1 * i * (self.heater_boundary_high - self.heater_boundary_low) / (self.num_temp_readings - 1)
+                )
+                approx_delta = -1 * self.heater_slope_init * adjustment  # This is just for display purposes
+                calibration_procedure.add_action(
+                    AllVialsAdjustHeaterAction(
+                        name=f"vial_sweep_{i}_adjust_heaters",
+                        vials=self.vials,
+                        raw_adjustment=adjustment,
+                        description=(
+                            f"Begin sweep for temperature wave {i + 1}/{self.num_temp_readings}. "
+                            f"Will set heaters to approximately room temp +{approx_delta:0.2f} C"
+                        ),
+                        hardware=selected_hardware,
+                    )
+                )
+
             calibration_procedure.add_action(
                 DisplayInstructionAction(
-                    description=f"Beginning vial sweep {i} of {self.num_temp_readings} set temperature and wait 25 mins for global equilibrium",
+                    description="Wait for global equilibrium. This may take several hours. Proceed when reached.",
                     name=f"vial_sweep_{i}_wait_for_equilibrium_instruction",
                     hardware=selected_hardware,
                 )
             )
+
+            if i == 0:
+                calibration_procedure.add_action(
+                    AllVialsReadRoomTempAction(
+                        name="vial_sweep_0_read_room_temp",
+                        vials=self.vials,
+                        description="The hardware will now read and store the raw outputs of each vial sensor.",
+                        hardware=selected_hardware,
+                    )
+                )
+
             for vial in self.vials:
                 calibration_procedure.add_action(
                     ReferenceValueAction(

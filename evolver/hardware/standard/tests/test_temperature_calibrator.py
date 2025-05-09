@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import pytest
 
 from evolver.calibration.demo import NoOpTransformer
@@ -24,3 +26,26 @@ def test_temperature_initialization_refit(temperature_calibration_file):
     # of transformers as (reference, raw) tuple args.
     assert calibrator.get_output_transformer(0)._refit_args == (1, 0)
     assert calibrator.get_output_transformer(1)._refit_args == (100, 99)
+
+
+def test_temperature_calibrator_effector_actions():
+    mock_hardware = MagicMock()
+    calibrator = TemperatureCalibrator(vials=[0])
+    calibrator.create_calibration_procedure(selected_hardware=mock_hardware)
+    procedure = calibrator.calibration_procedure
+    # room temp - turn heaters off
+    action = procedure.get_action("vial_sweep_0_turn_off_heaters")
+    action.execute(state=None)
+    mock_hardware.set.assert_called_with(vial=0, temperature=None, raw=None)
+    # do the room temp read action
+    mock_hardware.read.return_value = {0: MagicMock(raw=2000)}
+    action = procedure.get_action("vial_sweep_0_read_room_temp")
+    state = action.execute(state=CalibrationStateModel())
+    # temp 1
+    action = procedure.get_action("vial_sweep_1_adjust_heaters")
+    action.execute(state=state)
+    mock_hardware.set.assert_called_with(vial=0, temperature=None, raw=1500)
+    # temp 2
+    action = procedure.get_action("vial_sweep_2_adjust_heaters")
+    action.execute(state=state)
+    mock_hardware.set.assert_called_with(vial=0, temperature=None, raw=1000)

@@ -80,6 +80,11 @@ class TestTempSensor:
             [[Temperature.Input(vial=0, temperature=30.1), Temperature.Input(vial=1, temperature=40.5)], []],
             [b"tempr,4095,1523,_!", b"tempr,4095,1523,_!"],
         ),
+        (
+            {"addr": "temp", "vials": [0, 1], "slots": 2},
+            [[Temperature.Input(vial=0)], [Temperature.Input(vial=1, raw=1234)]],
+            [b"tempr,4095,4095,_!", b"tempr,4095,1234,_!"],
+        ),
     ],
 )
 class TestTempEffectorMode(SerialVialEffectorHardwareTestSuite):
