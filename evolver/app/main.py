@@ -1,5 +1,5 @@
-import asyncio
 import logging
+import threading
 from contextlib import asynccontextmanager
 from http import HTTPStatus
 
@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
         app.state.evolver = Evolver.create()
 
     with app.state.evolver:
-        asyncio.create_task(evolver_async_loop())
+        threading.Thread(target=evolver_thread_loop, daemon=True).start()
         yield
 
     # Shutdown:
@@ -42,6 +42,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan, default_response_class=ORJSONResponse)
 app.state.evolver = None
+app.state.loop_trigger = threading.Event()  # enables on-demand re-executon of the loop
+
+
+def evolver_thread_loop():
+    while True:
+        app.state.evolver.loop_once()
+        app.state.loop_trigger.wait(timeout=app.state.evolver.interval)
+        app.state.loop_trigger.clear()
 
 
 @require_all_fields
@@ -116,6 +124,8 @@ async def update_evolver(config: EvolverConfigWithoutDefaults):
     """
     app.state.evolver = Evolver.create(config)
     app.state.evolver.config_model.save(app_settings.CONFIG_FILE)
+    # State will be cleared, so trigger loop in order to populate.
+    app.state.loop_trigger.set()
 
 
 @app.get("/schema/", response_model=SchemaResponse, operation_id="schema")
@@ -179,15 +189,6 @@ async def healthz():
         "active": app.state.evolver.enable_control,
         "name": app.state.evolver.name,
     }
-
-
-async def evolver_async_loop():
-    while True:
-        try:
-            app.state.evolver.loop_once()
-        except RuntimeError:
-            logging.exception("Error in loop")
-        await asyncio.sleep(app.state.evolver.interval)
 
 
 @app.get("/calibration_status/")
