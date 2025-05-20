@@ -89,14 +89,26 @@ class Transformer(BaseInterface):
     @abstractmethod
     def convert_to(self, *args, **kwargs):
         """Implement and return some transformation upon the input.
-        This is the inverse transformation of ``convert_from`
+
+        The advice for conversion methods used in hardware is as follows:
+
+            - Hardware should use the convert_to method on an output transformer to
+              convert from raw values (e.g. voltages) to real-world values (e.g.
+              temperature) for sensors.
+            - Hardware should use the convert_from method on an input transformer to
+              convert from real-world values (e.g. temperature) to raw values (e.g.
+              voltages) for effectors.
+
+        The inverse transformation of this is ``convert_from`` and should be
+        used per the advice above.
         """
         ...
 
     @abstractmethod
     def convert_from(self, *args, **kwargs):
         """Implement and return some transformation upon the input.
-        This is the inverse transformation of ``convert_to`
+        This is the inverse transformation of ``convert_to`. See documentation for
+        ``convert_to`` for more information.
         """
         ...
 
