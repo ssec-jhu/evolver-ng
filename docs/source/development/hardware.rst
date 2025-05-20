@@ -106,12 +106,12 @@ In hardware driver code, we use the following for transforming raw outputs from
 a sensor::
 
     raw_voltage = int(serial_response[vial])
-    calibrated_value = self._transform('output_transformer', 'convert_from', raw_voltage, vial)
+    calibrated_value = self._transform('output_transformer', 'convert_to', raw_voltage, vial)
 
 And for transforming inputs to be sent to an effector::
 
     real_value = self.proposal[vial].value
-    raw_setting = self._transform('input_transformer', 'convert_to', real_value, vial)
+    raw_setting = self._transform('input_transformer', 'convert_from', real_value, vial)
 
 The transform function will fallback to a null value (`None`) when either the
 transformer does not exist (in the case that the user has not attached a
@@ -123,7 +123,7 @@ values and indicates that the calibration is not available or has failed. In
 cases where a value other than null is appropriate, the transform function has a
 `fallback` parameter which can be used to provide a default value::
 
-    self._transform('output_transformer', 'convert_from', raw_voltage, vial, fallback=0)
+    self._transform('output_transformer', 'convert_to', raw_voltage, vial, fallback=0)
 
 This section discussed making the calibration conversion within hardware code,
 for more information on calibrators, their transformers and calibration

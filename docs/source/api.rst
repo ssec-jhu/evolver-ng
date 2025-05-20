@@ -14,6 +14,21 @@ Hardware Extension Points
    evolver.hardware.interface.EffectorDriver
    evolver.hardware.interface.EffectorDriver.commit
    evolver.hardware.interface.EffectorDriver.set
+   evolver.hardware.interface.HardwareDriver._transform
+
+Calibration Extension Points
+----------------------------
+.. autosummary::
+   :toctree: generated
+
+   evolver.calibration.interface.Calibrator
+   evolver.calibration.interface.Calibrator.create_calibration_procedure
+   evolver.calibration.interface.Calibrator.init_transformers
+   evolver.calibration.procedure.CalibrationProcedure
+   evolver.calibration.interface.Transformer
+   evolver.calibration.interface.Transformer.fit
+   evolver.calibration.interface.Transformer.convert_to
+   evolver.calibration.interface.Transformer.convert_from
 
 Experiment Control Extension Points
 -----------------------------------
@@ -23,7 +38,6 @@ Experiment Control Extension Points
 
    evolver.controller.interface.Controller
    evolver.controller.interface.Controller.control
-
 
 Evolver manager
 ---------------

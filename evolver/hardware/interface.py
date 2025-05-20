@@ -27,7 +27,25 @@ class HardwareDriver(BaseInterface):
         super().__init__(*args, **kwargs)
 
     def _transform(self, transformer: str, func: str, x: Any, vial: int = None, fallback=None):
-        """Helper func to reduce boilerplate when transforming input and output data."""
+        """Helper func to reduce boilerplate when transforming input and output
+        data.
+
+        See :py:meth:`evolver.calibration.interface.Transformer.convert_to` for
+        advice on which transformer and function to use for hardware
+        transformations.
+
+        Args:
+            transformer (str): The name of the transformer to use. This is
+            typically
+                either ``input_transformer`` or ``output_transformer``.
+            func (str): The name of the function to call on the transformer.
+                This is typically either ``convert_from`` or ``convert_to``.
+            x (Any): The input data to transform. vial (int, optional): The vial
+            index to use for the transformation.
+                Defaults to None for a global transfomer.
+            fallback (Any, optional): The value to return if the transformation
+                fails.
+        """
 
         if self.calibrator and (_transformer := getattr(self.calibrator, transformer, None)):
             try:
