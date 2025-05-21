@@ -3,7 +3,8 @@ from unittest.mock import MagicMock
 import pytest
 
 from evolver.controller.standard import Chemostat
-from evolver.device import Evolver
+from evolver.device import Evolver, Experiment
+from evolver.hardware.interface import EffectorDriver
 from evolver.hardware.standard.pump import VialIEPump
 from evolver.hardware.standard.stir import Stir
 
@@ -18,7 +19,9 @@ def add_mock_hardware(evolver):
     def setup_hw_mock(mock, cls):
         mock.inputs = []
         mock.Input.side_effect = lambda **a: cls.Input(**a)
-        mock.set.side_effect = lambda a: mock.inputs.append(a)
+        mock.set.side_effect = lambda *args, **kwargs: mock.inputs.append(
+            EffectorDriver._get_input_from_args(cls, *args, **kwargs)
+        )
 
     setup_hw_mock(evolver.hardware["pump"], VialIEPump)
     setup_hw_mock(evolver.hardware["stirrer"], Stir)
@@ -90,7 +93,14 @@ def test_evolver_based_setup():  # test to ensure evolver pluggability via confi
         "raise_loop_exceptions": True,
     }
     evolver = Evolver.create(config)
-    with pytest.raises(AttributeError):
+    with pytest.raises(KeyError):
         evolver.loop_once()
     add_mock_hardware(evolver)
     evolver.loop_once()
+
+
+def test_serialize_in_experiment():
+    controller = Chemostat(od_sensor="od", pump="pump", stirrer="stirrer")
+    experiment = Experiment(controllers=[controller])
+    experiment_dumped = experiment.model_dump()
+    Chemostat.Config.model_validate(experiment_dumped["controllers"][0])
