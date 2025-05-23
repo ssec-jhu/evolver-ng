@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+
 from evolver.controller.interface import Controller
 from evolver.device import Evolver
 
@@ -24,7 +25,7 @@ class TestControllerInterface:
 
     def test_get_hw(self):
         sensor_mock = MagicMock()
-        evolver = Evolver(hardware={'sensor': sensor_mock})
+        evolver = Evolver(hardware={"sensor": sensor_mock})
         controller = TestController(evolver=evolver)
         # for strings we expect the hardware attached to evolver manager
         assert controller.get_hw("sensor") == sensor_mock
