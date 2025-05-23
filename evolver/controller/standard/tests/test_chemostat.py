@@ -104,3 +104,8 @@ def test_serialize_in_experiment():
     experiment = Experiment(controllers=[controller])
     experiment_dumped = experiment.model_dump()
     Chemostat.Config.model_validate(experiment_dumped["controllers"][0])
+
+
+def test_missing_required_hardware_raises():
+    with pytest.raises(KeyError):
+        Chemostat(od_sensor="od", pump="pump")  # stirrer is missing
