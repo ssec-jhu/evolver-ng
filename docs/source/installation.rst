@@ -1,12 +1,15 @@
 Installation
 ============
 
+Server
+------
+
 This guide is for installing the server on the Raspberry Pi mounted within the
 eVolver hardware platform connected via serial to the physical hardware (see
 :doc:`quick-start` for running the server locally with dummy hardware).
 
 Requirements
-------------
+~~~~~~~~~~~~
 
 The application depends on python 3.11 or later, so ensure the Raspberry Pi os
 is up to date and has at least this version of python installed. We recommend
@@ -23,7 +26,7 @@ done by adding the following to the /boot/firmware/config.txt file::
     dtoverlay=pi3-disable-bt
 
 Install and setup service
--------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Install the package::
 
@@ -52,7 +55,7 @@ connections. You can confirm this by navigating to the openapi documentation
 interface at http://<raspberry-pi-ip>:8080/docs.
 
 Configuration
--------------
+~~~~~~~~~~~~~
 
 The evolver server needs to be configured with the hardware drivers that are
 available on the system. This can be done either by creating or obtaining the
@@ -84,4 +87,65 @@ installing the package, and example configurations to simplify setup for
 end-users. See :doc:`development/index` for more information on creating
 extensions.
 
+Web UI
+~~~~~~
 
+We can similarly install the web UI on the Raspberry Pi, or any other computer
+with network access to one or more evolver servers.
+
+The simplest way to install the web UI is to use mise to install npm, then build
+the and run the service via npm.
+
+* install mise (see also https://mise.jdx.dev/getting-started.html)::
+
+    curl https://mise.run | sh
+
+* install npm via mise::
+
+    mise use node@lts
+
+* clone the web UI repository::
+
+    git clone https://github.com/ssec-jhu/evolver-ui
+
+* build it::
+
+    cd evolver-ui
+    npm install
+    npm run build
+
+* run it::
+
+    npm run server
+
+Install and setup service
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We can also setup the web UI to run as a service on the Raspberry Pi. Here is an
+example systemd service file (for example at `/etc/systemd/system/evolver-ui.service`)::
+
+  [Service]
+  Requires=evolver.service
+  ExecStart=/home/pi/evolver-ui/start-ui.sh
+  WorkingDirectory=/home/pi/evolver-ui
+  Restart=on-failure
+  Type=exec
+
+  [Install]
+  WantedBy=multi-user.target
+
+The above uses a helper script to start the UI that has been placed at the root
+of the repository::
+
+  #!/bin/sh
+  export PATH=/home/pi/.local/share/mise/installs/node/22.15.0/bin:${PATH}
+  cd /home/pi/evolver-ui
+  npm start
+
+After which you can enable and start the service::
+
+    sudo systemctl enable evolver-ui
+    sudo systemctl start evolver-ui
+
+By default the UI will run on port 3000, so navigate your browser there and add
+devices as necessary.
