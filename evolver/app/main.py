@@ -5,6 +5,7 @@ from http import HTTPStatus
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse, ORJSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 
 import evolver.util
@@ -50,6 +51,15 @@ def evolver_thread_loop():
         app.state.evolver.loop_once()
         app.state.loop_trigger.wait(timeout=app.state.evolver.interval)
         app.state.loop_trigger.clear()
+
+origins = ["http://localhost", "http://127.0.0.1"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
+)
 
 
 @require_all_fields
