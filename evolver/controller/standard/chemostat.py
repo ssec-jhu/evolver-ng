@@ -20,21 +20,8 @@ class Chemostat(Controller):
         vial_volume: float = Field(1, description="Volume of vial in mL")
         stir_rate: float = Field(8, description="Stir rate")
 
-    def __init__(
-        self,
-        *args,
-        od_sensor: HardwareDriver | str,
-        pump: HardwareDriver | str,
-        stirrer: HardwareDriver | str,
-        **kwargs,
-    ):
-        self._od_sensor = od_sensor
-        self._pump = pump
-        self._stirrer = stirrer
-
-        # Since ``od_sensor`` and alike are properties that we explicitly initialize above, don't auto assign them
-        # in ``BaseInterface.__init__`` from the ``Config``.
-        super().__init__(*args, auto_config_ignore_fields=("od_sensor", "pump", "stirrer"), **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         # buffer could come from history as well
         self.od_buffer = defaultdict(lambda: deque(maxlen=self.window))
@@ -44,20 +31,8 @@ class Chemostat(Controller):
         # come from history similarly
         self.start_time = time.time()
 
-    @property
-    def od_sensor(self):
-        return self.evolver.hardware.get(self._od_sensor) if isinstance(self._od_sensor, str) else self._od_sensor
-
-    @property
-    def pump(self):
-        return self.evolver.hardware.get(self._pump) if isinstance(self._pump, str) else self._pump
-
-    @property
-    def stirrer(self):
-        return self.evolver.hardware.get(self._stirrer) if isinstance(self._stirrer, str) else self._stirrer
-
     def control(self, *args, **kwargs):
-        od_values = self.od_sensor.get()
+        od_values = self.get_hw(self.od_sensor).get()
         elapsed_time = time.time() - self.start_time
 
         if set(self.vials) - set(od_values):
@@ -81,13 +56,11 @@ class Chemostat(Controller):
 
             # Inputs assume the relevant device has its calibration and takes
             # the target real value.
-            self.pump.set(
-                self.pump.Input(
-                    vial=vial,
-                    influx_volume=self.bolus_volume,
-                    influx_rate=self.dilution_rate * self.vial_volume / self.bolus_volume,  # rate relative to vial vol
-                    efflux_volume=self.bolus_volume,
-                    efflux_rate=self.dilution_rate * self.vial_volume / self.bolus_volume,
-                )
+            self.get_hw(self.pump).set(
+                vial=vial,
+                influx_volume=self.bolus_volume,
+                influx_rate=self.dilution_rate * self.vial_volume / self.bolus_volume,  # rate relative to vial vol
+                efflux_volume=self.bolus_volume,
+                efflux_rate=self.dilution_rate * self.vial_volume / self.bolus_volume,
             )
-            self.stirrer.set(self.stirrer.Input(vial=vial, stir_rate=self.stir_rate))
+            self.get_hw(self.stirrer).set(vial=vial, stir_rate=self.stir_rate)
