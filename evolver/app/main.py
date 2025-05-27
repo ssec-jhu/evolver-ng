@@ -4,8 +4,8 @@ from contextlib import asynccontextmanager
 from http import HTTPStatus
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse, ORJSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, ORJSONResponse
 from pydantic import ValidationError
 
 import evolver.util
