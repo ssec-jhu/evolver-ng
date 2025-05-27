@@ -5,7 +5,7 @@ Server
 ------
 
 This guide is for installing the server on the Raspberry Pi mounted within the
-eVolver hardware platform connected via serial to the physical hardware (see
+eVOLVER hardware platform connected via serial to the physical hardware (see
 :doc:`quick-start` for running the server locally with dummy hardware).
 
 Requirements
@@ -16,7 +16,7 @@ is up to date and has at least this version of python installed. We recommend
 using the debian based systems, such as bookworm
 (see https://www.raspberrypi.com/software/operating-systems/).
 
-If you are using the standard eVolver hardware, the Raspberry Pi should also be
+If you are using the standard eVOLVER hardware, the Raspberry Pi should also be
 setup to use the UART serial port available at ttyAMA0, which requires custom
 bootflags in order to disable bluetooth and enable the serial port. This can be
 done by adding the following to the /boot/firmware/config.txt file::
@@ -57,7 +57,7 @@ interface at http://<raspberry-pi-ip>:8080/docs.
 Configuration
 ~~~~~~~~~~~~~
 
-The evolver server needs to be configured with the hardware drivers that are
+The eVOLVER server needs to be configured with the hardware drivers that are
 available on the system. This can be done either by creating or obtaining the
 appropriate configuration file prior to server start. Alternatively the API/UI
 can be used to update the configuration for a server that is already online.
@@ -91,7 +91,7 @@ Web UI
 ------
 
 We can similarly install the web UI on the Raspberry Pi, or any other computer
-with network access to one or more evolver servers.
+with network access to one or more eVOLVER servers.
 
 The simplest way to install the web UI is to use mise to install npm, then build
 the and run the service via npm.

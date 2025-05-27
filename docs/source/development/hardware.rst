@@ -4,7 +4,7 @@ Developing custom hardware drivers
 Basics
 ------
 
-Implementing hardware within the eVolver system means creating a new subclass of
+Implementing hardware within the eVOLVER system means creating a new subclass of
 the appropriate driver interface classes, creating concrete implementations of
 the abstract methods therein.
 
@@ -52,9 +52,9 @@ Using the built-in serial interface
 -----------------------------------
 
 Many drivers will want to use the shared serial bus attached to a standard
-eVolver setup, addressing a specific component on that line. Since this is a
+eVOLVER setup, addressing a specific component on that line. Since this is a
 shared global resource that must be locked to avoid contention, it is defined at
-the main eVolver level. When the eVolver manager constructs hardware drivers, it
+the main eVOLVER level. When the eVOLVER manager constructs hardware drivers, it
 passes itself in as the `evolver` attribute to the driver constructor, in a
 manner similar to::
 

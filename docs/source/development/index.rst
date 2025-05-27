@@ -1,4 +1,4 @@
-Developing eVolver components
+Developing eVOLVER components
 =============================
 
 .. toctree::

@@ -1,7 +1,7 @@
-Evolver concepts
+eVOLVER concepts
 ================
 
-The evolver system is made up of several configurable components tied together
+The eVOLVER system is made up of several configurable components tied together
 by a manager component that orchestrates the application control loop and
 exposure to the web interface. Components can be grouped into two high level
 categories:
@@ -42,7 +42,7 @@ categories:
 Configuration and ConfigDescriptors
 -----------------------------------
 
-All components in the evolver can be represented by a so-called
+All components in the eVOLVER can be represented by a so-called
 :py:class:`ConfigDescriptor<evolver.config.ConfigDescriptor>`. This is the key
 component which translates from a static serialized configuration (e.g. that
 which can be represented in a yaml file) to the in-memory instantiated objects
@@ -62,7 +62,7 @@ particular hardware might look like:
           addr: "od90"
           integrations: 500
 
-The object under ``hardware.temp`` is recognized in the evolver system as a
+The object under ``hardware.temp`` is recognized in the eVOLVER system as a
 ``ConfigDescriptor``, where the object to create is an
 ``evolver.hardware.standard.od_sensor.ODSensor`` and the config to pass in will
 be an evaluated version of its ``Config``. To clarify the point, consider the
@@ -82,7 +82,7 @@ the ``Config`` class represented within the ``config`` key.
 Experiment loop
 ---------------
 
-In the normal mode, the evolver operates in a loop, continuously performing the
+In the normal mode, the eVOLVER operates in a loop, continuously performing the
 following steps in succession:
 
 1. **Read sensors**: values are `read` and buffered within individual hardware
@@ -113,13 +113,13 @@ the loop.
 Buffering
 ---------
 
-Both Sensor and Effector drivers in the evolver system have separate methods for
+Both Sensor and Effector drivers in the eVOLVER system have separate methods for
 reading/writing values to the underlying hardware device and for getting and
-setting values in within the evolver software framework.
+setting values in within the eVOLVER software framework.
 
 The primary reason for this separation is to simplify the operation of
 potentially multiple controllers working against multiple vials, while
-recognizing that the serial protocol for hardware on the standard evolver boxes
+recognizing that the serial protocol for hardware on the standard eVOLVER boxes
 both:
 
 * reads-to/writes-from *all* vials in a single serial communication, and
@@ -148,7 +148,7 @@ of configured vials.
 
 .. note::
   Note that values are typically neither read nor committed within the `control`
-  method itself - these are executed by the evolver in the **read** and
+  method itself - these are executed by the eVOLVER in the **read** and
   **commit** phases of :ref:`experiment_loop`. Multiple ``get`` calls would
   return the same values and subsequent ``set`` calls would overwrite the value
   to commit.

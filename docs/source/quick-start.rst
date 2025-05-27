@@ -1,8 +1,8 @@
 Quick Start
 ===========
 
-While the eVolver server is meant to run on the Raspberry Pi mounted within the
-eVolver hardware platform connected via serial to the physical hardware, it is
+While the eVOLVER server is meant to run on the Raspberry Pi mounted within the
+eVOLVER hardware platform connected via serial to the physical hardware, it is
 sometimes desireable to run it locally using dummy hardware for evaluation of
 configuration or api calls.
 
