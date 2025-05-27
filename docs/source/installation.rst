@@ -116,7 +116,7 @@ the and run the service via npm.
 
 * run it::
 
-    npm run server
+    npm run start
 
 Install and setup service
 ~~~~~~~~~~~~~~~~~~~~~~~~~
