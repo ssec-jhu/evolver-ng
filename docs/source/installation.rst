@@ -88,7 +88,7 @@ end-users. See :doc:`development/index` for more information on creating
 extensions.
 
 Web UI
-~~~~~~
+------
 
 We can similarly install the web UI on the Raspberry Pi, or any other computer
 with network access to one or more evolver servers.
