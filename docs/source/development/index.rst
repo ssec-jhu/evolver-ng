@@ -6,3 +6,4 @@ Developing eVOLVER components
     controllers
     hardware
     calibrators
+    installation
