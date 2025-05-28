@@ -76,7 +76,8 @@ configuration of a particular component by its fully qualified class name::
 
 might return something like:
 
-.. json::
+.. code-block:: json
+
     {
         "classinfo": "my_module.MyController",
         "config": {
