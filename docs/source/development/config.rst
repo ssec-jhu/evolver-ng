@@ -122,5 +122,34 @@ might return something like:
 which contains enough information to generate a UI form for the component's
 configuration.
 
-Config and component initialization
------------------------------------
+Component initialization and configuration
+------------------------------------------
+
+When a component is initialized via a config descriptor (e.g. when reading the
+configuration file on startup or via the web update API - specifically by
+calling :py:meth:`create<evolver.base.ConfigDescriptor.create>` on config
+descriptor or :py:meth:`create` on the base interface), by default the members
+of its `config` are unpacked and passed to the components constructor. Then the
+base class for components
+(:py:class:`BaseInterface<evolver.base.BaseInterface>`) will automatically
+assign the config members to the component instance as attributes.
+
+This effectively means that parameters in the config are also class parameters
+and can be directly accessed and used within the component logic. In the example
+above, this means that the control code in `MyController` could access
+`self.param_required`, as in::
+
+    class MyController(Controller):
+        <<<...>>>
+        def control(self):
+            if self.param_required > 0:
+                # do something based on the required parameter
+                <<<...>>>
+
+.. warning::
+    This has an implication on the mutability of the class parameters that share
+    a name with the config members: due to the serializability requirements of
+    components, such members should also be serializable and compatible with the
+    config model. For example, if `param` has a type hint of `float` in the config
+    model, then setting `self.param = "string"` will violate the type validation
+    on serialization and may cause errors in the application.
