@@ -56,7 +56,7 @@ the wire via the web API.
 
 In the serialized configuration, we describe a component by its class and the
 data members to set on its config. This is done via a
-:py:class:`ConfigDescriptor<evolver.config.ConfigDescriptor>`. For example, the
+:py:class:`ConfigDescriptor<evolver.base.ConfigDescriptor>`. For example, the
 above `MyController` class can be described in the serialized configuration as
 follows (assuming it is defined in `my_module`)::
 
@@ -68,7 +68,7 @@ follows (assuming it is defined in `my_module`)::
 JSON schema
 -----------
 
-The web API also provides and endpoint to retreive the JSON schema for the
+The web API also provides and endpoint to retrieve the JSON schema for the
 configuration of a particular component by its fully qualified class name::
 
     GET /schema/?classinfo={component_name}
@@ -121,6 +121,22 @@ might return something like:
 
 which contains enough information to generate a UI form for the component's
 configuration.
+
+The base of the configuration for the eVOLVER application is defined in the
+`Config` of :py:class:`Evolver<evolver.device.Evolver>`, so to get the schema for
+the base configuration you can use::
+
+    GET /schema/?classinfo=evolver.device.Evolver
+
+This is the schema of what will be deserialized from yaml when the eVOLVER
+application starts up. The schema of any dynamically configured component within
+can be inspected as above.
+
+In the python interpreter, you can access the schema of any config component by
+calling pydantics `model_json_schema()` on the class::
+
+    from evolver.device import Evolver
+    schema = Evolver.Config.model_json_schema()
 
 Component initialization and configuration
 ------------------------------------------

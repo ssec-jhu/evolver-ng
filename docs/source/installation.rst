@@ -94,7 +94,8 @@ We can similarly install the web UI on the Raspberry Pi, or any other computer
 with network access to one or more eVOLVER servers.
 
 The simplest way to install the web UI is to use mise to install npm, then build
-the and run the service via npm.
+the and run the service via npm (see also
+https://github.com/ssec-jhu/evolver-ui).
 
 * install mise (see also https://mise.jdx.dev/getting-started.html)::
 
