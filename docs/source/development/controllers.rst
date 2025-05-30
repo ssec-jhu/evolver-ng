@@ -2,8 +2,8 @@ Developing a new controller
 ===========================
 
 In eVolver, controllers are the components that implement experiment logic. They
-can read the state and history of the eVolver environment (e.g. the sensor
-values) and subsequently modify it (via effectors). In a typical eVolver setup
+can read the state and history of the eVOLVER environment (e.g. the sensor
+values) and subsequently modify it (via effectors). In a typical eVOLVER setup
 controller logic is executed once during a device loop, after reading the state
 of all sensors. See :doc:`/concepts` for more details on the device operation.
 
@@ -25,7 +25,7 @@ input).
     operation - and in particular the differences between getting and reading
     sensors and setting and committing effectors - see :doc:`/concepts`.
 
-As with other eVolver components, controllers contain `Config` classes that
+As with other eVOLVER components, controllers contain `Config` classes that
 define the configuration options for the experiment, which can be read from
 on-disk config and modified via the API and UIs. Authors should provide a
 `Config` class that inherits from :class:`evolver.controller.Controller.Config`
@@ -67,7 +67,7 @@ set desired state.
 .. note::
 
     The `evolver` property comes from hookup to the device (which happens for
-    example in creating a new eVolver from configuration), see also
+    example in creating a new eVOLVER from configuration), see also
     :ref:`evolver-hookup` below. `vials` comes from the base controller `Config`
     class, and represents a list of vials to operate on.
 
@@ -83,7 +83,7 @@ You might note in the above example that:
 The concept here is that each instance of a controller is a specific instance of
 the experiment on a set of vials. In the simplest case one experiment with a
 given set of configuration parameters is run on all vials on the box. The
-eVolver accepts a list of controllers, which can represent either distinct
+eVOLVER accepts a list of controllers, which can represent either distinct
 experiment logic on separate vials, or distinctly configured instances of the
 same experiment on separate vials. Their ``control`` methods are run in order
 during the control loop (wee :doc:`/concepts` for more details on experiment
@@ -114,19 +114,19 @@ Because the controller's main function is to modify the environment based on
 inputs, we can test a controller by mocking the hardware dependencies and
 asserting expected outputs are sent to particular hardware.
 
-We are currently working on a testing framework for eVolver controllers (please
+We are currently working on a testing framework for eVOLVER controllers (please
 see https://github.com/ssec-jhu/evolver-ng/issues/156), but in the meantime, an
-example for mocking hardware within an eVolver environment can be seen in the
-`test_chemostat.py` file in the eVolver repository.
+example for mocking hardware within an eVOLVER environment can be seen in the
+`test_chemostat.py` file in the eVOLVER repository.
 
 
 Logging in the controller
 -------------------------
 
-All components in the eVolver framework contain an internal logger which is an
+All components in the eVOLVER framework contain an internal logger which is an
 instance of a python standard library `logging.Logger`. This logger can be used
 to emit messages from within a controller which, unless otherwise configured,
-will get routed through the eVolver logging mechanism.
+will get routed through the eVOLVER logging mechanism.
 
 .. note::
 
@@ -154,7 +154,7 @@ given sensor in memory within the controller, this may have unintended
 consequences in the case of reboot or even a reconfiguration of the eVolver
 (which reallocates all objects): the buffer would be lost.
 
-eVolver provides a history server which is backed by persistent storage designed
+eVOLVER provides a history server which is backed by persistent storage designed
 to be queried via the API or within a controller. This means controller code
 can remain simple and focus on core logic, as opposed to maintaining file-based
 historic data or error-prone in-memory buffers.
@@ -183,7 +183,7 @@ For example::
 
 .. _evolver-hookup:
 
-Evolver hookup and portability
+eVOLVER hookup and portability
 ------------------------------
 
 You might notice that the controller in the example above implicitly requires an
@@ -211,10 +211,10 @@ hardware class, then a property which dispatches appropriately, for example::
 In the above case, when the controller operates within the application, the
 temp_sensor will be specified as the name of the hardware in the eVolver
 configuration file, and the controller will use the hardware instance from the
-eVolver.
+eVOLVER.
 
 If the controller should be instantiated outside the framework (and without an
-evolver instance), the instantiated Temperature object can be passed in
+eVOLVER instance), the instantiated Temperature object can be passed in
 directly::
 
     temp_sensor = Temperature()

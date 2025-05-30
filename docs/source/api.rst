@@ -1,6 +1,15 @@
 API
 ===
 
+Configuration
+-------------
+
+.. autosummary::
+   :toctree: generated
+
+   evolver.base.ConfigDescriptor
+   evolver.base.ConfigDescriptor.create
+
 Hardware Extension Points
 -------------------------
 

@@ -16,7 +16,7 @@ either the web interface or via the http API:
 Applying configuration
 -----------------------
 
-The eVolver server is self-contained and described by a static configuration
+The eVOLVER server is self-contained and described by a static configuration
 containing the physical setup and experiment control logic. This allows it to
 run experiments without intervention for long periods of time, and withstand
 failure and restarts, losing only the down-time interval.
@@ -36,11 +36,11 @@ Likewise it can be downloaded for editing and re-upload using a GET request::
 Configuring the hardware
 -------------------------
 
-Since the hardware portion of the eVolver is directly related to the physical
-setup of the evolver box, configuration should often be obtained from the source
+Since the hardware portion of the eVOLVER is directly related to the physical
+setup of the eVOLVER box, configuration should often be obtained from the source
 of the hardware or from examples for modular hardware components shared by their
 creators. The evolver-ng package will contain such examples for hardware
-components built or maintained by the eVolver team.
+components built or maintained by the eVOLVER team.
 
 As with all configuration in the system, each component will have a class
 specifying the code component that controls it, along with a configuration
@@ -101,7 +101,7 @@ Configure experiments
 =====================
 
 Experiments are configured in the same manner as other components in the system,
-such as hardware described above. The eVolver has a set of named experiments,
+such as hardware described above. The eVOLVER has a set of named experiments,
 which in turn are made up of one or more
 :py:class:`Controllers<evolver.controller.interface.Controller>`. Each
 controller is a descriptor object that has a config section, for example:
@@ -152,7 +152,7 @@ data.
 Aborting
 ========
 
-In general, once started, the eVolver will continuously run the experiment loop
+In general, once started, the eVOLVER will continuously run the experiment loop
 (see :ref:`experiment_loop`) until stopped. When there are experiments
 configured on the system, this means that physical actuation of some devices on
 the system may be carried out, and in cases where feedback about certain
