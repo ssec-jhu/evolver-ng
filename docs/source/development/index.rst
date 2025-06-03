@@ -1,4 +1,4 @@
-Developing eVolver components
+Developing eVOLVER components
 =============================
 
 .. toctree::
@@ -6,3 +6,4 @@ Developing eVolver components
     controllers
     hardware
     calibrators
+    installation
