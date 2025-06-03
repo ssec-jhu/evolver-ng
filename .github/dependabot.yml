@@ -9,8 +9,6 @@ updates:
         applies-to: version-updates
         patterns:
           - "*"
-        exclude-patterns:
-          - "pydantic"  # related to https://github.com/ssec-jhu/evolver-ng/issues/213
         update-types:
           - "minor"
           - "patch"
