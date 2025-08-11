@@ -92,18 +92,28 @@ class _BaseModel(pydantic.BaseModel):
 
 class _BaseConfig(_BaseModel):
     @classmethod
-    def get_classinfo(cls) -> str:
+    def get_classinfo(cls, strict=True) -> str:
         """The fully qualified classname for cls's container class (if one exists).
         E.g., ``Evolver.Config.get_classinfo()`` returns ``"evolver.device.Evolver"``.
-        Raises `TypeError` if parent class is not derived from BaseInterface.
+        Returns `None` if no container class exists, e.g., the container is a module.
         """
         fqn = evolver.util.fully_qualified_name(cls)
         containers = fqn.split(".")[:-1]
         container = ".".join(containers)
         container_class = evolver.util.import_string(container)
-        if issubclass(container_class, BaseInterface):
+        if not isinstance(container_class, type):
+            return
+        elif issubclass(container_class, BaseInterface):
             cls = container_class
         return f"{cls.__module__}.{cls.__qualname__}"
+
+    @pydantic.model_serializer(mode="wrap", when_used='json')
+    def to_descriptor(self, handler) -> dict:
+        serialized_by_super = handler(self)
+        class_info = self.get_classinfo()
+        if class_info is None or _is_descriptor_dict(serialized_by_super):
+            return serialized_by_super
+        return dict(classinfo=class_info, config=serialized_by_super)
 
     @classmethod
     def model_validate(cls, obj, *, strict=None, from_attributes=None, context=None):
@@ -396,12 +406,14 @@ class BaseInterface(ABC):
         Note: For convenience of converting back and forth from a ``ConfigDescriptor`` we return a ``dict`` rather
               than an instance of ``BaseConfig``.
         """
-        return self.config_model.model_dump(mode="json")
+        return self.config_model.model_dump(mode="json")["config"]
 
     @property
     def config_json(self) -> str:
         """Return a JSON str from a Config populated from instance attributes."""
-        return self.config_model.model_dump_json()
+        import json
+        return json.dumps(self.config, separators=(",", ":"))
+        # return self.config_model.model_dump_json()
 
     @property
     def config_model(self) -> BaseConfig:
