@@ -1,0 +1,250 @@
+abort_on_commit_errors: false
+abort_on_control_errors: false
+enable_control: true
+experiments:
+  example_experiment:
+    controllers:
+    - classinfo: evolver.controller.demo.NoOpController
+      config:
+        bolus_volume: 2.0
+        dilution_rate: 0.1
+        min_od: 0.5
+        name: noop_controller_670
+        start_delay: 1
+        stir_rate: 8.0
+        vial_volume: 2.0
+    enabled: true
+    name: null
+hardware:
+  od_sensor:
+    classinfo: evolver.hardware.standard.od_sensor.ODSensor
+    config:
+      addr: od_90
+      calibrator: null
+      integrations: 500
+      name: od_sensor
+      serial_conn: null
+      slots: 16
+      vials:
+      - 0
+      - 1
+      - 2
+      - 3
+  pump:
+    classinfo: evolver.hardware.standard.pump.GenericPump
+    config:
+      active_pumps:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      addr: pmp
+      calibrator:
+        classinfo: evolver.calibration.standard.calibrators.pump.GenericPumpCalibrator
+        config:
+          calibration_file: null
+          created: '2025-05-06T09:19:42.079249'
+          default_input_transformer: null
+          default_output_transformer: null
+          dir: calibration_files
+          expire: P168D
+          input_transformer: null
+          name: GenericPumpCalibrator
+          no_refit: false
+          output_transformer: null
+          procedure_file: null
+          time_to_pump_fast: 10.0
+          time_to_pump_slow: 100.0
+          vials:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+          - 9
+          - 10
+          - 11
+          - 12
+          - 13
+          - 14
+          - 15
+      ipp_pumps: []
+      name: pump
+      serial_conn: null
+      slots: 16
+      vials:
+      - 0
+      - 1
+      - 2
+      - 3
+  stirrer:
+    classinfo: evolver.hardware.standard.stir.Stir
+    config:
+      addr: stir
+      calibrator: null
+      name: stirrer
+      serial_conn: null
+      slots: 16
+      stir_max: 98
+      vials:
+      - 0
+      - 1
+      - 2
+      - 3
+  test:
+    classinfo: evolver.hardware.demo.NoOpSensorDriver
+    config:
+      calibrator:
+        classinfo: evolver.calibration.standard.calibrators.temperature.TemperatureCalibrator
+        config:
+          calibration_file: null
+          created: '2025-05-02T09:21:00.636783'
+          default_input_transformer: null
+          default_output_transformer:
+            classinfo: evolver.calibration.standard.polyfit.LinearTransformer
+            config:
+              created: '2025-05-02T09:21:00.636922'
+              degree: 1
+              dir: calibration_files
+              expire: P168D
+              name: LinearTransformer
+              parameters: null
+          dir: calibration_files
+          expire: P168D
+          heater_boundary_high: 1000
+          heater_boundary_low: 0
+          heater_slope_init: 0.02
+          input_transformer:
+            '0':
+              classinfo: evolver.calibration.standard.polyfit.LinearTransformer
+              config:
+                created: '2025-05-02T09:21:00.636211'
+                degree: 1
+                dir: calibration_files
+                expire: P168D
+                name: LinearTransformer
+                parameters: null
+            '1':
+              classinfo: evolver.calibration.standard.polyfit.LinearTransformer
+              config:
+                created: '2025-05-02T09:21:00.636315'
+                degree: 1
+                dir: calibration_files
+                expire: P168D
+                name: LinearTransformer
+                parameters: null
+            '2':
+              classinfo: evolver.calibration.standard.polyfit.LinearTransformer
+              config:
+                created: '2025-05-02T09:21:00.636409'
+                degree: 1
+                dir: calibration_files
+                expire: P168D
+                name: LinearTransformer
+                parameters: null
+          name: TemperatureCalibrator
+          no_refit: false
+          num_temp_readings: 3
+          output_transformer:
+            '0':
+              classinfo: evolver.calibration.standard.polyfit.LinearTransformer
+              config:
+                created: '2025-05-02T09:21:00.636507'
+                degree: 1
+                dir: calibration_files
+                expire: P168D
+                name: LinearTransformer
+                parameters: null
+            '1':
+              classinfo: evolver.calibration.standard.polyfit.LinearTransformer
+              config:
+                created: '2025-05-02T09:21:00.636596'
+                degree: 1
+                dir: calibration_files
+                expire: P168D
+                name: LinearTransformer
+                parameters: null
+            '2':
+              classinfo: evolver.calibration.standard.polyfit.LinearTransformer
+              config:
+                created: '2025-05-02T09:21:00.636686'
+                degree: 1
+                dir: calibration_files
+                expire: P168D
+                name: LinearTransformer
+                parameters: null
+          procedure_file: test_2025_06_02T11_42_13.yml
+          vials:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+          - 9
+          - 10
+          - 11
+          - 12
+          - 13
+          - 14
+          - 15
+      echo_raw: 1
+      echo_val: 2
+      name: test
+      vials:
+      - 0
+      - 1
+      - 2
+history:
+  classinfo: evolver.history.standard.HistoryServer
+  config:
+    buffer_partitions: 3
+    default_n_max: 5000
+    default_window: 3600
+    name: HistoryServer
+    namespace: null
+    partition_seconds: 3600
+interval: 20
+log_level: 21
+name: foo
+namespace: unspecified
+raise_loop_exceptions: false
+serial:
+  classinfo: evolver.serial.EvolverSerialUART
+  config:
+    baudrate: 9600
+    name: EvolverSerialUART
+    port: /dev/ttyAMA0
+    timeout: 1.0
+skip_control_on_read_failure: true
+vial_layout:
+- 4
+- 4
+vials:
+- 0
+- 1
+- 2
+- 3
+- 4
+- 5
+- 6
+- 7
+- 8
+- 9
+- 10
+- 11
+- 12
+- 13
+- 14
+- 15
