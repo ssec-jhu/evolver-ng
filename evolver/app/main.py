@@ -45,7 +45,7 @@ app = FastAPI(lifespan=lifespan, default_response_class=ORJSONResponse)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_origin_regex="|".join(f"({p})" for p in app_settings.CORS_ALLOW_ORIGIN_REGEX),
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=True,
