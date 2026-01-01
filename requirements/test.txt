@@ -1,6 +1,6 @@
-bandit==1.8.6
+bandit==1.9.2
 deepdiff==8.6.1
 httpx==0.28.1
-ruff==0.12.11
+ruff==0.14.10
 pytest==8.4.1
 pytest-cov==7.0.0
